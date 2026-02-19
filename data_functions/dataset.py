@@ -1,0 +1,129 @@
+import json
+import os
+
+import numpy as np
+import torch
+import torch.utils.data as tdata
+import xarray as xr
+
+
+class next_oso_Dataset(tdata.Dataset):
+    def __init__(
+        self,
+        path_s2,
+        path_label,
+        norm=True,
+        folds=None,
+        label_type="max_class",
+        reference_date="2019-12-31",
+    ):
+        super(next_oso_Dataset, self).__init__()
+        self.path_s2 = path_s2
+        self.path_label = path_label
+        self.norm = norm
+        self.folds = folds
+        self.label_type = label_type
+        self.reference_date = np.datetime64(reference_date)
+        self.s2_files = []
+        self.label_files = []
+        self.ids_per_fold = {}
+        self.norms = {}
+        self._collect_files()
+        self._get_ids_per_fold()
+        self._get_norm()
+
+    def _collect_files(self):
+        for zone in range(1, 9):
+            zone_dir = os.path.join(self.path_s2, str(zone))
+            if self.folds is None:
+                self.folds = list(range(1, 6))
+            for f in self.folds:
+                zone_dir_fold = os.path.join(zone_dir, f"fold_{str(f)}")
+                s2_nc_files = sorted(
+                    [f for f in os.listdir(zone_dir_fold) if f.endswith(".nc")]
+                )
+                for s2_nc_file in s2_nc_files:
+                    path_s2_file = os.path.join(zone_dir_fold, s2_nc_file)
+                    if os.path.exists(path_s2_file):
+                        self.s2_files.append(path_s2_file)
+                        file_id = s2_nc_file.split("_")[1].split(".")[0]
+                        path_label_file = os.path.join(
+                            self.path_label, f"label_{file_id}.nc"
+                        )
+                        if os.path.exists(path_label_file):
+                            self.label_files.append(path_label_file)
+                        else:
+                            print(
+                                f"Avertissement : Le fichier label {path_s2_file} est introuvable."
+                            )
+                    else:
+                        print(
+                            f"Avertissement : Le fichier source {path_s2_file} est introuvable."
+                        )
+
+    def _get_norm(self):
+        with open(os.path.join(self.path_s2, "s2_stats.json"), "r") as f:
+            data_norms = json.load(f)
+            for i in self.folds:
+                norm_value = data_norms.get(f"fold_{i}")
+                self.norms.update({str(i): norm_value})
+
+    def _get_ids_per_fold(self):
+        with open(os.path.join(self.path_s2, "s2_ids_per_folder.json"), "r") as f:
+            self.ids_per_fold.update(json.load(f))
+
+    def _find_keys_for_file(file_name, dictionary):
+        return [key for key, file_list in dictionary.items() if file_name in file_list]
+
+    def __len__(self):
+        return len(self.s2_files)
+
+    def __getitem__(self, idx):
+        with xr.open_dataset(self.s2_files[idx]) as s2_data:
+            s2 = (
+                s2_data[["B2", "B3", "B4", "B5", "B6", "B7", "B8", "B8A", "B11", "B12"]]
+                .to_dataarray()
+                .to_numpy()
+            )  # c x t x h x w
+
+            if self.norm:
+                dict_fold = self.ids_per_fold()  # dict associating fold & s2 data
+                fold = self._find_keys_for_file(
+                    dict_fold, os.path.basename(s2_data)
+                )  # which fold
+                norms = self.norms[fold]  # get norms for fold
+
+                s2_normalized = np.zeros_like(s2)
+
+                # Normalize per band
+                for band_idx in range(s2.shape[0]):
+                    band_data = s2[band_idx, :, :, :]  # Shape: (t, h, w)
+
+                    # Clipping btw p5 & p95
+                    p_min = norms["p_min"][band_idx]
+                    p_max = norms["p_max"][band_idx]
+                    band_clipped = np.clip(band_data, p_min, p_max)
+
+                    # normalise
+                    median = norms["median"][band_idx]
+                    scale = p_max - p_min
+
+                    band_normalized = (band_clipped - median) / scale
+
+                    s2_normalized[band_idx, :, :, :] = band_normalized
+
+                    s2 = torch.from_numpy(s2_normalized)
+            else:
+                s2 = torch.from_numpy(s2)
+
+            mask = torch.from_numpy(s2_data["S2_mask"].to_numpy())  # t x h x w
+            date = torch.from_numpy(
+                (s2_data["time"].data - self.reference_date)
+                .astype("timedelta64[D]")
+                .astype(int)
+            )  # t
+        with xr.open_dataset(self.label_files[idx]) as label_data:
+            if self.label_type == "max_class":
+                label = torch.from_numpy(label_data["max_class_1"].data)  # h x w
+
+        return (s2, date, mask), label
