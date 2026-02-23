@@ -20,6 +20,7 @@ class classifier(L.LightningModule):
         self.acc_metric = Accuracy(
             task="multiclass", num_classes=self.num_classe, ignore_index=0
         )
+        self.save_hyperparameters()
 
     def _shared_step(self, batch, step_name, log_on_step, log_on_epoch):
         (x, date, mask), y = batch
