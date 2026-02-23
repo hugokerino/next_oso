@@ -123,7 +123,9 @@ class next_oso_Dataset(tdata.Dataset):
             else:
                 s2 = torch.from_numpy(s2_array)
 
-            mask = torch.from_numpy(s2_data["S2_mask"].to_numpy())  # t x h x w
+            mask = torch.from_numpy(
+                s2_data["S2_mask"].to_numpy()
+            )  # t x h x w, 1 == 'invalid' 0 == 'valid'
             date = torch.from_numpy(
                 (s2_data["time"].data - self.reference_date)
                 .astype("timedelta64[D]")

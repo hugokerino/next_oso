@@ -23,7 +23,7 @@ def pad_to_length(tensor, dim, length, pad_value=0):
 
     # Créer le padding pour la dimension spécifiée
     pad_list = [0, 0] * tensor.dim()
-    pad_list[2 * (tensor.dim() - 1 - dim)] = (
+    pad_list[2 * (tensor.dim() - 1 - dim) + 1] = (
         pad_size  # Ajouter le padding à la fin de la dimension
     )
 
@@ -52,8 +52,8 @@ def pad_nextoso_collate(batch, len_max_seq=148, pad_value=0):
         )
         # Padding pour mask (t, h, w) -> (len_max_seq, h, w)
         mask_padded = pad_to_length(
-            mask, dim=0, length=len_max_seq, pad_value=pad_value
-        )
+            mask, dim=0, length=len_max_seq, pad_value=1
+        )  # Padding mask with 'invalid' == 1 not 0
 
         # Ajouter les données après padding aux listes
         padded_s2.append(s2_padded)

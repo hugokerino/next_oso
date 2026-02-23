@@ -1,7 +1,6 @@
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.colors import ListedColormap
-from matplotlib import cm
 
 
 # For RGB array
@@ -44,7 +43,7 @@ def count_label(dataset, plot=True):
         plt.xticks(range(len(normalized_count)), dataset.name_labels, rotation=90)
         plt.ylabel("Labels occurence")
 
-    return classes
+    return normalized_count
 
 
 # Plot RGB images sequence with associated date, mask and label
