@@ -2,6 +2,7 @@ import torch
 import lightning as L
 from lightning.pytorch.loggers import TensorBoardLogger
 from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
+from torchmetrics.classification import MulticlassConfusionMatrix, MulticlassF1Score
 
 from argparse import ArgumentParser
 import sys
@@ -32,7 +33,8 @@ parser.add_argument(
 parser.add_argument("--epochs_max", type=int, default=10)
 parser.add_argument("--batch_size", type=int, default=8)
 parser.add_argument("--num_worker", type=int, default=4)
-parser.add_argument("--folds_train", type=list, default=[1, 2, 3])
+parser.add_argument("--num_class", type=int, default=25)
+parser.add_argument("--folds_train", type=list, default=[1])
 parser.add_argument("--folds_val", type=list, default=[4])
 parser.add_argument("--folds_test", type=list, default=[5])
 parser.add_argument("--test_model", type=bool, default=True)
@@ -125,6 +127,7 @@ trainer = L.Trainer(
     callbacks=[checkpoint_callback, callbacks],
     max_epochs=args.epochs_max,
     profiler="simple",
+    num_sanity_val_steps=2,
 )
 
 # Training
