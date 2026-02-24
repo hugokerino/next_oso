@@ -6,6 +6,7 @@ import torch
 import torch.utils.data as tdata
 import xarray as xr
 import pandas
+from data_functions import collate
 
 
 class next_oso_Dataset(tdata.Dataset):
@@ -140,3 +141,50 @@ class next_oso_Dataset(tdata.Dataset):
                 label = torch.from_numpy(label_numpy)  # h x w
 
         return (s2, date, mask), label
+
+
+def get_loaders(
+    path_s2,
+    path_label,
+    folds_train,
+    folds_val,
+    folds_test,
+    batch_size,
+    num_worker,
+    norm=True,
+    shuffle=True,
+):
+    dt_train = next_oso_Dataset(
+        path_s2=path_s2, path_label=path_label, norm=norm, folds=folds_train
+    )
+    dl_train = torch.utils.data.DataLoader(
+        dt_train,
+        batch_size=batch_size,
+        collate_fn=collate.pad_nextoso_collate,
+        shuffle=shuffle,
+        num_workers=num_worker,
+    )
+
+    dt_val = next_oso_Dataset(
+        path_s2=path_s2, path_label=path_label, norm=norm, folds=folds_val
+    )
+    dl_val = torch.utils.data.DataLoader(
+        dt_val,
+        batch_size=batch_size,
+        collate_fn=collate.pad_nextoso_collate,
+        shuffle=False,
+        num_workers=num_worker,
+    )
+
+    dt_test = next_oso_Dataset(
+        path_s2=path_s2, path_label=path_label, norm=norm, folds=folds_test
+    )
+    dl_test = torch.utils.data.DataLoader(
+        dt_test,
+        batch_size=batch_size,
+        collate_fn=collate.pad_nextoso_collate,
+        shuffle=False,
+        num_workers=num_worker,
+    )
+
+    return dl_train, dl_val, dl_test

@@ -38,19 +38,10 @@ class classifier(L.LightningModule):
         y_pred = torch.softmax(y_logits, dim=1).argmax(dim=1)
         acc = self.acc_metric(y_pred, y.long())
 
-        self.log(
-            f"{step_name}_loss",
-            loss,
-            prog_bar=True,
-            on_epoch=log_on_epoch,
-            on_step=log_on_step,
-        )
-        self.log(
-            f"{step_name}_accuracy",
-            acc,
-            prog_bar=True,
-            on_epoch=log_on_epoch,
-            on_step=log_on_step,
+        metrics = {f"{step_name}_loss": loss, f"{step_name}_accuracy": acc}
+
+        self.log_dict(
+            metrics, prog_bar=True, on_epoch=log_on_epoch, on_step=log_on_step
         )
 
         return loss
