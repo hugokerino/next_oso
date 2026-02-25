@@ -67,9 +67,9 @@ def calculate_miou(y_pred, y, n_classes, ignore_label=True):
     return miou
 
 
-def convert_to_figure(cm):
+def convert_cm_to_figure(cm):
     # Créer la figure
-    fig, ax = plt.subplots(figsize=(15, 8))
+    fig, ax = plt.subplots(figsize=(18, 10))
 
     # Tracer la heatmap
     sns.heatmap(
@@ -95,7 +95,7 @@ def return_plot_confusion_matrix(
     cm_normalized = cm.astype("float") / cm.sum(axis=1)[:, np.newaxis]
 
     # Créer la figure
-    fig, ax = plt.subplots(figsize=(15, 8))
+    fig, ax = plt.subplots(figsize=(20, 12))
 
     # Tracer la heatmap
     sns.heatmap(
@@ -124,8 +124,8 @@ def return_plot_f_score(confusion_matrix, names_class):
 
     for i in range(n_classe):
         TP = confusion_matrix[i, i]
-        P = TP / confusion_matrix[:, i].sum()
-        R = TP / confusion_matrix[i, :].sum()
+        P = TP / (confusion_matrix[:, i].sum() + 1e-6)
+        R = TP / (confusion_matrix[i, :].sum() + 1e-6)
         F = 2 * (P * R) / (P + R)
         res[i, :] = np.array((P, R, F))
 
@@ -153,3 +153,12 @@ def return_plot_f_score(confusion_matrix, names_class):
 
     # Retourner la figure
     return fig, dict_mean
+
+
+def create_markdown_table(dict):
+    # Créer une chaîne Markdown pour le tableau
+    table_str = "| Metric       | Value       |\n"
+    table_str += "|--------------|-------------|\n"
+    for key, value in dict.items():
+        table_str += f"| {key}        | {value:.3f}       |\n"
+    return table_str

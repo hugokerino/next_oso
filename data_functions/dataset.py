@@ -14,6 +14,7 @@ class next_oso_Dataset(tdata.Dataset):
         self,
         path_s2,
         path_label,
+        path_oso_class,
         norm=True,
         folds=None,
         label_type="max_class",
@@ -32,9 +33,7 @@ class next_oso_Dataset(tdata.Dataset):
         self.norms = {}
         self._collect_files()
         self._get_ids_per_fold()
-        self.name_labels = pandas.read_csv(
-            "/home/hkerino/Documents/nextoso-dataset/data/auxiliary/OSO/oso_classes.csv"
-        ).get("name_class")
+        self.name_labels = pandas.read_csv(path_oso_class).get("name_class")
 
         if self.norm:
             self._get_norm()
@@ -146,6 +145,7 @@ class next_oso_Dataset(tdata.Dataset):
 def get_loaders(
     path_s2,
     path_label,
+    path_oso_class,
     folds_train,
     folds_val,
     folds_test,
@@ -155,7 +155,11 @@ def get_loaders(
     shuffle=True,
 ):
     dt_train = next_oso_Dataset(
-        path_s2=path_s2, path_label=path_label, norm=norm, folds=folds_train
+        path_s2=path_s2,
+        path_label=path_label,
+        path_oso_class=path_oso_class,
+        norm=norm,
+        folds=folds_train,
     )
     dl_train = torch.utils.data.DataLoader(
         dt_train,
@@ -166,7 +170,11 @@ def get_loaders(
     )
 
     dt_val = next_oso_Dataset(
-        path_s2=path_s2, path_label=path_label, norm=norm, folds=folds_val
+        path_s2=path_s2,
+        path_label=path_label,
+        path_oso_class=path_oso_class,
+        norm=norm,
+        folds=folds_val,
     )
     dl_val = torch.utils.data.DataLoader(
         dt_val,
@@ -177,7 +185,11 @@ def get_loaders(
     )
 
     dt_test = next_oso_Dataset(
-        path_s2=path_s2, path_label=path_label, norm=norm, folds=folds_test
+        path_s2=path_s2,
+        path_label=path_label,
+        path_oso_class=path_oso_class,
+        norm=norm,
+        folds=folds_test,
     )
     dl_test = torch.utils.data.DataLoader(
         dt_test,

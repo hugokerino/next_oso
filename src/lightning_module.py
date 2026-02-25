@@ -2,10 +2,12 @@ import lightning as L
 import torch
 import torch.nn as nn
 from torchmetrics.classification import (
-    Accuracy,
+    MulticlassAccuracy,
     MulticlassConfusionMatrix,
     MulticlassF1Score,
 )
+from torchmetrics.segmentation import MeanIoU
+from src import metrics
 
 
 class classifier(L.LightningModule):
@@ -23,15 +25,14 @@ class classifier(L.LightningModule):
         self.loss_fn = nn.CrossEntropyLoss(ignore_index=0)
         self.y_pred_test = []
         self.y_true_test = []
-        self.acc_metric = Accuracy(
-            task="multiclass", num_classes=self.num_class, ignore_index=0
-        )
+        self.acc_metric = MulticlassAccuracy(num_classes=self.num_class, ignore_index=0)
         self.cm_metric = MulticlassConfusionMatrix(
             num_classes=self.num_class, ignore_index=0, normalize="true"
         )
         self.f_score_metric = MulticlassF1Score(
             num_classes=self.num_class, ignore_index=0
         )
+        self.miou_metric = MeanIoU(num_classes=self.num_class, include_background=False)
         self.save_hyperparameters(ignore=["encoder", "decoder"])
 
     def _shared_step(self, batch, step_name, log_on_step, log_on_epoch):
@@ -42,24 +43,38 @@ class classifier(L.LightningModule):
             z = self.encoder(x, batch_positions=date)
 
         y_logits = self.decoder(z)  # (bhw) x nb_class
-        # print(f"{y_logits.shape}")
         y_logits = (
             y_logits.view(x.shape[0], self.H, self.W, self.num_class)
             .permute(0, 3, 1, 2)
             .contiguous()
         )  # b x nb_class x h x w
-        # print(f"{y_logits.shape}")
-        # print(y_logits)
 
         loss = self.loss_fn(y_logits, y.long())
 
         y_pred = torch.softmax(y_logits, dim=1).argmax(dim=1)
-        acc = self.acc_metric(y_pred, y.long())
+        acc = self.acc_metric(y_pred, y)
+        miou = self.miou_metric(y_pred, y)
 
-        metrics = {f"{step_name}_loss": loss, f"{step_name}_accuracy": acc}
-
-        self.log_dict(
-            metrics, prog_bar=True, on_epoch=log_on_epoch, on_step=log_on_step
+        self.log(
+            f"{step_name}_loss",
+            loss,
+            prog_bar=True,
+            on_epoch=log_on_epoch,
+            on_step=log_on_step,
+        )
+        self.log(
+            f"{step_name}_accuracy",
+            acc,
+            prog_bar=True,
+            on_epoch=log_on_epoch,
+            on_step=log_on_step,
+        )
+        self.log(
+            f"{step_name}_miou",
+            miou,
+            prog_bar=True,
+            on_epoch=log_on_epoch,
+            on_step=log_on_step,
         )
 
         return loss
@@ -98,14 +113,18 @@ class classifier(L.LightningModule):
         acc = self.acc_metric(y_preds, y_trues)
         cm = self.cm_metric(y_preds, y_trues)
         f1 = self.f_score_metric(y_preds, y_trues)
+        miou = self.miou_metric(y_preds, y_trues)
 
         # Log des métriques globales
-        self.log("test_accuracy", acc, on_epoch=True)
-        # self.log("test_confusion_matrix", cm, on_epoch=True)
-        # self.log("test_f1_score", f1, on_epoch=True)
-
-        # Afficher la matrice de confusion
-        print("Confusion Matrix:\n", cm)
+        test_metrics = {
+            "Test_accuracy": acc,
+            "Test_f1_score": f1,
+            "Test_Miou": miou,
+        }
+        table_metrics = metrics.create_markdown_table(test_metrics)
+        self.logger.experiment.add_text("Test_Metrics", table_metrics)
+        cm_fig = metrics.convert_cm_to_figure(cm)
+        self.logger.experiment.add_figure("Confusion Matrix", cm_fig, close=True)
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
