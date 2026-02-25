@@ -122,7 +122,7 @@ class next_oso_Dataset(tdata.Dataset):
                 s2 = torch.from_numpy(s2_normalized).float()
 
             else:
-                s2 = torch.from_numpy(s2_array)
+                s2 = torch.from_numpy(s2_array).float()
 
             mask = torch.from_numpy(
                 s2_data["S2_mask"].to_numpy()

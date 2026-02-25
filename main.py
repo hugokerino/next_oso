@@ -18,7 +18,6 @@ from src import LTAE, utils_model, lightning_module
 ########################################
 #
 print("\nPARSE ARGUMENTS ")
-date = datetime.now().date().strftime("%Y-%m-%d")
 parser = ArgumentParser()
 
 # Hyperparameters for the model
@@ -41,6 +40,7 @@ parser.add_argument("--test_model", type=bool, default=True)
 
 # Parse the user inputs and defaults (returns a argparse.Namespace)
 args = parser.parse_args()
+date = datetime.now().date().strftime("%Y-%m-%d")
 
 # Load DataLoaders
 print("\nLOADING DATA ...")
