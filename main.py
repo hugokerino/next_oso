@@ -37,7 +37,7 @@ parser.add_argument(
 parser.add_argument(
     "--path_logs",
     type=str,
-    default="/home/hkerino/Documents/models_on_nextoso/logs/",
+    default="/home/hkerino/Documents/models_on_nextoso/logs/lightning/",
 )
 parser.add_argument("--epochs_max", type=int, default=10)
 parser.add_argument("--batch_size", type=int, default=8)

@@ -19,6 +19,7 @@ from src.pytorch_training import train, val
 ########################################
 #
 print("\nPARSE ARGUMENTS ... ")
+sys.stdout.flush()
 parser = ArgumentParser()
 
 # Hyperparameters for the model
