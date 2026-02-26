@@ -93,6 +93,8 @@ def return_plot_confusion_matrix(
 ):
     # Normaliser la matrice de confusion
     cm_normalized = cm.astype("float") / cm.sum(axis=1)[:, np.newaxis]
+    cm_normalized = cm_normalized[1:, 1:]
+    classes = classes[1:]
 
     # Créer la figure
     fig, ax = plt.subplots(figsize=(20, 12))
@@ -119,15 +121,15 @@ def return_plot_confusion_matrix(
 
 def return_plot_f_score(confusion_matrix, names_class):
 
-    n_classe = confusion_matrix.shape[0]
+    n_classe = confusion_matrix.shape[0] - 1
     res = np.zeros((n_classe, 3))
 
-    for i in range(n_classe):
+    for i in range(1, n_classe + 1):
         TP = confusion_matrix[i, i]
         P = TP / (confusion_matrix[:, i].sum() + 1e-6)
         R = TP / (confusion_matrix[i, :].sum() + 1e-6)
-        F = 2 * (P * R) / (P + R)
-        res[i, :] = np.array((P, R, F))
+        F = 2 * (P * R) / (P + R + 1e-6)
+        res[i - 1, :] = np.array((P, R, F))
 
     mean_values = np.mean(res, axis=0)
 
@@ -147,7 +149,7 @@ def return_plot_f_score(confusion_matrix, names_class):
         fmt=".2f",
         cmap=plt.cm.Blues,
         xticklabels=["Precision", "Recall", "F-Score"],
-        yticklabels=names_class,
+        yticklabels=names_class[1:],
         ax=ax,
     )
 

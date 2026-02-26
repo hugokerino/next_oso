@@ -30,7 +30,7 @@ module load pixi
 
 echo "Launch python file"
 
-pixi run python main.py \
+pixi run python main_lightning.py \
     --batch_size 8 \
     --epochs_max 5 \
     --path_s2 "$PATH_s2" \
