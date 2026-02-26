@@ -1,14 +1,19 @@
 #!/bin/bash
 
 #SBATCH -J main_lightning_ltae
-#SBATCH -N 1
-#SBATCH -n 32
-#SBATCH -t 20:00:00
 #SBATCH -A theia_oso
 #SBATCH -o script_logs/out_main_light%j.out
 #SBATCH -e script_logs/err_main_light%j.err
 #SBATCH --export=none
 
+#SBATCH -N 1                        # number of nodes ( or --nodes=)
+#SBATCH -n 5                        # number of tasks ( or --tasks=)
+#SBATCH --gpus=v100_32g:1           # archi and number of gpus 
+#SBATCH --qos=gpu_all               # QoS
+#SBATCH --partition=gpu_std         # partition
+#SBATCH --time=10:00:00             # Walltime
+#SBATCH --mem-per-cpu=12000M
+  
 mkdir -p script_logs
 
 PATH_s2='/work/THEIA/CES/oso/hugok/s2_data/'

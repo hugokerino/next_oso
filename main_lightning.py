@@ -92,9 +92,13 @@ def main(args):
 
     trainer = L.Trainer(
         logger=tb_logger,
-        log_every_n_steps=10,
+        log_every_n_steps=1,
         callbacks=[checkpoint_callback, callbacks],
         max_epochs=args.epochs_max,
+	accelerator='gpu',
+	devices=1,
+	num_nodes=4,
+	strategy='ddp',
         # profiler="simple",
         num_sanity_val_steps=1,
         # limit_train_batches=3,

@@ -5,8 +5,8 @@
 #SBATCH -n 32
 #SBATCH -t 20:00:00
 #SBATCH -A theia_oso
-#SBATCH -o script_logs/out_main_%j.out
-#SBATCH -e script_logs/err_main_%j.err
+#SBATCH -o script_logs/out_main_torch%j.out
+#SBATCH -e script_logs/err_main_torch%j.err
 #SBATCH --export=none
 
 mkdir -p script_logs
