@@ -12,7 +12,16 @@ from src import metrics
 
 class classifier(L.LightningModule):
     def __init__(
-        self, encoder, decoder, batch_size, num_classe=25, H=128, W=128, mask_need=True
+        self,
+        encoder,
+        decoder,
+        batch_size,
+        loss_fn,
+        lr=1e-3,
+        num_classe=25,
+        H=128,
+        W=128,
+        mask_need=True,
     ):
         super().__init__()
         self.encoder = encoder
@@ -22,7 +31,8 @@ class classifier(L.LightningModule):
         self.H = H
         self.W = W
         self.mask_need = mask_need
-        self.loss_fn = nn.CrossEntropyLoss(ignore_index=0)
+        self.loss_fn = loss_fn
+        self.lr = lr
         self.y_pred_test = []
         self.y_true_test = []
         self.acc_metric = MulticlassAccuracy(num_classes=self.num_class, ignore_index=0)
@@ -127,5 +137,5 @@ class classifier(L.LightningModule):
         self.logger.experiment.add_figure("Confusion Matrix", cm_fig, close=True)
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
         return optimizer

@@ -1,7 +1,9 @@
 import torch
+import torch.nn.functional as F
 import lightning as L
 from lightning.pytorch.loggers import TensorBoardLogger
 from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
+import numpy as np
 
 import os
 from argparse import ArgumentParser
@@ -9,7 +11,7 @@ import sys
 from datetime import datetime
 
 from data_functions import dataset
-from src import LTAE, utils_model, lightning_module
+from src import LTAE, utils_model, lightning_module, metrics
 
 
 def main(args):
@@ -58,8 +60,15 @@ def main(args):
     MLP_Decoder = utils_model.MLPDecoder(mlp=[128, 64, 25], dropout=0.2)
 
     # Classifier
+    # criterion_ce = F.CrossEntropyLoss(ignore_index=0)
+    alpha_weights = torch.from_numpy(np.load("./data_functions/alpha_weights.npy"))
+    criterion_fl = metrics.FocalLoss(alpha=alpha_weights, gamma=2, ignore_index=0)
     classifier = lightning_module.classifier(
-        LTAE_encoder, MLP_Decoder, batch_size=args.batch_size
+        LTAE_encoder,
+        MLP_Decoder,
+        batch_size=args.batch_size,
+        loss_fn=criterion_fl,
+        lr=1e-2,
     )
 
     #
@@ -88,17 +97,17 @@ def main(args):
     tb_logger = TensorBoardLogger(
         args.path_logs, name=f"LTAE_{date}", default_hp_metric=False
     )
-    callbacks = EarlyStopping(monitor="val_loss", mode="min", patience=3)
+    callbacks = EarlyStopping(monitor="val_loss", mode="min", patience=2)
 
     trainer = L.Trainer(
         logger=tb_logger,
         log_every_n_steps=1,
         callbacks=[checkpoint_callback, callbacks],
         max_epochs=args.epochs_max,
-	#accelerator='gpu',
-	#devices=1,
-	#num_nodes=4,
-	#strategy='ddp',
+        # accelerator='gpu',
+        # devices=1,
+        # num_nodes=4,
+        # strategy='ddp',
         # profiler="simple",
         num_sanity_val_steps=1,
         # limit_train_batches=3,
@@ -143,13 +152,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--path_logs",
         type=str,
-        default="/home/hkerino/Documents/models_on_nextoso/logs/lightning/",
+        default="/home/hkerino/Documents/models_on_nextoso/logs/light_training",
     )
     parser.add_argument("--epochs_max", type=int, default=10)
     parser.add_argument("--batch_size", type=int, default=8)
     parser.add_argument("--num_worker", type=int, default=4)
     parser.add_argument("--num_class", type=int, default=25)
-    parser.add_argument("--folds_train", type=list, default=[1,2,3])
+    parser.add_argument("--folds_train", type=list, default=[1, 2, 3])
     parser.add_argument("--folds_val", type=list, default=[4])
     parser.add_argument("--folds_test", type=list, default=[5])
     parser.add_argument("--test_model", type=str, default="False")

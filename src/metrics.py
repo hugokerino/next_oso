@@ -1,4 +1,6 @@
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 import numpy as np
 from matplotlib import pyplot as plt
 import seaborn as sns
@@ -165,6 +167,7 @@ def create_markdown_table(dict):
         table_str += f"| {key}        | {value:.3f}       |\n"
     return table_str
 
+
 def alpha_weights(dataset):
     classes = np.zeros(25)
 
@@ -178,21 +181,30 @@ def alpha_weights(dataset):
         counts = np.bincount(labels, minlength=25)
         classes += counts
 
-    freqs = 1/classes
-    return freqs/freqs.sum() 
+    freqs = 1 / counts
+    freqs[0] = 0
+    alpha_weights = freqs / freqs.sum()
+
+    return alpha_weights
+
 
 class FocalLoss(nn.Module):
-    def __init__(self, alpha=None, gamma=2):
+    def __init__(self, alpha=None, gamma=2, ignore_index=0):
         super(FocalLoss, self).__init__()
-        self.alpha = alpha  # Vecteur de poids pour chaque classe (taille : nombre de classes)
+        self.alpha = (
+            alpha  # Vecteur de poids pour chaque classe (taille : nombre de classes)
+        )
         self.gamma = gamma  # Facteur de focalisation
-        
+        self.ignore_index = ignore_index  # To ignore
+
     def forward(self, inputs, targets):
         # inputs : (b, c, h, w)
         # targets : (b, h, w)
 
         # Calcul de la cross-entropy sans réduction
-        ce_loss = F.cross_entropy(inputs, targets, reduction='none')  # Sortie : (b, h, w)
+        ce_loss = F.cross_entropy(
+            inputs, targets, reduction="none", ignore_index=self.ignore_index
+        )  # Sortie : (b, h, w)
 
         # Calcul de pt (probabilité de la classe cible)
         pt = torch.exp(-ce_loss)  # Sortie : (b, h, w)
@@ -207,6 +219,8 @@ class FocalLoss(nn.Module):
             alpha_weights = 1.0
 
         # Calcul de la focal loss
-        focal_loss = alpha_weights * (1 - pt) ** self.gamma * ce_loss  # Sortie : (b, h, w)
-        
-        return focal_loss.mean() 
+        focal_loss = (
+            alpha_weights * (1 - pt) ** self.gamma * ce_loss
+        )  # Sortie : (b, h, w)
+
+        return focal_loss.mean()
