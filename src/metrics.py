@@ -164,3 +164,49 @@ def create_markdown_table(dict):
     for key, value in dict.items():
         table_str += f"| {key}        | {value:.3f}       |\n"
     return table_str
+
+def alpha_weights(dataset):
+    classes = np.zeros(25)
+
+    for i in range(len(dataset)):
+        labels = dataset[i][1].flatten().numpy()
+        if np.any(labels < 0):
+            print(f"Échantillon {i} : labels contiennent des valeurs négatives !")
+            print(f"Valeurs uniques : {np.unique(labels)}")
+            continue  # Exclure cet échantillon
+
+        counts = np.bincount(labels, minlength=25)
+        classes += counts
+
+    freqs = 1/classes
+    return freqs/freqs.sum() 
+
+class FocalLoss(nn.Module):
+    def __init__(self, alpha=None, gamma=2):
+        super(FocalLoss, self).__init__()
+        self.alpha = alpha  # Vecteur de poids pour chaque classe (taille : nombre de classes)
+        self.gamma = gamma  # Facteur de focalisation
+        
+    def forward(self, inputs, targets):
+        # inputs : (b, c, h, w)
+        # targets : (b, h, w)
+
+        # Calcul de la cross-entropy sans réduction
+        ce_loss = F.cross_entropy(inputs, targets, reduction='none')  # Sortie : (b, h, w)
+
+        # Calcul de pt (probabilité de la classe cible)
+        pt = torch.exp(-ce_loss)  # Sortie : (b, h, w)
+
+        # Appliquer alpha si fourni
+        if self.alpha is not None:
+            # Assure que alpha est sur le même device que les inputs
+            alpha = self.alpha.to(inputs.device)
+            # Récupère les valeurs de alpha pour chaque classe cible (targets)
+            alpha_weights = alpha[targets]  # Sortie : (b, h, w)
+        else:
+            alpha_weights = 1.0
+
+        # Calcul de la focal loss
+        focal_loss = alpha_weights * (1 - pt) ** self.gamma * ce_loss  # Sortie : (b, h, w)
+        
+        return focal_loss.mean() 

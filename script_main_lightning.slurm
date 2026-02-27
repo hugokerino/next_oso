@@ -6,13 +6,9 @@
 #SBATCH -e script_logs/err_main_light%j.err
 #SBATCH --export=none
 
-#SBATCH -N 1                        # number of nodes ( or --nodes=)
-#SBATCH -n 5                        # number of tasks ( or --tasks=)
-#SBATCH --gpus=v100_32g:1           # archi and number of gpus 
-#SBATCH --qos=gpu_all               # QoS
-#SBATCH --partition=gpu_std         # partition
-#SBATCH --time=10:00:00             # Walltime
-#SBATCH --mem-per-cpu=12000M
+#SBATCH -N 1
+#SBATCH --ntasks-per-node=32
+#SBATCH --time=20:00:00             # Walltime
   
 mkdir -p script_logs
 
@@ -32,6 +28,7 @@ echo -e "\nRépertoire courant : $(pwd)"
 echo "Load pixi envs"
 module purge
 module load pixi
+#module load cuda/11.7
 
 echo "Launch python file"
 

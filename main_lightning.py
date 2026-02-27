@@ -95,10 +95,10 @@ def main(args):
         log_every_n_steps=1,
         callbacks=[checkpoint_callback, callbacks],
         max_epochs=args.epochs_max,
-	accelerator='gpu',
-	devices=1,
-	num_nodes=4,
-	strategy='ddp',
+	#accelerator='gpu',
+	#devices=1,
+	#num_nodes=4,
+	#strategy='ddp',
         # profiler="simple",
         num_sanity_val_steps=1,
         # limit_train_batches=3,
@@ -149,7 +149,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=8)
     parser.add_argument("--num_worker", type=int, default=4)
     parser.add_argument("--num_class", type=int, default=25)
-    parser.add_argument("--folds_train", type=list, default=[1])
+    parser.add_argument("--folds_train", type=list, default=[1,2,3])
     parser.add_argument("--folds_val", type=list, default=[4])
     parser.add_argument("--folds_test", type=list, default=[5])
     parser.add_argument("--test_model", type=str, default="False")
