@@ -69,27 +69,6 @@ def calculate_miou(y_pred, y, n_classes, ignore_label=True):
     return miou
 
 
-def convert_cm_to_figure(cm):
-    # Créer la figure
-    fig, ax = plt.subplots(figsize=(18, 10))
-
-    # Tracer la heatmap
-    sns.heatmap(
-        cm,
-        annot=True,
-        fmt=".2f",
-        cmap=plt.cm.Blues,
-        ax=ax,
-    )
-
-    # Ajouter un titre et des labels
-    ax.set_title("Confusion matrix")
-    ax.set_ylabel("Vraies étiquettes")
-    ax.set_xlabel("Prédictions")
-
-    return fig
-
-
 def return_plot_confusion_matrix(
     cm, classes, title="Confusion Matrix", cmap=plt.cm.Blues
 ):
@@ -121,19 +100,40 @@ def return_plot_confusion_matrix(
     return fig
 
 
-def return_plot_f_score(confusion_matrix, names_class):
+def convert_cm_to_figure(cm):
+    # Créer la figure
+    fig, ax = plt.subplots(figsize=(18, 10))
+
+    # Tracer la heatmap
+    sns.heatmap(
+        cm,
+        annot=True,
+        fmt=".2f",
+        cmap=plt.cm.Blues,
+        ax=ax,
+    )
+
+    # Ajouter un titre et des labels
+    ax.set_title("Confusion matrix")
+    ax.set_ylabel("Vraies étiquettes")
+    ax.set_xlabel("Prédictions")
+
+    return fig
+
+
+def return_plot_f_score(confusion_matrix):
 
     n_classe = confusion_matrix.shape[0] - 1
-    res = np.zeros((n_classe, 3))
+    f_scores = np.zeros((n_classe, 3))
 
     for i in range(1, n_classe + 1):
         TP = confusion_matrix[i, i]
         P = TP / (confusion_matrix[:, i].sum() + 1e-6)
         R = TP / (confusion_matrix[i, :].sum() + 1e-6)
         F = 2 * (P * R) / (P + R + 1e-6)
-        res[i - 1, :] = np.array((P, R, F))
+        f_scores[i - 1, :] = np.array((P, R, F))
 
-    mean_values = np.mean(res, axis=0)
+    mean_values = np.mean(f_scores, axis=0)
 
     dict_mean = {
         "Precision": mean_values[0],
@@ -146,17 +146,41 @@ def return_plot_f_score(confusion_matrix, names_class):
 
     # Plot
     sns.heatmap(
-        res,
+        f_scores,
         annot=True,
         fmt=".2f",
         cmap=plt.cm.Blues,
         xticklabels=["Precision", "Recall", "F-Score"],
-        yticklabels=names_class[1:],
         ax=ax,
     )
 
     # Retourner la figure
     return fig, dict_mean
+
+
+def return_plot_miou(confusion_matrix):
+
+    n_classe = confusion_matrix.shape[0] - 1
+    miou = np.zeros(n_classe)
+
+    for i in range(1, n_classe + 1):
+        TP = confusion_matrix[i, i]
+        FP = confusion_matrix[:, i].sum() - TP
+        FN = confusion_matrix[i, :].sum() - TP
+        miou[i - 1] = TP / (TP + FP + FN + 1e-6)
+        # Créer la figure
+    fig, ax = plt.subplots(figsize=(15, 8))
+
+    # Plot
+    sns.heatmap(
+        miou,
+        annot=True,
+        fmt=".2f",
+        cmap=plt.cm.Blues,
+        xticklabels=["mIoU"],
+        ax=ax,
+    )
+    return fig
 
 
 def create_markdown_table(dict):

@@ -133,8 +133,15 @@ class classifier(L.LightningModule):
         }
         table_metrics = metrics.create_markdown_table(test_metrics)
         self.logger.experiment.add_text("Test_Metrics", table_metrics)
+
+        # Figures
         cm_fig = metrics.convert_cm_to_figure(cm)
+        f1_fig = metrics.return_plot_f_score(cm)
+        miou_fig = metrics.return_plot_miou(cm)
+
         self.logger.experiment.add_figure("Confusion Matrix", cm_fig, close=True)
+        self.logger.experiment.add_figure("F-Score", f1_fig, close=True)
+        self.logger.experiment.add_figure("mIoU", miou_fig, close=True)
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)

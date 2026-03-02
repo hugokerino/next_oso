@@ -49,7 +49,7 @@ def main(args):
     LTAE_encoder = LTAE.LTAE2d(
         in_channels=10,
         n_head=16,
-        d_k=16,
+        d_k=8,
         d_model=128,
         T=1000,
         return_att=False,
