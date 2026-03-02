@@ -8,8 +8,10 @@
 
 #SBATCH -N 1
 #SBATCH --ntasks-per-node=32
-#SBATCH --time=00:30:00             # Walltime
-  
+#SBATCH --time=23:00:00             # Walltime
+
+#SBATCH --signal=SIGUSR1@90         # For auto-resubmit
+
 mkdir -p script_logs
 
 PATH_s2='/work/THEIA/CES/oso/hugok/s2_data/'
@@ -34,7 +36,7 @@ echo "Launch python file"
 
 pixi run python main_lightning.py \
     --batch_size 16 \
-    --epochs_max 1 \
+    --epochs_max 5 \
     --path_s2 "$PATH_s2" \
     --path_label "$PATH_label" \
     --path_oso_classes "$PATH_class_name" \

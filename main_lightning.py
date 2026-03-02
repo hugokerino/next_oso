@@ -3,7 +3,7 @@ import torch.nn.functional as F
 import lightning as L
 from lightning.pytorch.loggers import TensorBoardLogger
 from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
-from lightning.pytorch.profilers import PyTorchProfiler
+from lightning.pytorch.profilers import SimpleProfiler
 import numpy as np
 
 import os
@@ -14,8 +14,9 @@ from datetime import datetime
 from data_functions import dataset
 from src import LTAE, utils_model, lightning_module, metrics
 
-# Ajoute FocalLoss aux globaux sûrs
+# Add FocalLoss for loading best model from checkpoint
 torch.serialization.add_safe_globals([metrics.FocalLoss])
+
 
 def main(args):
     #
@@ -93,8 +94,8 @@ def main(args):
     # Real training params
     checkpoint_callback = ModelCheckpoint(
         dirpath=os.path.join(args.path_logs, f"LTAE_{date}/Checkpoints/"),
-        save_weights_only=True, 
-	monitor="val_loss",
+        save_weights_only=True,
+        monitor="val_loss",
         mode="min",
         save_top_k=1,
     )
@@ -102,8 +103,10 @@ def main(args):
         args.path_logs, name=f"LTAE_{date}", default_hp_metric=False
     )
     callbacks = EarlyStopping(monitor="val_loss", mode="min", patience=2)
-    profiler = PyTorchProfiler(dirpath=os.path.join(args.path_logs, f"LTAE{date}") , file_name="perf_logs")
-    
+    profiler = SimpleProfiler(
+        dirpath=os.path.join(args.path_logs, f"LTAE_{date}"), file_name="profiler"
+    )
+
     trainer = L.Trainer(
         logger=tb_logger,
         log_every_n_steps=1,
@@ -115,9 +118,9 @@ def main(args):
         # strategy='ddp',
         profiler=profiler,
         num_sanity_val_steps=1,
-        limit_train_batches=2,
-        limit_val_batches=2,
-        limit_test_batches=2,
+        # limit_train_batches=2,
+        # limit_val_batches=2,
+        # limit_test_batches=2,
     )
 
     # Training
@@ -127,7 +130,7 @@ def main(args):
     best_model_path = checkpoint_callback.best_model_path
     best_classifier = lightning_module.classifier.load_from_checkpoint(
         best_model_path,
-	weights_only=True,
+        weights_only=True,
         encoder=LTAE_encoder,
         decoder=MLP_Decoder,
         loss_fn=criterion_fl,
