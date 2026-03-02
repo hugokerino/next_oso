@@ -8,7 +8,7 @@
 
 #SBATCH -N 1
 #SBATCH --ntasks-per-node=32
-#SBATCH --time=20:00:00             # Walltime
+#SBATCH --time=00:30:00             # Walltime
   
 mkdir -p script_logs
 
@@ -33,8 +33,8 @@ module load pixi
 echo "Launch python file"
 
 pixi run python main_lightning.py \
-    --batch_size 8 \
-    --epochs_max 5 \
+    --batch_size 16 \
+    --epochs_max 1 \
     --path_s2 "$PATH_s2" \
     --path_label "$PATH_label" \
     --path_oso_classes "$PATH_class_name" \

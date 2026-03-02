@@ -155,7 +155,7 @@ def return_plot_f_score(confusion_matrix):
     )
 
     # Retourner la figure
-    return fig, dict_mean
+    return fig
 
 
 def return_plot_miou(confusion_matrix):
@@ -168,12 +168,14 @@ def return_plot_miou(confusion_matrix):
         FP = confusion_matrix[:, i].sum() - TP
         FN = confusion_matrix[i, :].sum() - TP
         miou[i - 1] = TP / (TP + FP + FN + 1e-6)
-        # Créer la figure
+    
+    miou_2d = miou.reshape(-1, 1)
+    # Créer la figure
     fig, ax = plt.subplots(figsize=(15, 8))
 
     # Plot
     sns.heatmap(
-        miou,
+        miou_2d,
         annot=True,
         fmt=".2f",
         cmap=plt.cm.Blues,

@@ -3,6 +3,7 @@ import torch.nn.functional as F
 import lightning as L
 from lightning.pytorch.loggers import TensorBoardLogger
 from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
+from lightning.pytorch.profilers import PyTorchProfiler
 import numpy as np
 
 import os
@@ -13,6 +14,8 @@ from datetime import datetime
 from data_functions import dataset
 from src import LTAE, utils_model, lightning_module, metrics
 
+# Ajoute FocalLoss aux globaux sûrs
+torch.serialization.add_safe_globals([metrics.FocalLoss])
 
 def main(args):
     #
@@ -90,7 +93,8 @@ def main(args):
     # Real training params
     checkpoint_callback = ModelCheckpoint(
         dirpath=os.path.join(args.path_logs, f"LTAE_{date}/Checkpoints/"),
-        monitor="val_loss",
+        save_weights_only=True, 
+	monitor="val_loss",
         mode="min",
         save_top_k=1,
     )
@@ -98,7 +102,8 @@ def main(args):
         args.path_logs, name=f"LTAE_{date}", default_hp_metric=False
     )
     callbacks = EarlyStopping(monitor="val_loss", mode="min", patience=2)
-
+    profiler = PyTorchProfiler(dirpath=os.path.join(args.path_logs, f"LTAE{date}") , file_name="perf_logs")
+    
     trainer = L.Trainer(
         logger=tb_logger,
         log_every_n_steps=1,
@@ -108,11 +113,11 @@ def main(args):
         # devices=1,
         # num_nodes=4,
         # strategy='ddp',
-        # profiler="simple",
+        profiler=profiler,
         num_sanity_val_steps=1,
-        # limit_train_batches=3,
-        # limit_val_batches=1,
-        # limit_test_batches=1,
+        limit_train_batches=2,
+        limit_val_batches=2,
+        limit_test_batches=2,
     )
 
     # Training
@@ -122,10 +127,14 @@ def main(args):
     best_model_path = checkpoint_callback.best_model_path
     best_classifier = lightning_module.classifier.load_from_checkpoint(
         best_model_path,
+	weights_only=True,
         encoder=LTAE_encoder,
         decoder=MLP_Decoder,
+        loss_fn=criterion_fl,
         batch_size=args.batch_size,
     )
+    print("\nTesting ... ")
+    sys.stdout.flush()
     trainer.test(model=best_classifier, dataloaders=dl_test)
 
 
@@ -158,7 +167,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=8)
     parser.add_argument("--num_worker", type=int, default=4)
     parser.add_argument("--num_class", type=int, default=25)
-    parser.add_argument("--folds_train", type=list, default=[1, 2, 3])
+    parser.add_argument("--folds_train", type=list, default=[1])
     parser.add_argument("--folds_val", type=list, default=[4])
     parser.add_argument("--folds_test", type=list, default=[5])
     parser.add_argument("--test_model", type=str, default="False")

@@ -43,7 +43,7 @@ class classifier(L.LightningModule):
             num_classes=self.num_class, ignore_index=0
         )
         self.miou_metric = MeanIoU(num_classes=self.num_class, include_background=False)
-        self.save_hyperparameters(ignore=["encoder", "decoder"])
+        self.save_hyperparameters(ignore=["encoder", "decoder","loss_fn"])
 
     def _shared_step(self, batch, step_name, log_on_step, log_on_epoch):
         (x, date, mask), y = batch
