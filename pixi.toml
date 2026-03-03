@@ -5,11 +5,6 @@ name = "models_on_nextoso"
 platforms = ["linux-64"]
 version = "0.1.0"
 
-[tasks]
-
-[tool.pixi.system-requirements]
-cuda = "12.9"
-
 [dependencies]
 numpy = ">=2.4.2,<3"
 netcdf4 = ">=1.7.4,<2"
@@ -26,5 +21,21 @@ mlflow = ">=1.2.0,<2"
 tensorboard = ">=2.20.0,<3"
 setuptools = "==81.0"
 seaborn = ">=0.13.2,<0.14"
-pytorch = ">=2.10"
-cuda-version = ">=12.4.0" 
+
+# Environnement CPU (pour le développement local)
+[feature.cpu.dependencies]
+pytorch-cpu = ">=2.10"  # Version CPU de PyTorch
+
+# Environnement GPU (pour le cluster)
+[feature.gpu.system-requirements]
+cuda = "12.4"  # Version de CUDA sur le cluster
+
+[feature.gpu.dependencies]
+cuda-version = ">=12.4"  # Version de CUDA
+pytorch-gpu = ">=2.10"   # Version GPU de PyTorch
+
+# Définition des environnements
+[environments]
+cpu = ["cpu"]   # Environnement CPU (héritant des dépendances communes + pytorch-cpu)
+gpu = ["gpu"]   # Environnement GPU (héritant des dépendances communes + pytorch-gpu)
+default = ["cpu"]
