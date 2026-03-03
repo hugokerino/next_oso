@@ -104,7 +104,7 @@ def main(args):
     )
     callbacks = EarlyStopping(monitor="val_loss", mode="min", patience=2)
     profiler = SimpleProfiler(
-        dirpath=os.path.join(args.path_logs, f"LTAE_{date}"), file_name="profiler"
+        dirpath=os.path.join(args.path_logs, f"LTAE_{date}"), filename="profiler"
     )
 
     trainer = L.Trainer(
@@ -170,7 +170,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=8)
     parser.add_argument("--num_worker", type=int, default=4)
     parser.add_argument("--num_class", type=int, default=25)
-    parser.add_argument("--folds_train", type=list, default=[1])
+    parser.add_argument("--folds_train", type=list, default=[1,2,3])
     parser.add_argument("--folds_val", type=list, default=[4])
     parser.add_argument("--folds_test", type=list, default=[5])
     parser.add_argument("--test_model", type=str, default="False")
