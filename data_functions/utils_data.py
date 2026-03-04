@@ -124,3 +124,9 @@ def plot_nextoso(dataset, idx=0, first_date=0, lenght=5):
 
     plt.tight_layout()
     return fig1, fig2
+
+
+def remove_invalid(s2_xarray):
+    "Remove temporel step with full invalid mask"
+    mask_all_ones = (s2_xarray["S2_mask"] == 1).all(dim=["y", "x"])
+    return s2_xarray.where(~mask_all_ones, drop=True)

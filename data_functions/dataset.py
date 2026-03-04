@@ -6,7 +6,7 @@ import torch
 import torch.utils.data as tdata
 import xarray as xr
 import pandas
-from data_functions import collate
+from data_functions import collate, utils_data
 
 
 class next_oso_Dataset(tdata.Dataset):
@@ -16,6 +16,7 @@ class next_oso_Dataset(tdata.Dataset):
         path_label,
         path_oso_class,
         norm=True,
+        remove_invalid_temp=True,
         folds=None,
         label_type="max_class",
         reference_date="2019-12-31",
@@ -24,6 +25,7 @@ class next_oso_Dataset(tdata.Dataset):
         self.path_s2 = path_s2
         self.path_label = path_label
         self.norm = norm
+        self.remove_invalid_temp = remove_invalid_temp
         self.folds = folds
         self.label_type = label_type
         self.reference_date = np.datetime64(reference_date)
@@ -86,6 +88,9 @@ class next_oso_Dataset(tdata.Dataset):
 
     def __getitem__(self, idx):
         with xr.open_dataset(self.s2_files[idx]) as s2_data:
+            if self.remove_invalid_temp:
+                s2_data = utils_data.remove_invalid(s2_data)
+
             s2_array = (
                 s2_data[["B2", "B3", "B4", "B5", "B6", "B7", "B8", "B8A", "B11", "B12"]]
                 .to_dataarray()
@@ -152,6 +157,7 @@ def get_loaders(
     batch_size,
     num_worker,
     norm=True,
+    remove_invalid_temp=True,
     shuffle=True,
 ):
     dt_train = next_oso_Dataset(
@@ -159,6 +165,7 @@ def get_loaders(
         path_label=path_label,
         path_oso_class=path_oso_class,
         norm=norm,
+        remove_invalid_temp=remove_invalid_temp,
         folds=folds_train,
     )
     dl_train = torch.utils.data.DataLoader(
@@ -174,6 +181,7 @@ def get_loaders(
         path_label=path_label,
         path_oso_class=path_oso_class,
         norm=norm,
+        remove_invalid_temp=remove_invalid_temp,
         folds=folds_val,
     )
     dl_val = torch.utils.data.DataLoader(
@@ -189,6 +197,7 @@ def get_loaders(
         path_label=path_label,
         path_oso_class=path_oso_class,
         norm=norm,
+        remove_invalid_temp=remove_invalid_temp,
         folds=folds_test,
     )
     dl_test = torch.utils.data.DataLoader(

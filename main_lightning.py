@@ -5,21 +5,41 @@ from lightning.pytorch.loggers import TensorBoardLogger
 from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
 from lightning.pytorch.profilers import SimpleProfiler
 from pytorch_lightning.plugins.environments import SLURMEnvironment
+
 import numpy as np
 import signal
+import ast
 import os
 from argparse import ArgumentParser
 import sys
 from datetime import datetime
+import pprint
 
 from data_functions import dataset
-from src import LTAE, utils_model, lightning_module, metrics
+from src import LTAE, UTAE, utils_model, lightning_module, metrics
 
 # Add FocalLoss for loading best model from checkpoint
 torch.serialization.add_safe_globals([metrics.FocalLoss])
 
 
-def main(args):
+def parse_args_to_lists(config):
+    # Convert str representing a list to a list of int
+    for k, v in config.items():
+        if "folds" in k:
+            try:
+                # Utilise ast.literal_eval pour convertir la chaîne en liste de manière sûre
+                config[k] = ast.literal_eval(v)
+            except (ValueError, SyntaxError):
+                # Si ast.literal_eval échoue, essaie une conversion manuelle
+                v = v.strip("[]")  # Supprime les crochets
+                v = v.replace(" ", "")  # Supprime les espaces
+                config[k] = [
+                    int(x) for x in v.split(",") if x
+                ]  # Convertit en liste d'entiers
+    return config
+
+
+def main(config):
     #
     ########################################
     # # # ARGUMENTS, PATHS & DATA # # #
@@ -31,15 +51,16 @@ def main(args):
     print("\nLOADING DATA ...")
     sys.stdout.flush()
     dl_train, dl_val, dl_test = dataset.get_loaders(
-        path_s2=args.path_s2,
-        path_label=args.path_label,
-        path_oso_class=args.path_oso_classes,
-        folds_train=args.folds_train,
-        folds_val=args.folds_val,
-        folds_test=args.folds_test,
-        batch_size=args.batch_size,
-        num_worker=args.num_worker,
+        path_s2=config["path_s2"],
+        path_label=config["path_label"],
+        path_oso_class=config["path_oso_classes"],
+        folds_train=config["folds_train"],
+        folds_val=config["folds_val"],
+        folds_test=config["folds_test"],
+        batch_size=config["batch_size"],
+        num_worker=config["num_worker"],
         norm=True,
+        remove_invalid_temp=True,
         shuffle=True,
     )
 
@@ -71,7 +92,7 @@ def main(args):
     classifier = lightning_module.classifier(
         LTAE_encoder,
         MLP_Decoder,
-        batch_size=args.batch_size,
+        batch_size=config["batch_size"],
         loss_fn=criterion_fl,
         lr=1e-2,
     )
@@ -84,66 +105,76 @@ def main(args):
     print("\nTRAINING ...")
     sys.stdout.flush()
 
-    # Test models training over 3 batchs on each train,validation & testing datasets
-    if args.test_model == "True":
-        trainer_test = L.Trainer(fast_dev_run=3, num_sanity_val_steps=None)
-        trainer_test.fit(
-            model=classifier, train_dataloaders=dl_train, val_dataloaders=dl_val
-        )
-        trainer_test.test(model=classifier, dataloaders=dl_test)
-
-    # Real training params
+    # Training params
     checkpoint_callback = ModelCheckpoint(
-        dirpath=os.path.join(args.path_logs, f"LTAE_{date}/Checkpoints/"),
+        dirpath=os.path.join(config["path_logs"], f"LTAE_{date}/Checkpoints/"),
         save_weights_only=True,
         monitor="val_loss",
         mode="min",
         save_top_k=1,
     )
-     
+
     tb_logger = TensorBoardLogger(
-        	args.path_logs, name=f"LTAE_{date}", default_hp_metric=False
-    		)
+        config["path_logs"], name=f"LTAE_{date}", default_hp_metric=False
+    )
 
     callbacks = EarlyStopping(monitor="val_loss", mode="min", patience=2)
     profiler = SimpleProfiler(
-        dirpath=os.path.join(args.path_logs, f"LTAE_{date}"), filename="profiler"
+        dirpath=os.path.join(config["path_logs"], f"LTAE_{date}"), filename="profiler"
     )
-    plugin=SLURMEnvironment(requeue_signal=signal.SIGHUP)
-    
+    list_callback = [checkpoint_callback, callbacks]
+    limit_batches = 1.0  # full
+
+    # Testing config, desactivate loggers, callback & profiler for testing, limit number of batches
+    if config["test_model"]:
+        tb_logger = None
+        list_callback = None
+        profiler = None
+        limit_batches = 2
+
+    plugin = None
+    if config["running_on_trex_gpu"]:
+        plugin = [SLURMEnvironment(requeue_signal=signal.SIGHUP)]
+
+    # Trainer
     trainer = L.Trainer(
         logger=tb_logger,
         log_every_n_steps=10,
-        callbacks=[checkpoint_callback, callbacks],
-        max_epochs=args.epochs_max,
-        accelerator=args.accelerator,
-        devices=args.devices,
-        num_nodes=args.nodes,
-        strategy=args.strategy,
+        callbacks=list_callback,
+        max_epochs=config["epochs_max"],
+        accelerator=config["accelerator"],
+        devices=config["devices"],
+        num_nodes=config["nodes"],
+        strategy=config["strategy"],
         profiler=profiler,
-        num_sanity_val_steps=1,
-        #limit_train_batches=2,
-        #limit_val_batches=2,
-        #limit_test_batches=2,
+        num_sanity_val_steps=limit_batches,
+        limit_train_batches=limit_batches,
+        limit_val_batches=limit_batches,
+        limit_test_batches=limit_batches,
         precision="16-mixed",
-        #plugins=[plugin],
+        plugins=plugin,
     )
 
     # Training
     trainer.fit(model=classifier, train_dataloaders=dl_train, val_dataloaders=dl_val)
 
-    # Get best params and test with them
-    best_model_path = checkpoint_callback.best_model_path
-    best_classifier = lightning_module.classifier.load_from_checkpoint(
-        best_model_path,
-        weights_only=True,
-        encoder=LTAE_encoder,
-        decoder=MLP_Decoder,
-        loss_fn=criterion_fl,
-        batch_size=args.batch_size,
-    )
+    # Testing
     print("\nTesting ... ")
     sys.stdout.flush()
+
+    best_classifier = classifier
+    if not config["test_model"]:
+        # Get best params and test with them
+        best_model_path = checkpoint_callback.best_model_path
+        best_classifier = lightning_module.classifier.load_from_checkpoint(
+            best_model_path,
+            weights_only=True,
+            encoder=LTAE_encoder,
+            decoder=MLP_Decoder,
+            loss_fn=criterion_fl,
+            batch_size=config["batch_size"],
+        )
+
     trainer.test(model=best_classifier, dataloaders=dl_test)
 
 
@@ -151,7 +182,7 @@ if __name__ == "__main__":
     print("\nPARSE ARGUMENTS ... ")
     parser = ArgumentParser()
 
-    # Hyperparameters for the model
+    # Paths
     parser.add_argument(
         "--path_s2",
         type=str,
@@ -170,23 +201,32 @@ if __name__ == "__main__":
     parser.add_argument(
         "--path_logs",
         type=str,
-        default="/home/hkerino/Documents/models_on_nextoso/logs/light_training",
+        default="/home/hkerino/Documents/next_oso/logs/light_training",
     )
-    parser.add_argument("--epochs_max", type=int, default=10)
-    parser.add_argument("--batch_size", type=int, default=8)
+
+    # Data
     parser.add_argument("--num_worker", type=int, default=0)
     parser.add_argument("--num_class", type=int, default=25)
-    parser.add_argument("--folds_train", type=list, default=[1,2,3])
-    parser.add_argument("--folds_val", type=list, default=[4])
-    parser.add_argument("--folds_test", type=list, default=[5])
-    parser.add_argument("--test_model", type=str, default="False")
-    parser.add_argument("--logger", type=str,default="True")
+    parser.add_argument(
+        "--folds_train", type=str, default="[1, 2, 3]"
+    )  # To convert in list
+    parser.add_argument("--folds_val", type=str, default="[4]")  # To convert in list
+    parser.add_argument("--folds_test", type=str, default="[5]")  # To convert in list
+
+    # Training
+    parser.add_argument("--epochs_max", type=int, default=10)
+    parser.add_argument("--batch_size", type=int, default=8)
+    parser.add_argument("--test_model", type=int, default=0)  # true/false
     parser.add_argument("--accelerator", type=str, default="auto")
     parser.add_argument("--devices", default="auto")
-    parser.add_argument("--nodes", type=int,default=1)
+    parser.add_argument("--nodes", type=int, default=1)
     parser.add_argument("--strategy", type=str, default="auto")
+    parser.add_argument("--running_on_trex_gpu", type=int, default=0)  # true/false
 
     # Parse the user inputs and defaults (returns a argparse.Namespace)
     args = parser.parse_args()
+    config = vars(parser.parse_args())
+    config = parse_args_to_lists(config)
+    pprint.pprint(config)
 
-    main(args)
+    main(config)
