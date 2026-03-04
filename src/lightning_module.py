@@ -71,6 +71,7 @@ class classifier(L.LightningModule):
             prog_bar=True,
             on_epoch=log_on_epoch,
             on_step=log_on_step,
+            sync_dist=True,
         )
         self.log(
             f"{step_name}_accuracy",
@@ -78,6 +79,7 @@ class classifier(L.LightningModule):
             prog_bar=True,
             on_epoch=log_on_epoch,
             on_step=log_on_step,
+            sync_dist=True,
         )
         self.log(
             f"{step_name}_miou",
@@ -85,6 +87,7 @@ class classifier(L.LightningModule):
             prog_bar=True,
             on_epoch=log_on_epoch,
             on_step=log_on_step,
+            sync_dist=True,
         )
 
         return loss
@@ -135,9 +138,9 @@ class classifier(L.LightningModule):
         self.logger.experiment.add_text("Test_Metrics", table_metrics)
 
         # Figures
-        cm_fig = metrics.convert_cm_to_figure(cm)
-        f1_fig = metrics.return_plot_f_score(cm)
-        miou_fig = metrics.return_plot_miou(cm)
+        cm_fig = metrics.convert_cm_to_figure(cm.cpu())
+        f1_fig = metrics.return_plot_f_score(cm.cpu())
+        miou_fig = metrics.return_plot_miou(cm.cpu())
 
         self.logger.experiment.add_figure("Confusion Matrix", cm_fig, close=True)
         self.logger.experiment.add_figure("F-Score", f1_fig, close=True)

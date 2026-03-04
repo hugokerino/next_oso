@@ -4,8 +4,9 @@ import lightning as L
 from lightning.pytorch.loggers import TensorBoardLogger
 from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
 from lightning.pytorch.profilers import SimpleProfiler
+from pytorch_lightning.plugins.environments import SLURMEnvironment
 import numpy as np
-
+import signal
 import os
 from argparse import ArgumentParser
 import sys
@@ -99,28 +100,33 @@ def main(args):
         mode="min",
         save_top_k=1,
     )
+     
     tb_logger = TensorBoardLogger(
-        args.path_logs, name=f"LTAE_{date}", default_hp_metric=False
-    )
+        	args.path_logs, name=f"LTAE_{date}", default_hp_metric=False
+    		)
+
     callbacks = EarlyStopping(monitor="val_loss", mode="min", patience=2)
     profiler = SimpleProfiler(
         dirpath=os.path.join(args.path_logs, f"LTAE_{date}"), filename="profiler"
     )
-
+    plugin=SLURMEnvironment(requeue_signal=signal.SIGHUP)
+    
     trainer = L.Trainer(
         logger=tb_logger,
-        log_every_n_steps=1,
+        log_every_n_steps=10,
         callbacks=[checkpoint_callback, callbacks],
         max_epochs=args.epochs_max,
-        # accelerator='gpu',
-        # devices=1,
-        # num_nodes=4,
-        # strategy='ddp',
+        accelerator=args.accelerator,
+        devices=args.devices,
+        num_nodes=args.nodes,
+        strategy=args.strategy,
         profiler=profiler,
         num_sanity_val_steps=1,
-        # limit_train_batches=2,
-        # limit_val_batches=2,
-        # limit_test_batches=2,
+        #limit_train_batches=2,
+        #limit_val_batches=2,
+        #limit_test_batches=2,
+        precision="16-mixed",
+        #plugins=[plugin],
     )
 
     # Training
@@ -168,12 +174,17 @@ if __name__ == "__main__":
     )
     parser.add_argument("--epochs_max", type=int, default=10)
     parser.add_argument("--batch_size", type=int, default=8)
-    parser.add_argument("--num_worker", type=int, default=4)
+    parser.add_argument("--num_worker", type=int, default=0)
     parser.add_argument("--num_class", type=int, default=25)
     parser.add_argument("--folds_train", type=list, default=[1,2,3])
     parser.add_argument("--folds_val", type=list, default=[4])
     parser.add_argument("--folds_test", type=list, default=[5])
     parser.add_argument("--test_model", type=str, default="False")
+    parser.add_argument("--logger", type=str,default="True")
+    parser.add_argument("--accelerator", type=str, default="auto")
+    parser.add_argument("--devices", default="auto")
+    parser.add_argument("--nodes", type=int,default=1)
+    parser.add_argument("--strategy", type=str, default="auto")
 
     # Parse the user inputs and defaults (returns a argparse.Namespace)
     args = parser.parse_args()
