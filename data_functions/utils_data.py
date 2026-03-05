@@ -1,6 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.colors import ListedColormap
+import pandas
 
 
 # For RGB array
@@ -130,3 +131,99 @@ def remove_invalid(s2_xarray):
     "Remove temporel step with full invalid mask"
     mask_all_ones = (s2_xarray["S2_mask"] == 1).all(dim=["y", "x"])
     return s2_xarray.where(~mask_all_ones, drop=True)
+
+
+def find_clear_img(batch):
+    (sits, dates, mask), _ = batch  # sits : b, c, t, h, w ; mask : b, t, h, w
+    clear_imgs = []
+
+    for i in range(sits.shape[0]):
+        # Trouver les indices t où mask[i][t, :, :] == 0 partout
+        idxs_t = (mask[i] == 0).all(dim=(1, 2)).nonzero(as_tuple=True)[0]
+
+        if idxs_t.numel() > 0:
+            # Si au moins un t satisfait la condition, prendre le premier
+            t_idx = idxs_t[0]
+        else:
+            # Sinon, trouver l'index t avec le maximum de valeurs 0
+            # Compter le nombre de 0 pour chaque t
+            num_zeros = (mask[i] == 0).sum(dim=(1, 2))  # Shape : (t,)
+            t_idx = num_zeros.argmax()  # Index du max de 0
+
+        clear_imgs.append(array_to_RGB(sits[i, :, t_idx, :, :].cpu().numpy()))
+
+    return clear_imgs
+
+
+def plot_pred_label_and_img(
+    preds,
+    labels,
+    imgs,
+    batch_index,
+    path_oso_class="/home/hkerino/Documents/nextoso-dataset/data/auxiliary/OSO/oso_classes.csv",
+):
+
+    batch_size = preds[batch_index].shape[0]
+    fig, ax = plt.subplots(batch_size, 3, figsize=(15, batch_size * 3))
+
+    OSO_COLORS = {
+        1: (255, 0, 255),  # Urbain dense
+        2: (255, 85, 255),  # Urbain diffus
+        3: (255, 170, 255),  # Zones industrielles et commerciales
+        4: (0, 255, 255),  # Routes
+        5: (255, 255, 0),  # Colza
+        6: (208, 255, 0),  # Céréales à paille
+        7: (161, 214, 0),  # Protéagineux
+        8: (255, 170, 68),  # Soja
+        9: (214, 214, 0),  # Tournesol
+        10: (255, 85, 0),  # Maïs
+        11: (197, 255, 255),  # Riz
+        12: (170, 170, 97),  # Tubercules / Racines
+        13: (170, 170, 0),  # Prairies
+        14: (170, 170, 255),  # Vergers
+        15: (85, 0, 0),  # Vignes
+        16: (0, 156, 0),  # Forêts de feuillus
+        17: (0, 50, 0),  # Forêts de conifères
+        18: (170, 255, 0),  # Pelouse
+        19: (85, 170, 127),  # Landes
+        20: (255, 0, 0),  # Surfaces minérales
+        21: (255, 184, 2),  # Plages et Dunes
+        22: (190, 190, 190),  # Glaciers et neiges éternelles
+        23: (0, 0, 255),  # Eau
+        24: (68, 121, 200),  # Serres
+    }
+
+    # Ajouter une couleur pour la classe 0 ('nan')
+    OSO_COLORS[0] = (128, 128, 128)  # Gris pour 'nan'
+
+    # Normaliser les couleurs (diviser par 255)
+    normalized_colors = [
+        (r / 255, g / 255, b / 255)
+        for r, g, b in [OSO_COLORS[i] for i in sorted(OSO_COLORS.keys())]
+    ]
+    cmap = ListedColormap(normalized_colors)
+    name_classes = pandas.read_csv(path_oso_class).get("name_class")
+
+    imgs_batch = imgs[batch_index]
+    preds_batch = preds[batch_index]
+    labels_batch = labels[batch_index]
+
+    for i in range(batch_size):
+        ax[i, 0].imshow(imgs_batch[i])
+        ax[i, 0].axis("off")
+
+        ax[i, 1].imshow(preds_batch[i], cmap=cmap, vmin=0, vmax=24)
+        ax[i, 1].axis("off")
+
+        im = ax[i, 2].imshow(labels_batch[i], cmap=cmap, vmin=0, vmax=24)
+        cbar = fig.colorbar(im, ax=ax[i, 2], ticks=np.arange(0, 25))
+        cbar.ax.set_yticklabels([name_classes[i] for i in range(25)])
+        ax[i, 2].axis("off")
+
+    ax[0, 0].set_title("Images")
+    ax[0, 1].set_title("Predictions")
+    ax[0, 2].set_title("Labels")
+
+    plt.tight_layout()
+
+    return fig

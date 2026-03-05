@@ -1,6 +1,0 @@
-H: 128
-W: 128
-batch_size: 4
-lr: 0.01
-mask_need: true
-num_classe: 25

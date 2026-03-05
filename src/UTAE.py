@@ -132,12 +132,16 @@ class UTAE(nn.Module):
         )
 
     def forward(self, input, batch_positions=None, return_att=False):
-        # input shape must be = b,t,c,h,w
+        b, c, t, h, w = input.shape
+        input_reshape = input.permute(
+            0, 2, 1, 3, 4
+        ).contiguous()  # input shape must be = (b,t,c,h,w) but next_oso data is (b,c,t,h,w), modfi Hugo
+
         pad_mask = (
-            (input == self.pad_value).all(dim=-1).all(dim=-1).all(dim=-1)
+            (input_reshape == self.pad_value).all(dim=-1).all(dim=-1).all(dim=-1)
         )  # BxT pad mask
 
-        out = self.in_conv.smart_forward(input)
+        out = self.in_conv.smart_forward(input_reshape)
 
         feature_maps = [out]
         # SPATIAL ENCODER
@@ -162,7 +166,10 @@ class UTAE(nn.Module):
         if self.encoder:
             return out, maps
         else:
-            out = self.out_conv(out)
+            out = self.out_conv(out)  # b, out_conv[-1], h, w
+            out = (
+                out.permute(0, 2, 3, 1).contiguous().view(b * h * w, -1)
+            )  # (bhw) out__conv[-1]
             if return_att:
                 return out, att
             if self.return_maps:

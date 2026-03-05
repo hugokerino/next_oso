@@ -17,11 +17,11 @@ class classifier(L.LightningModule):
         decoder,
         batch_size,
         loss_fn,
+        mask_need,
         lr=1e-3,
         num_classe=25,
         H=128,
         W=128,
-        mask_need=True,
     ):
         super().__init__()
         self.encoder = encoder
@@ -135,16 +135,33 @@ class classifier(L.LightningModule):
             "Test_Miou": miou,
         }
         table_metrics = metrics.create_markdown_table(test_metrics)
-        self.logger.experiment.add_text("Test_Metrics", table_metrics)
 
         # Figures
         cm_fig = metrics.convert_cm_to_figure(cm.cpu())
         f1_fig = metrics.return_plot_f_score(cm.cpu())
         miou_fig = metrics.return_plot_miou(cm.cpu())
 
-        self.logger.experiment.add_figure("Confusion Matrix", cm_fig, close=True)
-        self.logger.experiment.add_figure("F-Score", f1_fig, close=True)
-        self.logger.experiment.add_figure("mIoU", miou_fig, close=True)
+        if self.logger:
+            self.logger.experiment.add_text("Test_Metrics", table_metrics)
+            self.logger.experiment.add_figure("Confusion Matrix", cm_fig, close=True)
+            self.logger.experiment.add_figure("F-Score", f1_fig, close=True)
+            self.logger.experiment.add_figure("mIoU", miou_fig, close=True)
+
+    def predict_step(self, batch):
+        (x, date, mask), y = batch
+        if self.mask_need:
+            z = self.encoder(x, batch_positions=date, pad_mask=mask)  # (bhw) x d_model
+        else:
+            z = self.encoder(x, batch_positions=date)
+
+        y_logits = self.decoder(z)  # (bhw) x nb_class
+        y_logits = (
+            y_logits.view(x.shape[0], self.H, self.W, self.num_class)
+            .permute(0, 3, 1, 2)
+            .contiguous()
+        )  # b x nb_class x h x w
+
+        return torch.softmax(y_logits, dim=1).argmax(dim=1)
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)

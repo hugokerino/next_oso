@@ -71,29 +71,63 @@ def main(config):
     #
     print("\nLOADING MODEL ...")
     sys.stdout.flush()
-    # Encoder
-    LTAE_encoder = LTAE.LTAE2d(
-        in_channels=10,
-        n_head=16,
-        d_k=8,
-        d_model=128,
-        T=1000,
-        return_att=False,
-        positional_encoding=True,
-    )
 
-    # Decoder
-    MLP_Decoder = utils_model.MLPDecoder(mlp=[128, 64, 25], dropout=0.2)
-
-    # Classifier
+    # Loss function
     # criterion_ce = F.CrossEntropyLoss(ignore_index=0)
     alpha_weights = torch.from_numpy(np.load("./data_functions/alpha_weights.npy"))
     criterion_fl = metrics.FocalLoss(alpha=alpha_weights, gamma=2, ignore_index=0)
+
+    # Model
+    if config["model"] == "LTAE":
+        # Encoder
+        LTAE_encoder = LTAE.LTAE2d(
+            in_channels=10,
+            n_head=16,
+            d_k=8,
+            d_model=128,
+            T=1000,
+            return_att=False,
+            positional_encoding=True,
+        )
+        mask_need = True
+        # Decoder
+        MLP_Decoder = utils_model.MLPDecoder(mlp=[128, 64, 25], dropout=0.2)
+        encoder = LTAE_encoder
+        decoder = MLP_Decoder
+
+    if config["model"] == "UTAE":
+        # Encoder
+        UTAE_encoder = UTAE.UTAE(
+            input_dim=10,
+            encoder_widths=[64, 64, 64, 128],
+            decoder_widths=[32, 32, 64, 128],
+            out_conv=[32, 20],
+            str_conv_k=4,
+            str_conv_s=2,
+            str_conv_p=1,
+            agg_mode="att_group",
+            encoder_norm="group",
+            n_head=8,
+            d_model=128,
+            d_k=4,
+            encoder=False,
+            return_maps=False,
+            pad_value=0,
+            padding_mode="reflect",
+        )
+        mask_need = False
+        # Decoder
+        MLP_Decoder = utils_model.MLPDecoder(mlp=[20, 64, 25], dropout=0.2)
+        encoder = UTAE_encoder
+        decoder = MLP_Decoder
+
+    # Classifier
     classifier = lightning_module.classifier(
-        LTAE_encoder,
-        MLP_Decoder,
+        encoder,
+        decoder,
         batch_size=config["batch_size"],
         loss_fn=criterion_fl,
+        mask_need=mask_need,
         lr=1e-2,
     )
 
@@ -107,7 +141,9 @@ def main(config):
 
     # Training params
     checkpoint_callback = ModelCheckpoint(
-        dirpath=os.path.join(config["path_logs"], f"LTAE_{date}/Checkpoints/"),
+        dirpath=os.path.join(
+            config["path_logs"], f"{config['model']}_{date}/Checkpoints/"
+        ),
         save_weights_only=True,
         monitor="val_loss",
         mode="min",
@@ -115,12 +151,13 @@ def main(config):
     )
 
     tb_logger = TensorBoardLogger(
-        config["path_logs"], name=f"LTAE_{date}", default_hp_metric=False
+        config["path_logs"], name=f"{config['model']}_{date}", default_hp_metric=False
     )
 
     callbacks = EarlyStopping(monitor="val_loss", mode="min", patience=2)
     profiler = SimpleProfiler(
-        dirpath=os.path.join(config["path_logs"], f"LTAE_{date}"), filename="profiler"
+        dirpath=os.path.join(config["path_logs"], f"{config['model']}_{date}"),
+        filename="profiler",
     )
     list_callback = [checkpoint_callback, callbacks]
     limit_batches = 1.0  # full
@@ -203,6 +240,9 @@ if __name__ == "__main__":
         type=str,
         default="/home/hkerino/Documents/next_oso/logs/light_training",
     )
+
+    # Model
+    parser.add_argument("--model", type=str)
 
     # Data
     parser.add_argument("--num_worker", type=int, default=0)
