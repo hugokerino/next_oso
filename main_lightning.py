@@ -1,5 +1,4 @@
 import torch
-import torch.nn.functional as F
 import lightning as L
 from lightning.pytorch.loggers import TensorBoardLogger
 from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
@@ -73,9 +72,12 @@ def main(config):
     sys.stdout.flush()
 
     # Loss function
-    alpha_weights = torch.from_numpy(np.load("./data_functions/alpha_weights.npy"))
-    #criterion_ce = torch.nn.CrossEntropyLoss(ignore_index=0, weight=alpha_weights)
-    criterion_fl = metrics.FocalLoss(alpha=alpha_weights, gamma=2, ignore_index=0)
+    alpha_weights = torch.from_numpy(
+        np.load("./data_functions/alpha_weights.npy")
+    ).float()
+    criterion = torch.nn.CrossEntropyLoss(ignore_index=0, weight=alpha_weights)
+    # criterion = metrics.FocalLoss(alpha=alpha_weights, gamma=2, ignore_index=0)  #
+    learning_rate = 1e-3
 
     # Model
     if config["model"] == "LTAE":
@@ -101,7 +103,7 @@ def main(config):
             input_dim=10,
             encoder_widths=[64, 64, 64, 128],
             decoder_widths=[32, 32, 64, 128],
-            out_conv=[32, 20],
+            out_conv=[32, 25],
             str_conv_k=4,
             str_conv_s=2,
             str_conv_p=1,
@@ -117,7 +119,7 @@ def main(config):
         )
         mask_need = False
         # Decoder
-        MLP_Decoder = utils_model.MLPDecoder(mlp=[20, 64, 25], dropout=0.2)
+        MLP_Decoder = utils_model.MLPDecoder(mlp=[25, 64, 25], dropout=0.2)
         encoder = UTAE_encoder
         decoder = MLP_Decoder
 
@@ -126,9 +128,9 @@ def main(config):
         encoder,
         decoder,
         batch_size=config["batch_size"],
-        loss_fn=criterion_fl,
+        loss_fn=criterion,
         mask_need=mask_need,
-        lr=1e-4,
+        lr=learning_rate,
     )
 
     #
@@ -208,7 +210,7 @@ def main(config):
             weights_only=True,
             encoder=encoder,
             decoder=decoder,
-            loss_fn=criterion_fl,
+            loss_fn=criterion,
             batch_size=config["batch_size"],
         )
 

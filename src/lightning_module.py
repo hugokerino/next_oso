@@ -50,15 +50,17 @@ class classifier(L.LightningModule):
         if self.mask_need:
             z = self.encoder(x, batch_positions=date, pad_mask=mask)  # (bhw) x d_model
         else:
-            z = self.encoder(x, batch_positions=date)
+            z = self.encoder(x, batch_positions=date)  # (bhw) * out_conv[-1]
 
         y_logits = self.decoder(z)  # (bhw) x nb_class
+        print(y_logits.shape)
+
         y_logits = (
             y_logits.view(x.shape[0], self.H, self.W, self.num_class)
             .permute(0, 3, 1, 2)
             .contiguous()
         )  # b x nb_class x h x w
-
+        print(y_logits.shape)
         loss = self.loss_fn(y_logits, y.long())
 
         y_pred = torch.softmax(y_logits, dim=1).argmax(dim=1)
