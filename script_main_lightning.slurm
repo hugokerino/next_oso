@@ -15,7 +15,7 @@
 #SBATCH --partition=gpu_std
 #SBATCH --qos=gpu_all
 
-#SBATCH --time=05:00:00             # Walltime
+#SBATCH --time=10:00:00             # Walltime
 
 #SBATCH --signal=SIGUSR1@90         # For auto-resubmit
 
@@ -44,7 +44,7 @@ echo "Launch python file"
 pixi run -e gpu python main_lightning.py \
     --model "UTAE" \
     --batch_size 4 \
-    --epochs_max 10 \
+    --epochs_max 20 \
     --accelerator "gpu" \
     --devices 1 \
     --nodes 1 \

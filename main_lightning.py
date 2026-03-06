@@ -73,8 +73,8 @@ def main(config):
     sys.stdout.flush()
 
     # Loss function
-    # criterion_ce = F.CrossEntropyLoss(ignore_index=0)
     alpha_weights = torch.from_numpy(np.load("./data_functions/alpha_weights.npy"))
+    #criterion_ce = torch.nn.CrossEntropyLoss(ignore_index=0, weight=alpha_weights)
     criterion_fl = metrics.FocalLoss(alpha=alpha_weights, gamma=2, ignore_index=0)
 
     # Model
@@ -128,7 +128,7 @@ def main(config):
         batch_size=config["batch_size"],
         loss_fn=criterion_fl,
         mask_need=mask_need,
-        lr=1e-2,
+        lr=1e-4,
     )
 
     #
@@ -206,8 +206,8 @@ def main(config):
         best_classifier = lightning_module.classifier.load_from_checkpoint(
             best_model_path,
             weights_only=True,
-            encoder=LTAE_encoder,
-            decoder=MLP_Decoder,
+            encoder=encoder,
+            decoder=decoder,
             loss_fn=criterion_fl,
             batch_size=config["batch_size"],
         )
