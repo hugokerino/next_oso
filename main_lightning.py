@@ -156,7 +156,7 @@ def main(config):
         config["path_logs"], name=f"{config['model']}_{date}", default_hp_metric=False
     )
 
-    callbacks = EarlyStopping(monitor="val_loss", mode="min", patience=2)
+    callbacks = EarlyStopping(monitor="val_loss", mode="min", patience=3)
     profiler = SimpleProfiler(
         dirpath=os.path.join(config["path_logs"], f"{config['model']}_{date}"),
         filename="profiler",
