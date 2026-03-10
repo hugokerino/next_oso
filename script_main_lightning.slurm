@@ -44,7 +44,7 @@ echo "Launch python file"
 pixi run -e gpu python main_lightning.py \
     --model "UTAE" \
     --batch_size 4 \
-    --epochs_max 30 \
+    --epochs_max 50 \
     --accelerator "gpu" \
     --devices 1 \
     --nodes 1 \

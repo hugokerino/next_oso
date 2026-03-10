@@ -156,15 +156,16 @@ def find_clear_img(batch):
 
 
 def plot_pred_label_and_img(
-    preds,
+    preds_model_1,
+    preds_model_2,
     labels,
     imgs,
     batch_index,
     path_oso_class="/home/hkerino/Documents/nextoso-dataset/data/auxiliary/OSO/oso_classes.csv",
 ):
 
-    batch_size = preds[batch_index].shape[0]
-    fig, ax = plt.subplots(batch_size, 3, figsize=(15, batch_size * 3))
+    batch_size = preds_model_1[batch_index].shape[0]
+    fig, ax = plt.subplots(batch_size, 4, figsize=(15, batch_size * 3))
 
     OSO_COLORS = {
         1: (255, 0, 255),  # Urbain dense
@@ -205,24 +206,28 @@ def plot_pred_label_and_img(
     name_classes = pandas.read_csv(path_oso_class).get("name_class")
 
     imgs_batch = imgs[batch_index]
-    preds_batch = preds[batch_index]
+    preds_model_1_batch = preds_model_1[batch_index]
+    preds_model_2_batch = preds_model_2[batch_index]
     labels_batch = labels[batch_index]
 
     for i in range(batch_size):
         ax[i, 0].imshow(imgs_batch[i])
         ax[i, 0].axis("off")
 
-        ax[i, 1].imshow(preds_batch[i], cmap=cmap, vmin=0, vmax=24)
+        ax[i, 1].imshow(preds_model_1_batch[i], cmap=cmap, vmin=0, vmax=24)
         ax[i, 1].axis("off")
-
-        im = ax[i, 2].imshow(labels_batch[i], cmap=cmap, vmin=0, vmax=24)
-        cbar = fig.colorbar(im, ax=ax[i, 2], ticks=np.arange(0, 25))
-        cbar.ax.set_yticklabels([name_classes[i] for i in range(25)])
+        ax[i, 2].imshow(preds_model_2_batch[i], cmap=cmap, vmin=0, vmax=24)
         ax[i, 2].axis("off")
 
+        im = ax[i, 3].imshow(labels_batch[i], cmap=cmap, vmin=0, vmax=24)
+        cbar = fig.colorbar(im, ax=ax[i, 3], ticks=np.arange(0, 25))
+        cbar.ax.set_yticklabels([name_classes[i] for i in range(25)])
+        ax[i, 3].axis("off")
+
     ax[0, 0].set_title("Images")
-    ax[0, 1].set_title("Predictions")
-    ax[0, 2].set_title("Labels")
+    ax[0, 1].set_title("Predictions LTAE")
+    ax[0, 2].set_title("Predictions UTAE")
+    ax[0, 3].set_title("Labels")
 
     plt.tight_layout()
 
