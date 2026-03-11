@@ -69,6 +69,14 @@ def calculate_miou(y_pred, y, n_classes, ignore_label=True):
     return miou
 
 
+def calculate_kappa(cm):
+    cm_true = cm.cpu().numpy()[1:, 1:]  # ignore 'nan class' for calculation
+    n_class = cm_true.shape[0]
+    P0 = np.trace(cm_true) / n_class
+    Pe = np.trace(np.power(cm_true, 2)) / n_class**2
+    return (P0 - Pe) / (1 - Pe + 1e-6)
+
+
 def return_plot_confusion_matrix(
     cm, classes, title="Confusion Matrix", cmap=plt.cm.Blues
 ):
@@ -168,7 +176,7 @@ def return_plot_miou(confusion_matrix):
         FP = confusion_matrix[:, i].sum() - TP
         FN = confusion_matrix[i, :].sum() - TP
         miou[i - 1] = TP / (TP + FP + FN + 1e-6)
-    
+
     miou_2d = miou.reshape(-1, 1)
     # Créer la figure
     fig, ax = plt.subplots(figsize=(15, 8))

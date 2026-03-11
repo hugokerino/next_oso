@@ -5,6 +5,7 @@ from torchmetrics.classification import (
     MulticlassAccuracy,
     MulticlassConfusionMatrix,
     MulticlassF1Score,
+    MulticlassCohenKappa,
 )
 from torchmetrics.segmentation import MeanIoU
 from src import metrics
@@ -43,6 +44,7 @@ class classifier(L.LightningModule):
             num_classes=self.num_class, ignore_index=0
         )
         self.miou_metric = MeanIoU(num_classes=self.num_class, include_background=False)
+        self.kappa = MulticlassCohenKappa(num_classes=self.num_class, ignore_index=0)
         self.save_hyperparameters(ignore=["encoder", "decoder", "loss_fn"])
 
     def _shared_step(self, batch, step_name, log_on_step, log_on_epoch):
@@ -53,13 +55,13 @@ class classifier(L.LightningModule):
             z = self.encoder(x, batch_positions=date)  # (bhw) * out_conv[-1]
 
         y_logits = self.decoder(z)  # (bhw) x nb_class
-        
+
         y_logits = (
             y_logits.view(x.shape[0], self.H, self.W, self.num_class)
             .permute(0, 3, 1, 2)
             .contiguous()
         )  # b x nb_class x h x w
-        
+
         loss = self.loss_fn(y_logits, y.long())
 
         y_pred = torch.softmax(y_logits, dim=1).argmax(dim=1)
@@ -128,13 +130,16 @@ class classifier(L.LightningModule):
         cm = self.cm_metric(y_preds, y_trues)
         f1 = self.f_score_metric(y_preds, y_trues)
         miou = self.miou_metric(y_preds, y_trues)
+        kappa = self.kappa(y_preds, y_trues)
 
         # Log des métriques globales
         test_metrics = {
             "Test_accuracy": acc,
             "Test_f1_score": f1,
             "Test_Miou": miou,
+            "Test Kappa": kappa,
         }
+
         table_metrics = metrics.create_markdown_table(test_metrics)
 
         # Figures

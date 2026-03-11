@@ -232,3 +232,17 @@ def plot_pred_label_and_img(
     plt.tight_layout()
 
     return fig
+
+
+def s2_spectrale_indice(s2):
+    ndvi = (s2["B8"] - s2["B4"]) / (s2["B4"] + s2["B8"])
+    ndwi = (s2["B3"] - s2["B8"]) / (s2["B3"] + s2["B8"])
+    brgt = np.sqrt(
+        np.pow(s2[["B2", "B3", "B4", "B5", "B6", "B7", "B8", "B8A", "B11", "B12"]], 2)
+        .to_array()
+        .sum("variable")
+    )
+    s2["ndvi"] = ndvi
+    s2["ndwi"] = ndwi
+    s2["brightness"] = brgt
+    return s2
