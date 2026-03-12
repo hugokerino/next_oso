@@ -7,7 +7,7 @@ import joblib
 import json
 from datetime import datetime
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.metrics import f1_score, confusion_matrix
 
 import pandas
 
@@ -38,7 +38,6 @@ def main(config):
     T0 = "2020-01-15"
     T_fin = "2020-12-31"
     grid = pandas.date_range(start=T0, end=T_fin, freq="16D")
-    names_class = pandas.read_csv(config["path_oso_classes"]).get("name_class")
 
     # Datasets
     print("\nLOADING DATA ...")
@@ -75,17 +74,13 @@ def main(config):
     # Metrics
     print("\nMETRICS")
     cm = confusion_matrix(Y_test, Y_pred)
-    report_dict = classification_report(
-        Y_test, Y_pred, target_names=names_class, output_dict=True
-    )
+    f_score = f1_score(Y_test, Y_pred)
 
     # Save metrics + classifier
     path_to_save = os.path.join(config["path_logs"], date)
     joblib.dump(RF_classifier, os.path.join(path_to_save, "RF.joblib"))
     with open(path_to_save, "w") as f:
-        json.dump(
-            {"confusion_matrix": cm.tolist(), "classification_report": report_dict}, f
-        )
+        json.dump({"confusion_matrix": cm.tolist(), "f_score": f_score}, f)
 
 
 if __name__ == "__main__":
