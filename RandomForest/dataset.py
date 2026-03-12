@@ -5,14 +5,12 @@ import numpy as np
 
 
 def create_dataset(path_s2, path_label, zone, folders, grid_time):
-    path_s2_data = os.path.join(
-        "/home/hkerino/Documents/nextoso-dataset/data/10m/s2", str(zone)
-    )
+    path_s2_eco = os.path.join(path_s2, str(zone))
 
     s2_list = []
     label_list = []
     for i in folders:
-        path_s2 = os.path.join(path_s2_data, f"fold_{str(i)}")
+        path_s2 = os.path.join(path_s2_eco, f"fold_{str(i)}")
 
         s2_nc_files = [f for f in os.listdir(path_s2) if f.endswith(".nc")]
         for s2_nc_file in s2_nc_files:

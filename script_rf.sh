@@ -5,8 +5,8 @@
 #SBATCH -n 32
 #SBATCH -t 10:00:00
 #SBATCH -A theia_oso
-#SBATCH -o logs/out_main_%j.out
-#SBATCH -e logs/err_main_%j.err
+#SBATCH -o script_logs/out_main_%j.out
+#SBATCH -e script_logs/err_main_%j.err
 #SBATCH --export=none
 
 mkdir -p script_logs
@@ -31,7 +31,7 @@ module load pixi
 
 echo "Launch python file"
 
-pixi run python src/main_RF.py \
+pixi run python RandomForest/main_RF.py \
     --path_s2 "$PATH_s2" \
     --path_label "$PATH_label" \
     --path_oso_classes "$PATH_class_name" \

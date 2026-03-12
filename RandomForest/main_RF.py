@@ -47,7 +47,7 @@ def main(config):
         path_s2=config["path_s2"],
         path_label=config["path_label"],
         zone=config["zone_eco"],
-        folders=["folds_train"],
+        folders=config["folds_train"],
         grid_time=grid,
     )
 
@@ -55,7 +55,7 @@ def main(config):
         path_s2=config["path_s2"],
         path_label=config["path_label"],
         zone=config["zone_eco"],
-        folders=["folds_test"],
+        folders=config["folds_test"],
         grid_time=grid,
     )
 
