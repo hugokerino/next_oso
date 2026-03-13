@@ -10,8 +10,9 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import f1_score, confusion_matrix
 
 import pandas
+from matplotlib import pyplot as plt
 
-import dataset
+import dataset, utils_data_RF
 
 
 def parse_args_to_lists(config):
@@ -74,13 +75,21 @@ def main(config):
     # Metrics
     print("\nMETRICS")
     cm = confusion_matrix(Y_test, Y_pred)
-    f_score = f1_score(Y_test, Y_pred)
+    f_score = f1_score(Y_test, Y_pred, average=None)
 
     # Save metrics + classifier
     path_to_save = os.path.join(config["path_logs"], date)
-    joblib.dump(RF_classifier, os.path.join(path_to_save, "RF.joblib"))
-    with open(path_to_save, "w") as f:
-        json.dump({"confusion_matrix": cm.tolist(), "f_score": f_score}, f)
+    
+    if not os.path.exists(path_to_save):
+    	os.mkdir(path_to_save)
+
+    joblib.dump(RF_classifier, os.path.join(path_to_save, f"RF_zone{config['zone_eco']}.joblib"))
+
+    cm_fig = utils_data_RF.convert_cm_to_figure(cm)
+    plt.savefig(os.path.join(path_to_save, f"confusion_matrix_zone{config['zone_eco']}"))
+
+    with open(os.path.join(path_to_save,f"test_metrics_zone_{config['zone_eco']}.json"), "w") as f:
+        json.dump({f"confusion_matrix_zone{config['zone_eco']}": cm.tolist(), f"f_score_zone{config['zone_eco']}": f_score.tolist()}, f)
 
 
 if __name__ == "__main__":

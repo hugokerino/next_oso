@@ -1,7 +1,7 @@
 from matplotlib import pyplot as plt
 import pandas
 import numpy as np
-
+import seaborn as sns
 
 def remove_invalid(s2_xarray):
     "Remove temporel step with full invalid mask"
@@ -74,3 +74,24 @@ def interpolate(s2_list, grid):
         dataset_list.append(interpolate_array)
 
     return np.stack(dataset_list)
+
+
+def convert_cm_to_figure(cm):
+    # Créer la figure
+    fig, ax = plt.subplots(figsize=(18, 10))
+
+    # Tracer la heatmap
+    sns.heatmap(
+        cm,
+        annot=True,
+        fmt=".2f",
+        cmap=plt.cm.Blues,
+        ax=ax,
+    )
+
+    # Ajouter un titre et des labels
+    ax.set_title("Confusion matrix")
+    ax.set_ylabel("Vraies étiquettes")
+    ax.set_xlabel("Prédictions")
+
+    return fig
