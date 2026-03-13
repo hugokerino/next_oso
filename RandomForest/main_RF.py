@@ -79,17 +79,31 @@ def main(config):
 
     # Save metrics + classifier
     path_to_save = os.path.join(config["path_logs"], date)
-    
-    if not os.path.exists(path_to_save):
-    	os.mkdir(path_to_save)
 
-    joblib.dump(RF_classifier, os.path.join(path_to_save, f"RF_zone{config['zone_eco']}.joblib"))
+    if not os.path.exists(path_to_save):
+        os.mkdir(path_to_save)
+
+    # joblib.dump(
+    #     RF_classifier,
+    #     os.path.join(path_to_save, f"RF_zone{config['zone_eco']}.joblib"),
+    #     compress=3,
+    # ) too heavy!!!
 
     cm_fig = utils_data_RF.convert_cm_to_figure(cm)
-    plt.savefig(os.path.join(path_to_save, f"confusion_matrix_zone{config['zone_eco']}"))
+    plt.savefig(
+        os.path.join(path_to_save, f"confusion_matrix_zone{config['zone_eco']}")
+    )
 
-    with open(os.path.join(path_to_save,f"test_metrics_zone_{config['zone_eco']}.json"), "w") as f:
-        json.dump({f"confusion_matrix_zone{config['zone_eco']}": cm.tolist(), f"f_score_zone{config['zone_eco']}": f_score.tolist()}, f)
+    with open(
+        os.path.join(path_to_save, f"test_metrics_zone_{config['zone_eco']}.json"), "w"
+    ) as f:
+        json.dump(
+            {
+                f"confusion_matrix_zone{config['zone_eco']}": cm.tolist(),
+                f"f_score_zone{config['zone_eco']}": f_score.tolist(),
+            },
+            f,
+        )
 
 
 if __name__ == "__main__":
