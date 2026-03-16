@@ -75,7 +75,8 @@ def main(config):
     alpha_weights = torch.from_numpy(
         np.load("./data_functions/alpha_weights.npy")
     ).float()
-    criterion = torch.nn.CrossEntropyLoss(ignore_index=0, weight=alpha_weights)
+    criterion = torch.nn.CrossEntropyLoss(ignore_index=0)
+    # criterion = torch.nn.CrossEntropyLoss(ignore_index=0, weight=alpha_weights)
     # criterion = metrics.FocalLoss(alpha=alpha_weights, gamma=2, ignore_index=0)  #
     learning_rate = 1e-3
 
