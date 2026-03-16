@@ -60,7 +60,7 @@ def main(config):
     )
 
     # Classifier
-    RF_classifier = RandomForestClassifier()
+    RF_classifier = RandomForestClassifier(n_jobs=None, verbose=1)
 
     # Training
     print("\nTRAINING ...")
@@ -78,7 +78,7 @@ def main(config):
     f_score = f1_score(Y_test, Y_pred, average=None)
 
     # Save metrics + classifier
-    path_to_save = os.path.join(config["path_logs"], date)
+    path_to_save = os.path.join(config["path_logs"], date, config["zone_eco"])
 
     if not os.path.exists(path_to_save):
         os.mkdir(path_to_save)
@@ -90,17 +90,13 @@ def main(config):
     # ) too heavy!!!
 
     cm_fig = utils_data_RF.convert_cm_to_figure(cm)
-    plt.savefig(
-        os.path.join(path_to_save, f"confusion_matrix_zone{config['zone_eco']}")
-    )
+    plt.savefig(os.path.join(path_to_save, "confusion_matrix"))
 
-    with open(
-        os.path.join(path_to_save, f"test_metrics_zone_{config['zone_eco']}.json"), "w"
-    ) as f:
+    with open(os.path.join(path_to_save, "test_metrics.json"), "w") as f:
         json.dump(
             {
-                f"confusion_matrix_zone{config['zone_eco']}": cm.tolist(),
-                f"f_score_zone{config['zone_eco']}": f_score.tolist(),
+                "confusion_matrix": cm.tolist(),
+                "f_score": f_score.tolist(),
             },
             f,
         )

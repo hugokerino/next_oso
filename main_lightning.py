@@ -102,8 +102,8 @@ def main(config):
         # Encoder
         UTAE_encoder = UTAE.UTAE(
             input_dim=10,
-            encoder_widths=[64, 64, 64, 128],
-            decoder_widths=[32, 32, 64, 128],
+            encoder_widths=[32, 64, 128],
+            decoder_widths=[64, 64, 128],
             out_conv=[32, 25],
             str_conv_k=4,
             str_conv_s=2,
@@ -120,7 +120,7 @@ def main(config):
         )
         mask_need = False
         # Decoder
-        MLP_Decoder = utils_model.MLPDecoder(mlp=[25, 64, 25], dropout=0.2)
+        MLP_Decoder = utils_model.MLPDecoder(mlp=[64, 32, 25], dropout=0.2)
         encoder = UTAE_encoder
         decoder = MLP_Decoder
 

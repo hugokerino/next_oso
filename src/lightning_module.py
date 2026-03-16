@@ -38,7 +38,7 @@ class classifier(L.LightningModule):
         self.y_true_test = []
         self.acc_metric = MulticlassAccuracy(num_classes=self.num_class, ignore_index=0)
         self.cm_metric = MulticlassConfusionMatrix(
-            num_classes=self.num_class, ignore_index=0, normalize="true"
+            num_classes=self.num_class, ignore_index=0, normalize="none"
         )
         self.f_score_metric = MulticlassF1Score(
             num_classes=self.num_class, ignore_index=0
@@ -66,7 +66,7 @@ class classifier(L.LightningModule):
 
         y_pred = torch.softmax(y_logits, dim=1).argmax(dim=1)
         acc = self.acc_metric(y_pred, y)
-        miou = self.miou_metric(y_pred, y)
+        f1 = self.f_score_metric(y_pred, y)
 
         self.log(
             f"{step_name}_loss",
@@ -85,8 +85,8 @@ class classifier(L.LightningModule):
             sync_dist=True,
         )
         self.log(
-            f"{step_name}_miou",
-            miou,
+            f"{step_name}_fscore",
+            f1,
             prog_bar=True,
             on_epoch=log_on_epoch,
             on_step=log_on_step,

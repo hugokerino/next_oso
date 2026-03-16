@@ -112,9 +112,11 @@ def convert_cm_to_figure(cm):
     # Créer la figure
     fig, ax = plt.subplots(figsize=(18, 10))
 
+    cm_normalized = cm / (cm.sum(axis=1, keepdims=True) + 1e-6)
+
     # Tracer la heatmap
     sns.heatmap(
-        cm,
+        cm_normalized,
         annot=True,
         fmt=".2f",
         cmap=plt.cm.Blues,
