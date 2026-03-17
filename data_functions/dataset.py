@@ -24,6 +24,7 @@ class next_oso_Dataset(tdata.Dataset):
         super(next_oso_Dataset, self).__init__()
         self.path_s2 = path_s2
         self.path_label = path_label
+        self.path_oso_class = path_oso_class
         self.norm = norm
         self.remove_invalid_temp = remove_invalid_temp
         self.folds = folds
@@ -33,9 +34,10 @@ class next_oso_Dataset(tdata.Dataset):
         self.label_files = []
         self.ids_per_fold = {}
         self.norms = {}
+        self.name_labels = []
         self._collect_files()
         self._get_ids_per_fold()
-        self.name_labels = pandas.read_csv(path_oso_class).get("name_class")
+        self._get_label_names()
 
         if self.norm:
             self._get_norm()
@@ -75,6 +77,11 @@ class next_oso_Dataset(tdata.Dataset):
             for i in self.folds:
                 norm_value = data_norms.get(f"fold_{i}")
                 self.norms.update({str(i): norm_value})
+
+    def _get_label_names(self):
+        labels_names = pandas.read_csv(self.path_oso_class).get("name_class")
+        for i, label_name in enumerate(labels_names):
+            self.name_labels.append(str(i) + "_" + str(label_name))
 
     def _get_ids_per_fold(self):
         with open(os.path.join(self.path_s2, "s2_ids_per_folder.json"), "r") as f:
@@ -142,7 +149,16 @@ class next_oso_Dataset(tdata.Dataset):
                 label_numpy = np.where(
                     label_numpy == -1, 0, label_numpy
                 )  # Replace -1 by 0
-                label = torch.from_numpy(label_numpy)  # h x w
+                label = torch.from_numpy(label_numpy).long()  # h x w
+            if self.label_type == "probas":
+                labels_probas = np.zeros((25, 128, 128))
+                for k, l in enumerate(self.name_labels):
+                    if l in list(label_data.data_vars):
+                        labels_probas[k, :, :] = label_data[l].data
+                        labels_probas[k, :, :] = np.where(
+                            labels_probas[k, :, :] == -1, 0, labels_probas[k, :, :]
+                        )  # Replace -1 by 0
+                label = torch.from_numpy(labels_probas).float()
 
         return (s2, date, mask), label
 
@@ -156,6 +172,7 @@ def get_loaders(
     folds_test,
     batch_size,
     num_worker,
+    label_type,
     norm=True,
     remove_invalid_temp=True,
     shuffle=True,
@@ -167,6 +184,7 @@ def get_loaders(
         norm=norm,
         remove_invalid_temp=remove_invalid_temp,
         folds=folds_train,
+        label_type=label_type,
     )
     dl_train = torch.utils.data.DataLoader(
         dt_train,
@@ -183,6 +201,7 @@ def get_loaders(
         norm=norm,
         remove_invalid_temp=remove_invalid_temp,
         folds=folds_val,
+        label_type=label_type,
     )
     dl_val = torch.utils.data.DataLoader(
         dt_val,
@@ -199,6 +218,7 @@ def get_loaders(
         norm=norm,
         remove_invalid_temp=remove_invalid_temp,
         folds=folds_test,
+        label_type=label_type,
     )
     dl_test = torch.utils.data.DataLoader(
         dt_test,

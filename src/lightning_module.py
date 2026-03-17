@@ -1,6 +1,5 @@
 import lightning as L
 import torch
-import torch.nn as nn
 from torchmetrics.classification import (
     MulticlassAccuracy,
     MulticlassConfusionMatrix,
@@ -62,9 +61,13 @@ class classifier(L.LightningModule):
             .contiguous()
         )  # b x nb_class x h x w
 
-        loss = self.loss_fn(y_logits, y.long())
+        loss = self.loss_fn(y_logits, y)
 
         y_pred = torch.softmax(y_logits, dim=1).argmax(dim=1)
+
+        if y.ndim == 4:  # means that we are using probability label
+            y = y.argmax(dim=1)
+
         acc = self.acc_metric(y_pred, y)
         f1 = self.f_score_metric(y_pred, y)
 
@@ -118,7 +121,10 @@ class classifier(L.LightningModule):
             .contiguous()
         )
         self.y_pred_test.append(torch.softmax(y_logits, dim=1).argmax(dim=1))
-        self.y_true_test.append(y.long())
+
+        if y.ndim == 4:  # means that we are using probability label
+            y = y.argmax(dim=1)
+        self.y_true_test.append(y)
 
     def on_test_epoch_end(self):
         # all preds & labels

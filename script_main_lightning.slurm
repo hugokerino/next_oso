@@ -1,9 +1,9 @@
 #!/bin/bash
 
-#SBATCH -J main_lightning_ltae
+#SBATCH -J main_lightning_utae
 #SBATCH -A theia_oso
-#SBATCH -o script_logs/out_main_light%j.out
-#SBATCH -e script_logs/err_main_light%j.err
+#SBATCH -o script_logs/out_main_utae%j.out
+#SBATCH -e script_logs/err_main_utae%j.err
 #SBATCH --export=none
 
 #SBATCH -N 1
@@ -42,7 +42,7 @@ module load pixi
 echo "Launch python file"
 
 pixi run -e gpu python main_lightning.py \
-    --model "LTAE" \
+    --model "UTAE" \
     --batch_size 4 \
     --epochs_max 50 \
     --accelerator "gpu" \
@@ -52,6 +52,7 @@ pixi run -e gpu python main_lightning.py \
     --path_s2 "$PATH_s2" \
     --path_label "$PATH_label" \
     --path_oso_classes "$PATH_class_name" \
-    --path_logs "$PATH_logs" 
+    --path_logs "$PATH_logs" \
+    --label_type "probas"
 
 echo "End"

@@ -58,6 +58,7 @@ def main(config):
         folds_test=config["folds_test"],
         batch_size=config["batch_size"],
         num_worker=config["num_worker"],
+        label_type=config["label_type"],
         norm=True,
         remove_invalid_temp=True,
         shuffle=True,
@@ -75,7 +76,7 @@ def main(config):
     alpha_weights = torch.from_numpy(
         np.load("./data_functions/alpha_weights.npy")
     ).float()
-    criterion = torch.nn.CrossEntropyLoss(ignore_index=0)
+    criterion = torch.nn.CrossEntropyLoss()
     # criterion = torch.nn.CrossEntropyLoss(ignore_index=0, weight=alpha_weights)
     # criterion = metrics.FocalLoss(alpha=alpha_weights, gamma=2, ignore_index=0)  #
     learning_rate = 1e-3
@@ -249,6 +250,7 @@ if __name__ == "__main__":
 
     # Data
     parser.add_argument("--num_worker", type=int, default=0)
+    parser.add_argument("--label_type", type=str, default="max_class")
     parser.add_argument("--num_class", type=int, default=25)
     parser.add_argument(
         "--folds_train", type=str, default="[1, 2, 3]"
