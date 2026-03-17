@@ -9,6 +9,7 @@ from datetime import datetime
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import f1_score, confusion_matrix
 
+import numpy as np
 import pandas
 from matplotlib import pyplot as plt
 
@@ -60,7 +61,7 @@ def main(config):
     )
 
     # Classifier
-    RF_classifier = RandomForestClassifier(n_jobs=None, verbose=1)
+    RF_classifier = RandomForestClassifier(n_jobs=-1, verbose=1)
 
     # Training
     print("\nTRAINING ...")
@@ -78,11 +79,15 @@ def main(config):
     f_score = f1_score(Y_test, Y_pred, average=None)
 
     # Save metrics + classifier
-    path_to_save = os.path.join(config["path_logs"], date, config["zone_eco"])
+    if not os.path.exists(os.path.join(config["path_logs"], date)):
+       os.mkdir(os.path.join(config["path_logs"], date))
+    
+    path_to_save = os.path.join(config["path_logs"], date, str(config["zone_eco"]))
 
     if not os.path.exists(path_to_save):
-        os.mkdir(path_to_save)
+       os.mkdir(path_to_save)
 
+    np.save(path_to_save, Y_pred) 
     # joblib.dump(
     #     RF_classifier,
     #     os.path.join(path_to_save, f"RF_zone{config['zone_eco']}.joblib"),

@@ -113,7 +113,7 @@ def main(config):
             n_head=8,
             d_model=128,
             d_k=4,
-            encoder=False,
+            encoder=True,
             return_maps=False,
             pad_value=0,
             padding_mode="reflect",

@@ -1,6 +1,7 @@
 #!/bin/bash
 
 #SBATCH -J random_forest
+#SBATCH --array=1-9:1%10
 #SBATCH -N 1
 #SBATCH -n 32
 #SBATCH -t 10:00:00
@@ -31,12 +32,14 @@ module load pixi
 
 echo "Launch python file"
 
+zone_eco=${SLURM_ARRAY_TASK_ID}
+
 pixi run python RandomForest/main_RF.py \
     --path_s2 "$PATH_s2" \
     --path_label "$PATH_label" \
     --path_oso_classes "$PATH_class_name" \
     --path_logs "$PATH_logs" \
-    --zone_eco 1 \
+    --zone_eco ${zone_eco} \
     --folds_train "[1, 2, 3]" \
     --folds_test "[5]" \
 
