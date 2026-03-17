@@ -156,16 +156,17 @@ def find_clear_img(batch):
 
 
 def plot_pred_label_and_img(
+    preds_RF,
     preds_model_1,
     preds_model_2,
     labels,
     imgs,
+    batch_size,
     batch_index,
     path_oso_class="/home/hkerino/Documents/nextoso-dataset/data/auxiliary/OSO/oso_classes.csv",
 ):
 
-    batch_size = preds_model_1[batch_index].shape[0]
-    fig, ax = plt.subplots(batch_size, 4, figsize=(15, batch_size * 3))
+    fig, ax = plt.subplots(batch_size, 3 + 2, figsize=(20, batch_size * 3))
 
     OSO_COLORS = {
         1: (255, 0, 255),  # Urbain dense
@@ -206,28 +207,35 @@ def plot_pred_label_and_img(
     name_classes = pandas.read_csv(path_oso_class).get("name_class")
 
     imgs_batch = imgs[batch_index]
-    preds_model_1_batch = preds_model_1[batch_index]
-    preds_model_2_batch = preds_model_2[batch_index]
     labels_batch = labels[batch_index]
+    pred_model1_batch = preds_model_1[batch_index]
+    pred_model2_batch = preds_model_2[batch_index]
 
     for i in range(batch_size):
         ax[i, 0].imshow(imgs_batch[i])
         ax[i, 0].axis("off")
 
-        ax[i, 1].imshow(preds_model_1_batch[i], cmap=cmap, vmin=0, vmax=24)
+        ax[i, 1].imshow(
+            preds_RF[batch_index * batch_size + i], cmap=cmap, vmin=0, vmax=24
+        )
         ax[i, 1].axis("off")
-        ax[i, 2].imshow(preds_model_2_batch[i], cmap=cmap, vmin=0, vmax=24)
+
+        ax[i, 2].imshow(pred_model1_batch[i], cmap=cmap, vmin=0, vmax=24)
         ax[i, 2].axis("off")
 
-        im = ax[i, 3].imshow(labels_batch[i], cmap=cmap, vmin=0, vmax=24)
-        cbar = fig.colorbar(im, ax=ax[i, 3], ticks=np.arange(0, 25))
-        cbar.ax.set_yticklabels([name_classes[i] for i in range(25)])
+        ax[i, 3].imshow(pred_model2_batch[i], cmap=cmap, vmin=0, vmax=24)
         ax[i, 3].axis("off")
 
+        im = ax[i, 4].imshow(labels_batch[i], cmap=cmap, vmin=0, vmax=24)
+        cbar = fig.colorbar(im, ax=ax[i, 4], ticks=np.arange(0, 25))
+        cbar.ax.set_yticklabels([name_classes[i] for i in range(25)])
+        ax[i, 4].axis("off")
+
     ax[0, 0].set_title("Images")
-    ax[0, 1].set_title("Predictions LTAE")
-    ax[0, 2].set_title("Predictions UTAE")
-    ax[0, 3].set_title("Labels")
+    ax[0, 1].set_title("Predictions RF")
+    ax[0, 2].set_title("Predictions LTAE")
+    ax[0, 3].set_title("Predictions UTAE")
+    ax[0, 4].set_title("Labels")
 
     plt.tight_layout()
 
