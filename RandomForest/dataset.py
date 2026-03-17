@@ -4,7 +4,7 @@ import xarray as xr
 import numpy as np
 
 
-def create_dataset(path_s2, path_label, zone, folders, grid_time):
+def create_dataset(path_s2, path_label, zone, folders, grid_time, label_only=False):
     path_s2_eco = os.path.join(path_s2, str(zone))
 
     s2_list = []
@@ -12,7 +12,7 @@ def create_dataset(path_s2, path_label, zone, folders, grid_time):
     for i in folders:
         path_s2 = os.path.join(path_s2_eco, f"fold_{str(i)}")
 
-        s2_nc_files = [f for f in os.listdir(path_s2) if f.endswith(".nc")]
+        s2_nc_files = sorted([f for f in os.listdir(path_s2) if f.endswith(".nc")])
         for s2_nc_file in s2_nc_files:
             # s2
             with xr.open_dataset(os.path.join(path_s2, s2_nc_file)) as s2_data:
@@ -49,6 +49,9 @@ def create_dataset(path_s2, path_label, zone, folders, grid_time):
                 label_list.append(label_numpy)
 
     Label = np.stack(label_list)
+
+    if label_only:
+        return Label
 
     # Rearrange time
     Dataset = utils_data_RF.interpolate(s2_list=s2_list, grid=grid_time)
