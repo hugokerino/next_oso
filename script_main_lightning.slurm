@@ -48,7 +48,7 @@ pixi run -e gpu python main_lightning.py \
     --accelerator "gpu" \
     --devices 1 \
     --nodes 1 \
-    --strategy "ddp" \
+    --strategy "ddp_find_unused_parameters_true" \
     --path_s2 "$PATH_s2" \
     --path_label "$PATH_label" \
     --path_oso_classes "$PATH_class_name" \
