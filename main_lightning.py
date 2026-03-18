@@ -76,7 +76,7 @@ def main(config):
     alpha_weights = torch.from_numpy(
         np.load("./data_functions/alpha_weights.npy")
     ).float()
-    criterion = torch.nn.CrossEntropyLoss()
+    criterion = torch.nn.CrossEntropyLoss(ignore_index=0)
     # criterion = torch.nn.CrossEntropyLoss(ignore_index=0, weight=alpha_weights)
     # criterion = metrics.FocalLoss(alpha=alpha_weights, gamma=2, ignore_index=0)  #
     learning_rate = 1e-3
@@ -103,8 +103,8 @@ def main(config):
         # Encoder
         UTAE_encoder = UTAE.UTAE(
             input_dim=10,
-            encoder_widths=[32, 64, 128],
-            decoder_widths=[64, 64, 128],
+            encoder_widths=[32, 64, 64, 128],
+            decoder_widths=[32, 64, 64, 128],
             out_conv=[32, 25],
             str_conv_k=4,
             str_conv_s=2,
@@ -121,7 +121,7 @@ def main(config):
         )
         mask_need = False
         # Decoder
-        MLP_Decoder = utils_model.MLPDecoder(mlp=[64, 32, 25], dropout=0.2)
+        MLP_Decoder = utils_model.MLPDecoder(mlp=[32, 25], dropout=0.2)
         encoder = UTAE_encoder
         decoder = MLP_Decoder
 
@@ -149,8 +149,8 @@ def main(config):
             config["path_logs"], f"{config['model']}_{date}/Checkpoints/"
         ),
         save_weights_only=True,
-        monitor="val_loss",
-        mode="min",
+        monitor="val_fscore",
+        mode="max",
         save_top_k=1,
     )
 
@@ -158,7 +158,7 @@ def main(config):
         config["path_logs"], name=f"{config['model']}_{date}", default_hp_metric=False
     )
 
-    callbacks = EarlyStopping(monitor="val_loss", mode="min", patience=3)
+    callbacks = EarlyStopping(monitor="val_fscore", mode="max", patience=3)
     profiler = SimpleProfiler(
         dirpath=os.path.join(config["path_logs"], f"{config['model']}_{date}"),
         filename="profiler",

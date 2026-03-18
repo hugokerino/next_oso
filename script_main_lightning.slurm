@@ -53,6 +53,6 @@ pixi run -e gpu python main_lightning.py \
     --path_label "$PATH_label" \
     --path_oso_classes "$PATH_class_name" \
     --path_logs "$PATH_logs" \
-    --label_type "probas"
+    --label_type "max_class"
 
 echo "End"
