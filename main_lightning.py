@@ -111,9 +111,9 @@ def main(config):
             str_conv_p=1,
             agg_mode="att_group",
             encoder_norm="group",
-            n_head=8,
-            d_model=128,
-            d_k=4,
+            n_head=16,
+            d_model=256,
+            d_k=8,
             encoder=True,
             return_maps=False,
             pad_value=0,
@@ -158,7 +158,7 @@ def main(config):
         config["path_logs"], name=f"{config['model']}_{date}", default_hp_metric=False
     )
 
-    callbacks = EarlyStopping(monitor="val_fscore", mode="max", patience=3)
+    callbacks = EarlyStopping(monitor="val_fscore", mode="max", patience=5)
     profiler = SimpleProfiler(
         dirpath=os.path.join(config["path_logs"], f"{config['model']}_{date}"),
         filename="profiler",
