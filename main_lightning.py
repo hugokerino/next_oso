@@ -16,6 +16,7 @@ import pprint
 
 from data_functions import dataset
 from src import LTAE, UTAE, utils_model, lightning_module, metrics
+from Alise import ALISE, sse, transformer, temporal_proj
 
 # Add FocalLoss for loading best model from checkpoint
 torch.serialization.add_safe_globals([metrics.FocalLoss])
@@ -94,8 +95,10 @@ def main(config):
             positional_encoding=True,
         )
         mask_need = True
+
         # Decoder
         MLP_Decoder = utils_model.MLPDecoder(mlp=[128, 64, 25], dropout=0.2)
+
         encoder = LTAE_encoder
         decoder = MLP_Decoder
 
@@ -120,9 +123,54 @@ def main(config):
             padding_mode="reflect",
         )
         mask_need = False
+
         # Decoder
         MLP_Decoder = utils_model.MLPDecoder(mlp=[32, 25], dropout=0.2)
+
         encoder = UTAE_encoder
+        decoder = MLP_Decoder
+
+    if config["model"] == "ALISE":
+        # Encoder
+        embedding_dim = 64
+        ALISE_encoder = ALISE.ALISE(
+            patch_embedding=sse.PatchEmbedding(
+                sse=sse.Unet(
+                    inplanes=10,
+                    planes=embedding_dim,
+                    encoder_widths=[64, 64, 64, 128],
+                    decoder_widths=[32, 32, 64, 128],
+                    encoder_norm="group",
+                    padding_mode="reflect",
+                    decoding_norm="group",
+                    return_maps=False,
+                    str_conv_k=4,
+                    str_conv_s=2,
+                    str_conv_p=1,
+                    skip_conv_norm="group",
+                ),
+                tpe=sse.PositionalEncoder(d=embedding_dim),
+            ),
+            temporal_encoder=transformer.Transformer(
+                d_model=embedding_dim,
+                nhead=4,
+                dim_feedforward=embedding_dim * 2,
+                dropout=0.2,
+                batch_first=True,
+                num_layers=3,
+            ),
+            temporal_projector=temporal_proj.LearnedQMultiHeadAttention(
+                n_head=8, d_k=8, d_in=embedding_dim, n_q=1
+            ),
+        )
+        mask_need = False
+
+        # Decoder
+        MLP_Decoder = utils_model.MLPDecoder(
+            mlp=[embedding_dim, embedding_dim / 2, 25], dropout=0.2
+        )
+
+        encoder = ALISE_encoder
         decoder = MLP_Decoder
 
     # Classifier
