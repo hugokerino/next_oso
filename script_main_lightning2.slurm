@@ -15,7 +15,7 @@
 #SBATCH --partition=gpu_std
 #SBATCH --qos=gpu_all
 
-#SBATCH --time=12:00:00             # Walltime
+#SBATCH --time=20:00:00             # Walltime
 
 #SBATCH --signal=SIGUSR1@90         # For auto-resubmit
 
@@ -42,16 +42,17 @@ module load pixi
 echo "Launch python file"
 
 pixi run -e gpu python main_lightning.py \
-    --model "UTAE" \
+    --model "ALISE" \
     --batch_size 4 \
-    --epochs_max 50 \
+    --epochs_max 100 \
     --accelerator "gpu" \
     --devices 1 \
     --nodes 1 \
-    --strategy "ddp_find_unused_parameters_true" \
+    --strategy "ddp" \
     --path_s2 "$PATH_s2" \
     --path_label "$PATH_label" \
     --path_oso_classes "$PATH_class_name" \
-    --path_logs "$PATH_logs" 
+    --path_logs "$PATH_logs" \ 
+    --running_on_trex_gpu 1
 
 echo "End"
