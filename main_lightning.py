@@ -3,7 +3,7 @@ import lightning as L
 from lightning.pytorch.loggers import TensorBoardLogger
 from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
 from lightning.pytorch.profilers import SimpleProfiler
-from pytorch_lightning.plugins.environments import SLURMEnvironment
+from lightning.pytorch.plugins.environments import SLURMEnvironment
 
 import numpy as np
 import signal
@@ -223,7 +223,7 @@ def main(config):
 
     plugin = None
     if config["running_on_trex_gpu"]:
-        plugin = [SLURMEnvironment(requeue_signal=signal.SIGHUP)]
+        plugin = [SLURMEnvironment(requeue_signal=signal.SIGHUP, auto_requeue=True)]
 
     # Trainer
     trainer = L.Trainer(
