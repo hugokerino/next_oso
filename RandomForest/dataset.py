@@ -4,11 +4,22 @@ import xarray as xr
 import numpy as np
 
 
-def create_dataset(path_s2, path_label, zone, folders, grid_time, label_only=False):
+def create_dataset(
+    path_s2,
+    path_label,
+    zone,
+    folders,
+    grid_time,
+    label_only=False,
+    return_label_entropy=False,
+):
     path_s2_eco = os.path.join(path_s2, str(zone))
 
     s2_list = []
     label_list = []
+    if return_label_entropy:
+        label_entropy_list = []
+
     for i in folders:
         path_s2 = os.path.join(path_s2_eco, f"fold_{str(i)}")
 
@@ -48,9 +59,14 @@ def create_dataset(path_s2, path_label, zone, folders, grid_time, label_only=Fal
                 )  # Replace -1 by 0
                 label_list.append(label_numpy)
 
+                if return_label_entropy:
+                    label_entropy_list.append(label_data["entropy_proba"].data)
+
     Label = np.stack(label_list)
 
     if label_only:
+        if return_label_entropy:
+            return Label, np.stack(label_entropy_list)
         return Label
 
     # Rearrange time
