@@ -1,9 +1,9 @@
 #!/bin/bash
 
-#SBATCH -J main_lightning_utae
+#SBATCH -J main_lightning_alise
 #SBATCH -A theia_oso
-#SBATCH -o script_logs/out_main_utae%j.out
-#SBATCH -e script_logs/err_main_utae%j.err
+#SBATCH -o script_logs/out_main_alise%j.out
+#SBATCH -e script_logs/err_main_alise%j.err
 #SBATCH --export=none
 
 #SBATCH -N 1
@@ -41,9 +41,11 @@ module load pixi
 
 echo "Launch python file"
 
+export PYTORCH_ALLOC_CONF=expandable_segments:True
+
 pixi run -e gpu python main_lightning.py \
     --model "ALISE" \
-    --batch_size 4 \
+    --batch_size 1 \
     --epochs_max 100 \
     --accelerator "gpu" \
     --devices 1 \
@@ -52,7 +54,8 @@ pixi run -e gpu python main_lightning.py \
     --path_s2 "$PATH_s2" \
     --path_label "$PATH_label" \
     --path_oso_classes "$PATH_class_name" \
-    --path_logs "$PATH_logs" \ 
+    --path_logs "$PATH_logs" \
+    --label_type "max_class" \
     --running_on_trex_gpu 1
-
+ 
 echo "End"

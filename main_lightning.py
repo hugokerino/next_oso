@@ -167,7 +167,7 @@ def main(config):
 
         # Decoder
         MLP_Decoder = utils_model.MLPDecoder(
-            mlp=[embedding_dim, embedding_dim / 2, 25], dropout=0.2
+            mlp=[64, 32, 25], dropout=0.2
         )
 
         encoder = ALISE_encoder
