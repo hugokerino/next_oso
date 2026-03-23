@@ -4,10 +4,10 @@
 #SBATCH --array=1-9:1%10
 #SBATCH -N 1
 #SBATCH -n 32
-#SBATCH -t 10:00:00
+#SBATCH -t 02:00:00
 #SBATCH -A theia_oso
-#SBATCH -o script_logs/out_main_%j.out
-#SBATCH -e script_logs/err_main_%j.err
+#SBATCH -o script_logs/out_rf%j.out
+#SBATCH -e script_logs/err_rf%j.err
 #SBATCH --export=none
 
 mkdir -p script_logs
