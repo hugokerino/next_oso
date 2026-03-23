@@ -39,7 +39,7 @@ def main(config):
     # Time
     T0 = "2020-01-15"
     T_fin = "2020-12-31"
-    grid = pandas.date_range(start=T0, end=T_fin, freq="16D")
+    grid = pandas.date_range(start=T0, end=T_fin, freq="10D")
 
     # Datasets
     print("\nLOADING DATA ...")
@@ -61,7 +61,7 @@ def main(config):
     )
 
     # Classifier
-    RF_classifier = RandomForestClassifier(n_jobs=-1, verbose=1)
+    RF_classifier = RandomForestClassifier(min_samples_split=25, n_jobs=-1, verbose=1)
 
     # Training
     print("\nTRAINING ...")
@@ -80,14 +80,14 @@ def main(config):
 
     # Save metrics + classifier
     if not os.path.exists(os.path.join(config["path_logs"], date)):
-       os.mkdir(os.path.join(config["path_logs"], date))
-    
+        os.mkdir(os.path.join(config["path_logs"], date))
+
     path_to_save = os.path.join(config["path_logs"], date, str(config["zone_eco"]))
 
     if not os.path.exists(path_to_save):
-       os.mkdir(path_to_save)
+        os.mkdir(path_to_save)
 
-    np.save(path_to_save, Y_pred) 
+    np.save(path_to_save, Y_pred)
     # joblib.dump(
     #     RF_classifier,
     #     os.path.join(path_to_save, f"RF_zone{config['zone_eco']}.joblib"),
