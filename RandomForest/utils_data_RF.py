@@ -2,6 +2,11 @@ from matplotlib import pyplot as plt
 import pandas
 import numpy as np
 import seaborn as sns
+from rasterio.features import rasterize
+import geopandas as gpd
+import xarray as xr
+import rioxarray
+
 
 def remove_invalid(s2_xarray):
     "Remove temporel step with full invalid mask"
@@ -95,3 +100,61 @@ def convert_cm_to_figure(cm):
     ax.set_xlabel("Prédictions")
 
     return fig
+
+
+def erode_class_max(
+    labels: str | xr.Dataset, variable: str = "max_class_1", buff: int = -10
+) -> xr.DataArray:
+
+    if isinstance(labels, str):
+        ds = rioxarray.open_rasterio(labels)
+
+    if isinstance(labels, xr.Dataset):
+        ds = labels
+
+    x, y, max_class = ds[variable].x.values, ds[variable].y.values, ds[variable]
+    x, y = np.meshgrid(x, y)
+    x, y, max_class = x.flatten(), y.flatten(), max_class.values.flatten()
+    max_pd = pandas.DataFrame.from_dict({"classe": max_class, "x": x, "y": y})
+    max_vector = gpd.GeoDataFrame(
+        max_pd["classe"],
+        geometry=gpd.GeoSeries.from_xy(max_pd["x"], max_pd["y"], crs=ds.rio.crs),
+    )
+
+    max_vector["geom"] = max_vector.buffer(5, cap_style="square")
+
+    max_vector = max_vector.drop(["geometry"], axis=1)
+    max_vector.rename(columns={"geom": "geometry"}, inplace=True)
+
+    max_vector = max_vector.dissolve(by="classe")
+
+    max_vector["geometry"] = max_vector.geometry.buffer(buff, cap_style="square")
+    max_vector = max_vector.reset_index()
+
+    max_vector = max_vector[
+        (~max_vector.geometry.is_empty) & (max_vector.geometry.is_valid)
+    ].reset_index(drop=True)
+
+    # rasterize
+    shapes = (
+        (geom, value)
+        for geom, value in zip(max_vector.geometry, max_vector.classe)
+        if not geom.is_empty and geom.is_valid
+    )
+
+    raster = rasterize(
+        shapes,
+        out_shape=(ds.max_class_1.shape[0], ds.max_class_1.shape[1]),
+        transform=ds.rio.transform(),
+        fill=0,
+        dtype=ds.dtypes.get("max_class_1").name,
+    )
+
+    rasterized_da: xr.DataArray = xr.DataArray(
+        raster,
+        coords={"classe": variable, "y": ds.y, "x": ds.x},
+        dims=["y", "x"],
+    )
+    rasterized_da = rasterized_da.rio.write_crs(ds.rio.crs)
+
+    return rasterized_da

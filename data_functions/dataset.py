@@ -159,6 +159,12 @@ class next_oso_Dataset(tdata.Dataset):
                             labels_probas[k, :, :] == -1, 0, labels_probas[k, :, :]
                         )  # Replace -1 by 0
                 label = torch.from_numpy(labels_probas).float()
+            if self.label_type == "erode_max_class":
+                label_eroded = utils_data.erode_class_max(label_data, buff=-10).data
+                label_eroded = np.where(
+                    label_eroded == -1, 0, label_eroded
+                )  # Replace -1 by 0
+                label = torch.from_numpy(label_eroded).long()  # h x w
 
         return (s2, date, mask), label
 

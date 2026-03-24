@@ -10,6 +10,7 @@ def create_dataset(
     zone,
     folders,
     grid_time,
+    label_type="max_class",
     label_only=False,
     return_label_entropy=False,
 ):
@@ -53,11 +54,21 @@ def create_dataset(
             file_id = s2_nc_file.split("_")[1].split(".")[0]
             path_label_file = os.path.join(path_label, f"label_{file_id}.nc")
             with xr.open_dataset(path_label_file) as label_data:
-                label_numpy = label_data["max_class_1"].data  # NumPy
-                label_numpy = np.where(
-                    label_numpy == -1, 0, label_numpy
-                )  # Replace -1 by 0
-                label_list.append(label_numpy)
+                if label_type == "max_class":
+                    label_numpy = label_data["max_class_1"].data  # NumPy
+                    label_numpy = np.where(
+                        label_numpy == -1, 0, label_numpy
+                    )  # Replace -1 by 0
+                    label_list.append(label_numpy)
+
+                if label_type == "erode_max_class":
+                    label_eroded = utils_data_RF.erode_class_max(
+                        label_data, buff=-10
+                    ).data
+                    label_eroded = np.where(
+                        label_eroded == -1, 0, label_eroded
+                    )  # Replace -1 by 0
+                    label_list.append(label_eroded)
 
                 if return_label_entropy:
                     label_entropy_list.append(label_data["entropy_proba"].data)
