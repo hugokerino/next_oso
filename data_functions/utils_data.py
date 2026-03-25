@@ -14,8 +14,12 @@ from torchmetrics.classification import (
     MulticlassRecall,
     MulticlassPrecision,
     MulticlassF1Score,
+    MulticlassAccuracy,
+    MulticlassConfusionMatrix,
+    MulticlassCohenKappa,
 )
 
+from torchmetrics.segmentation import MeanIoU
 
 names_class = (
     pandas.read_csv(
@@ -24,6 +28,7 @@ names_class = (
     .get("name_class")
     .values
 )  # Doit contenir 25 entrées (0 à 24)
+num_class = len(names_class)
 
 # Colormap personnalisée (25 couleurs, dont gris pour 'nan')
 # Définition des couleurs personnalisées (RVB 0-255)
@@ -387,7 +392,7 @@ def mean_entropy_per_class(path_labels, path_oso_class):
     plt.tight_layout()
     plt.show()
 
-    return entropy_per_class
+    return means
 
 
 def mean_entropy_per_class_per_eco_zone(path_labels, path_oso_class):
@@ -616,3 +621,63 @@ def erode_class_max(
     rasterized_da = rasterized_da.rio.write_crs(ds.rio.crs)
 
     return rasterized_da
+
+
+def metrics_on_oso(PATH_TO_OSO, PATH_TO_LABELS):
+
+    list_labels = []
+    list_oso = []
+
+    OSO_files = sorted([f for f in os.listdir(PATH_TO_OSO) if f.endswith(".nc")])
+
+    for file in OSO_files:
+        oso = xr.open_dataset(os.path.join(PATH_TO_OSO, file))[
+            "__xarray_dataarray_variable__"
+        ].values.squeeze()
+        label = xr.open_dataset(
+            os.path.join(
+                PATH_TO_LABELS,
+                f"label_{file.split('_')[1].split('.')[0]}.nc",
+            )
+        )["max_class_1"].data
+        label = np.where(label == -1, 0, label)  # Replace -1 by 0
+
+        list_oso.append(oso.flatten())
+        list_labels.append(label.flatten())
+
+    # From list to tensors
+    y_preds = torch.Tensor(np.concatenate(list_oso, axis=0))
+    y_trues = torch.Tensor(np.concatenate(list_labels, axis=0))
+
+    # Metrics
+    acc_metric = MulticlassAccuracy(num_classes=num_class, ignore_index=0)
+    cm_metric = MulticlassConfusionMatrix(
+        num_classes=num_class, ignore_index=0, normalize="none"
+    )
+    kappa = MulticlassCohenKappa(num_classes=num_class, ignore_index=0)
+    precision_metric = MulticlassPrecision(
+        num_classes=num_class, average="none", ignore_index=0
+    )
+    recall_metric = MulticlassRecall(
+        num_classes=num_class, average="none", ignore_index=0
+    )
+    f1_metric = MulticlassF1Score(num_classes=num_class, average="none", ignore_index=0)
+
+    # Global metrics
+    acc = acc_metric(y_preds, y_trues)
+    cm = cm_metric(y_preds, y_trues)
+    f1 = f1_metric(y_preds, y_trues)
+    kappa = kappa(y_preds, y_trues)
+
+    # Log des métriques globales
+    test_metrics = {
+        "Test_accuracy": acc,
+        "Test_f1_score": f1[1:-1].mean(),
+        "Test Kappa": kappa,
+    }
+
+    print(test_metrics)
+
+    # Metrics per class
+
+    return f1, cm
