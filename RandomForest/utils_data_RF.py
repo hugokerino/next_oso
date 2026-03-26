@@ -158,3 +158,42 @@ def erode_class_max(
     rasterized_da = rasterized_da.rio.write_crs(ds.rio.crs)
 
     return rasterized_da
+
+
+# For RGB array
+def to_RGB(img_multi_spec: np.ndarray | xr.Dataset, norm=True):
+
+    img_rgb = np.empty([128, 128, 3])
+
+    if isinstance(img_multi_spec, xr.Dataset):
+        img_rgb[:, :, 0] = img_multi_spec["B4"].values  # b
+        img_rgb[:, :, 1] = img_multi_spec["B3"].values  # g
+        img_rgb[:, :, 2] = img_multi_spec["B2"].values  # r
+
+    if isinstance(img_multi_spec, np.ndarray):
+        img_rgb[:, :, 2] = img_multi_spec[0, :, :]  # b
+        img_rgb[:, :, 1] = img_multi_spec[1, :, :]  # g
+        img_rgb[:, :, 0] = img_multi_spec[2, :, :]  # r
+
+    if norm:
+        qmin = np.nanquantile(img_rgb, 0.05)
+        qmax = np.nanquantile(img_rgb, 1 - 0.05)
+        img_rgb = (img_rgb - qmin) / (qmax - qmin)
+
+        return np.clip(img_rgb, 0, 1)
+    else:
+        return img_rgb
+
+
+def find_clear_img_in_xarray(s2_xr):
+    mask = s2_xr["S2_mask"]
+    t_test = (mask == 0).all(dim=("x", "y"))
+
+    if np.any(t_test.values):
+        img = s2_xr.isel(time=t_test).isel(time=0)
+    else:
+        num_zeros = (mask == 0).sum(dim=(1, 2))
+        t_idx = num_zeros.argmax()  # Index du max de 0
+        img = s2_xr.isel(time=t_idx)
+
+    return to_RGB(img)

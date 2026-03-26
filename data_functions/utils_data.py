@@ -20,6 +20,7 @@ from torchmetrics.classification import (
 )
 
 from torchmetrics.segmentation import MeanIoU
+import matplotlib.gridspec as gridspec
 
 names_class = (
     pandas.read_csv(
@@ -70,11 +71,19 @@ cmap = ListedColormap(normalized_colors)
 
 
 # For RGB array
-def array_to_RGB(img_multi_spec, norm=True):
+def to_RGB(img_multi_spec: np.ndarray | xr.Dataset, norm=True):
+
     img_rgb = np.empty([128, 128, 3])
-    img_rgb[:, :, 2] = img_multi_spec[0, :, :]  # b
-    img_rgb[:, :, 1] = img_multi_spec[1, :, :]  # g
-    img_rgb[:, :, 0] = img_multi_spec[2, :, :]  # r
+
+    if isinstance(img_multi_spec, xr.Dataset):
+        img_rgb[:, :, 0] = img_multi_spec["B2"].values  # b
+        img_rgb[:, :, 1] = img_multi_spec["B3"].values  # g
+        img_rgb[:, :, 2] = img_multi_spec["B4"].values  # r
+
+    if isinstance(img_multi_spec, np.ndarray):
+        img_rgb[:, :, 2] = img_multi_spec[0, :, :]  # b
+        img_rgb[:, :, 1] = img_multi_spec[1, :, :]  # g
+        img_rgb[:, :, 0] = img_multi_spec[2, :, :]  # r
 
     if norm:
         qmin = np.nanquantile(img_rgb, 0.05)
@@ -136,7 +145,7 @@ def plot_nextoso(dataset, idx=0, first_date=0, lenght=5):
 
     for t in range(lenght):
         # Affichage de l'image RGB
-        axes1[0, t].imshow(array_to_RGB(x[:, first_date + t, :, :], norm=True))
+        axes1[0, t].imshow(to_RGB(x[:, first_date + t, :, :], norm=True))
         axes1[0, t].set_title(f"DATE = {dates[first_date + t].numpy()}")
         axes1[0, t].axis("off")
 
@@ -187,7 +196,7 @@ def find_clear_img(batch):
             num_zeros = (mask[i] == 0).sum(dim=(1, 2))  # Shape : (t,)
             t_idx = num_zeros.argmax()  # Index du max de 0
 
-        clear_imgs.append(array_to_RGB(sits[i, :, t_idx, :, :].cpu().numpy()))
+        clear_imgs.append(to_RGB(sits[i, :, t_idx, :, :].cpu().numpy()))
 
     return clear_imgs
 
@@ -201,7 +210,6 @@ def plot_preds_labels_and_img(
     batch_size,
     batch_index,
 ):
-    import matplotlib.gridspec as gridspec
 
     # Créer une figure avec GridSpec pour gérer la layout
     fig = plt.figure(figsize=(20, batch_size * 3))
@@ -681,3 +689,95 @@ def metrics_on_oso(PATH_TO_OSO, PATH_TO_LABELS):
     # Metrics per class
 
     return f1, cm
+
+
+def plot_pred_and_label(y_true, y_pred, rgb_img, y_entropie, class_idx, idx_to_plot):
+
+    samples_with_class = []
+    for idx in range(y_true.shape[0]):
+        patch = y_true[idx, :, :]
+        pred = y_pred[idx, :, :]
+        entropy = y_entropie[idx, :, :]
+        imgs = rgb_img[idx, :, :, :]
+        if (patch == class_idx).any():
+            samples_with_class.append([idx, patch, pred, imgs, entropy])
+
+    max_samples = len(samples_with_class)
+
+    assert idx_to_plot <= max_samples
+
+    label = samples_with_class[idx_to_plot][1]
+    pred = samples_with_class[idx_to_plot][2]
+    img = samples_with_class[idx_to_plot][3]
+    entropy = samples_with_class[idx_to_plot][4]
+
+    error_mask = (label == class_idx) & (pred != class_idx)
+    label_class_only = np.where(label == class_idx, class_idx, np.nan)
+    pred_on_errors = np.where(error_mask, pred, np.nan)
+
+    class_maj_pred_on_error = np.argmax(
+        np.bincount(
+            pred_on_errors.flatten()[~np.isnan(pred_on_errors.flatten())].astype(int),
+            minlength=25,
+        )
+    )
+
+    # GridSpec : 3 lignes, 4 colonnes
+    # col 0 et 1 : plots, col 2 : cbar classes, col 3 : cbar entropy
+    # ligne 2 : plot entropy centré en col 0-1 + cbar entropy en col 3
+    fig = plt.figure(figsize=(15, 12))
+    gs = gridspec.GridSpec(
+        3, 4, width_ratios=[1, 1, 0.05, 0.05], hspace=0.35, wspace=0.35
+    )
+
+    ax00 = fig.add_subplot(gs[0, 0])
+    ax01 = fig.add_subplot(gs[0, 1])
+    ax10 = fig.add_subplot(gs[1, 0])
+    ax11 = fig.add_subplot(gs[1, 1])
+    ax20 = fig.add_subplot(gs[2, 0])
+    ax21 = fig.add_subplot(gs[2, 1])
+
+    # cbar classes — s'étend uniquement sur les 2 premières lignes
+    cbar_ax = fig.add_subplot(gs[0:2, 2])
+
+    # cbar entropy — uniquement sur la ligne 2
+    cbar_entropy_ax = fig.add_subplot(gs[2, 2])
+
+    ax00.imshow(label, cmap=cmap, vmin=0, vmax=24)
+    ax00.set_title("Labels")
+    ax00.axis("off")
+
+    ax01.imshow(pred, cmap=cmap, vmin=0, vmax=24)
+    ax01.set_title("Predictions")
+    ax01.axis("off")
+
+    ax10.imshow(label_class_only, cmap=cmap, vmin=0, vmax=24)
+    ax10.set_title(f"Pixels vrais '{names_class[class_idx]}'")
+    ax10.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
+
+    im = ax11.imshow(pred_on_errors, cmap=cmap, vmin=0, vmax=24)
+    ax11.set_title(
+        f"Classe majoritairement prédite : '{names_class[class_maj_pred_on_error]}'"
+    )
+    ax11.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
+
+    ax20.imshow(img)
+    ax20.set_title("S2 RGB image")
+    ax20.axis("off")
+
+    im_entropy = ax21.imshow(entropy, cmap="viridis")
+    ax21.set_title("Entropy")
+    ax21.axis("off")
+
+    # Colorbars
+    cbar = fig.colorbar(im, cax=cbar_ax, ticks=np.arange(0, 25))
+    cbar.ax.set_yticklabels([names_class[i] for i in range(25)])
+
+    fig.colorbar(im_entropy, cax=cbar_entropy_ax)
+
+    fig.suptitle(
+        f"Erreurs de prédiction — classe '{names_class[class_idx]}' "
+        f"({error_mask.sum()} pixels mal classifiés)"
+    )
+
+    plt.show()

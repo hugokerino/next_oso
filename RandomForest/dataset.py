@@ -13,6 +13,7 @@ def create_dataset(
     label_type="max_class",
     label_only=False,
     return_label_entropy=False,
+    return_img=False,
 ):
     path_s2_eco = os.path.join(path_s2, str(zone))
 
@@ -20,6 +21,8 @@ def create_dataset(
     label_list = []
     if return_label_entropy:
         label_entropy_list = []
+    if return_img:
+        img_list = []
 
     for i in folders:
         path_s2 = os.path.join(path_s2_eco, f"fold_{str(i)}")
@@ -49,6 +52,8 @@ def create_dataset(
                         ]
                     ]
                 )
+                if return_img:
+                    img_list.append(utils_data_RF.find_clear_img_in_xarray(s2_data))
 
             # Label
             file_id = s2_nc_file.split("_")[1].split(".")[0]
@@ -76,7 +81,9 @@ def create_dataset(
     Label = np.stack(label_list)
 
     if label_only:
-        if return_label_entropy:
+        if return_label_entropy and return_img:
+            return Label, np.stack(label_entropy_list), np.stack(img_list)
+        elif return_label_entropy:
             return Label, np.stack(label_entropy_list)
         return Label
 
