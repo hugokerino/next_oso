@@ -9,7 +9,10 @@ import rioxarray
 from rasterio.features import rasterize
 import geopandas as gpd
 from collections import defaultdict
+import matplotlib.dates as mdates
+
 import torch
+from torch.utils.data import DataLoader
 from torchmetrics.classification import (
     MulticlassRecall,
     MulticlassPrecision,
@@ -71,19 +74,25 @@ cmap = ListedColormap(normalized_colors)
 
 
 # For RGB array
-def to_RGB(img_multi_spec: np.ndarray | xr.Dataset, norm=True):
+def to_RGB(img_multi_spec: np.ndarray | torch.Tensor | xr.Dataset, norm=True):
 
     img_rgb = np.empty([128, 128, 3])
 
     if isinstance(img_multi_spec, xr.Dataset):
-        img_rgb[:, :, 0] = img_multi_spec["B2"].values  # b
+        img_rgb[:, :, 0] = img_multi_spec["B4"].values  # b
         img_rgb[:, :, 1] = img_multi_spec["B3"].values  # g
-        img_rgb[:, :, 2] = img_multi_spec["B4"].values  # r
+        img_rgb[:, :, 2] = img_multi_spec["B2"].values  # r
 
     if isinstance(img_multi_spec, np.ndarray):
-        img_rgb[:, :, 2] = img_multi_spec[0, :, :]  # b
+        img_rgb[:, :, 0] = img_multi_spec[2, :, :]  # b
         img_rgb[:, :, 1] = img_multi_spec[1, :, :]  # g
-        img_rgb[:, :, 0] = img_multi_spec[2, :, :]  # r
+        img_rgb[:, :, 2] = img_multi_spec[0, :, :]  # r
+
+    if isinstance(img_multi_spec, torch.Tensor):
+        img_multi_spec = img_multi_spec.numpy()
+        img_rgb[:, :, 0] = img_multi_spec[2, :, :]  # b
+        img_rgb[:, :, 1] = img_multi_spec[1, :, :]  # g
+        img_rgb[:, :, 2] = img_multi_spec[0, :, :]  # r
 
     if norm:
         qmin = np.nanquantile(img_rgb, 0.05)
@@ -120,6 +129,65 @@ def count_label(dataset, plot=True):
     return normalized_count
 
 
+def count_timestep_dataloard(dataset, plot=True, num_workers=8):
+
+    # Fonction collate qui ne récupère que les dates
+    def collate_dates(batch):
+        return [item[0][1] for item in batch]
+
+    loader = DataLoader(
+        dataset,
+        batch_size=32,
+        num_workers=num_workers,  # chargement parallèle
+        collate_fn=collate_dates,
+    )
+
+    list_date = []
+    for batch_dates in loader:
+        list_date.extend(batch_dates)
+
+    all_dates = np.concatenate(list_date).astype("datetime64[D]")
+    if plot:
+        fig, ax = plt.subplots(figsize=(14, 5))
+        ax.hist(
+            all_dates.astype("int64"),
+            bins=50,  # bins temporels
+            color="#3266ad",
+            edgecolor="white",
+            linewidth=0.5,
+        )
+        # Ticks lisibles en dates
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
+        ax.xaxis.set_major_locator(mdates.MonthLocator(interval=2))
+        plt.xticks(rotation=45, ha="right")
+        ax.set_xlabel("Date")
+        ax.set_ylabel("Nombre de timestamps")
+        ax.set_title("Répartition temporelle des données")
+        ax.grid(True, linestyle="--", alpha=0.5)
+        plt.tight_layout()
+        plt.show()
+
+    return all_dates
+
+
+def count_timestep(dataset, plot=True):
+
+    list_date = []
+
+    for i in range(len(dataset)):
+        list_date.append(dataset[i][0][1])
+    np.stack(list_date)
+
+    # if plot:
+    #     plt.figure(figsize=(12, 6))
+    #     plt.title("Normalized labels repartition")
+    #     plt.bar(range(normalized_count.shape[0]), normalized_count)
+    #     plt.xticks(range(len(normalized_count)), dataset.name_labels, rotation=90)
+    #     plt.ylabel("Labels occurence")
+
+    return
+
+
 def plot_label(patch: xr.Dataset | np.ndarray):
     if isinstance(patch, xr.Dataset):
         label = patch["max_class_1"]
@@ -146,7 +214,10 @@ def plot_nextoso(dataset, idx=0, first_date=0, lenght=5):
     for t in range(lenght):
         # Affichage de l'image RGB
         axes1[0, t].imshow(to_RGB(x[:, first_date + t, :, :], norm=True))
-        axes1[0, t].set_title(f"DATE = {dates[first_date + t].numpy()}")
+        if isinstance(dates[first_date + t], np.datetime64):
+            axes1[0, t].set_title(f"DATE = {dates[first_date + t]}")
+        if isinstance(dates[first_date + t], torch.Tensor):
+            axes1[0, t].set_title(f"DATE = {dates[first_date + t].numpy()}")
         axes1[0, t].axis("off")
 
         # Affichage du masque

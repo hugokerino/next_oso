@@ -18,7 +18,9 @@ class next_oso_Dataset(tdata.Dataset):
         norm=True,
         remove_invalid_temp=True,
         folds=None,
+        mask_needed=True,
         label_type="max_class",
+        date_type="relative",
         reference_date="2019-12-31",
     ):
         super(next_oso_Dataset, self).__init__()
@@ -28,8 +30,10 @@ class next_oso_Dataset(tdata.Dataset):
         self.norm = norm
         self.remove_invalid_temp = remove_invalid_temp
         self.folds = folds
+        self.mask_needed = mask_needed
         self.label_type = label_type
         self.reference_date = np.datetime64(reference_date)
+        self.date_type = date_type
         self.s2_files = []
         self.label_files = []
         self.ids_per_fold = {}
@@ -135,14 +139,20 @@ class next_oso_Dataset(tdata.Dataset):
             else:
                 s2 = torch.from_numpy(s2_array).float()
 
-            mask = torch.from_numpy(
-                s2_data["S2_mask"].to_numpy()
-            )  # t x h x w, 1 == 'invalid' 0 == 'valid'
-            date = torch.from_numpy(
-                (s2_data["time"].data - self.reference_date)
-                .astype("timedelta64[D]")
-                .astype(int)
-            )  # t
+            if self.mask_needed:
+                mask = torch.from_numpy(
+                    s2_data["S2_mask"].to_numpy()
+                )  # t x h x w, 1 == 'invalid' 0 == 'valid'
+
+            if self.date_type == "relative":
+                date = torch.from_numpy(
+                    (s2_data["time"].data - self.reference_date)
+                    .astype("timedelta64[D]")
+                    .astype(int)
+                )  # t
+            elif self.date_type == "raw":
+                date = s2_data["time"].data
+
         with xr.open_dataset(self.label_files[idx]) as label_data:
             if self.label_type == "max_class":
                 label_numpy = label_data["max_class_1"].data  # NumPy
@@ -166,7 +176,9 @@ class next_oso_Dataset(tdata.Dataset):
                 )  # Replace -1 by 0
                 label = torch.from_numpy(label_eroded).long()  # h x w
 
-        return (s2, date, mask), label
+        if self.mask_needed:
+            return (s2, date, mask), label
+        return (s2, date), label
 
 
 def get_loaders(
