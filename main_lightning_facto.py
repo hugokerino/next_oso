@@ -6,6 +6,7 @@ from lightning.pytorch.profilers import SimpleProfiler
 from lightning.pytorch.plugins.environments import SLURMEnvironment
 
 import signal
+import json
 import os
 import yaml
 import pprint
@@ -173,6 +174,13 @@ def main(config):
         )
 
     trainer.test(model=best_classifier, dataloaders=dl_test)
+
+    ########################################
+    # SAVE CONFIG
+    ########################################
+    if not config["test_model"]:
+        with open(os.path.join(log_dir, "config_parameters.json")) as c:
+            json.dump(config, c, indent=4)
 
 
 if __name__ == "__main__":
