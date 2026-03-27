@@ -12,6 +12,7 @@ import yaml
 import pprint
 from argparse import ArgumentParser
 from datetime import datetime
+import sys
 
 from data_functions import dataset
 from src import LTAE, UTAE, utils_model, lightning_module, metrics
@@ -74,6 +75,8 @@ def main(config):
     # MODEL
     ########################################
     print("\nLOADING MODEL ...")
+    sys.stdout.flush()
+
     criterion = torch.nn.CrossEntropyLoss(ignore_index=0)
     encoder, decoder, mask_need = build_model(config)
 
@@ -90,6 +93,8 @@ def main(config):
     # DATA
     ########################################
     print("\nLOADING DATA ...")
+    sys.stdout.flush()
+
     dl_train, dl_val, dl_test = dataset.get_loaders(
         path_s2=config["path_s2"],
         path_label=config["path_label"],
@@ -110,6 +115,8 @@ def main(config):
     # TRAINING
     ########################################
     print("\nTRAINING ...")
+    sys.stdout.flush()
+
     log_dir = os.path.join(config["path_logs"], f"{config['model']}_{date}")
 
     checkpoint_callback = ModelCheckpoint(
@@ -162,6 +169,8 @@ def main(config):
     # TESTING
     ########################################
     print("\nTESTING ...")
+    sys.stdout.flush()
+
     best_classifier = classifier
     if not config["test_model"]:
         best_classifier = lightning_module.classifier.load_from_checkpoint(
