@@ -1,5 +1,6 @@
 import json
 import os
+from functools import partial
 
 import numpy as np
 import torch
@@ -192,58 +193,31 @@ def get_loaders(
     num_worker,
     label_type,
     norm=True,
+    mask_needed=True,
     remove_invalid_temp=True,
     shuffle=True,
 ):
-    dt_train = next_oso_Dataset(
-        path_s2=path_s2,
-        path_label=path_label,
-        path_oso_class=path_oso_class,
-        norm=norm,
-        remove_invalid_temp=remove_invalid_temp,
-        folds=folds_train,
-        label_type=label_type,
-    )
-    dl_train = torch.utils.data.DataLoader(
-        dt_train,
-        batch_size=batch_size,
-        collate_fn=collate.pad_nextoso_collate,
-        shuffle=shuffle,
-        num_workers=num_worker,
-    )
+    def make_loader(folds, shuffle):
+        dataset = next_oso_Dataset(
+            path_s2=path_s2,
+            path_label=path_label,
+            path_oso_class=path_oso_class,
+            norm=norm,
+            remove_invalid_temp=remove_invalid_temp,
+            folds=folds,
+            mask_needed=mask_needed,
+            label_type=label_type,
+        )
+        return torch.utils.data.DataLoader(
+            dataset,
+            batch_size=batch_size,
+            collate_fn=partial(collate.pad_nextoso_collate, mask_needed=mask_needed),
+            shuffle=shuffle,
+            num_workers=num_worker,
+        )
 
-    dt_val = next_oso_Dataset(
-        path_s2=path_s2,
-        path_label=path_label,
-        path_oso_class=path_oso_class,
-        norm=norm,
-        remove_invalid_temp=remove_invalid_temp,
-        folds=folds_val,
-        label_type=label_type,
-    )
-    dl_val = torch.utils.data.DataLoader(
-        dt_val,
-        batch_size=batch_size,
-        collate_fn=collate.pad_nextoso_collate,
-        shuffle=False,
-        num_workers=num_worker,
-    )
-
-    dt_test = next_oso_Dataset(
-        path_s2=path_s2,
-        path_label=path_label,
-        path_oso_class=path_oso_class,
-        norm=norm,
-        remove_invalid_temp=remove_invalid_temp,
-        folds=folds_test,
-        label_type=label_type,
-    )
-    dl_test = torch.utils.data.DataLoader(
-        dt_test,
-        batch_size=batch_size,
-        collate_fn=collate.pad_nextoso_collate,
-        shuffle=False,
-        num_workers=num_worker,
-    )
+    dl_train = make_loader(folds_train, shuffle=shuffle)
+    dl_val = make_loader(folds_val, shuffle=False)
+    dl_test = make_loader(folds_test, shuffle=False)
 
     return dl_train, dl_val, dl_test

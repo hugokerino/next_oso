@@ -47,10 +47,11 @@ class classifier(L.LightningModule):
         self.save_hyperparameters(ignore=["encoder", "decoder", "loss_fn"])
 
     def _shared_step(self, batch, step_name, log_on_step, log_on_epoch):
-        (x, date, mask), y = batch
         if self.mask_need:
+            (x, date, mask), y = batch
             z = self.encoder(x, batch_positions=date, pad_mask=mask)  # (bhw) x d_model
         else:
+            (x, date), y = batch
             z = self.encoder(x, batch_positions=date)  # (bhw) * out_conv[-1]
 
         y_logits = self.decoder(z)  # (bhw) x nb_class
@@ -107,11 +108,12 @@ class classifier(L.LightningModule):
         self._shared_step(batch, step_name="val", log_on_step=False, log_on_epoch=True)
 
     def test_step(self, batch):
-        (x, date, mask), y = batch
 
         if self.mask_need:
+            (x, date, mask), y = batch
             z = self.encoder(x, batch_positions=date, pad_mask=mask)
         else:
+            (x, date), y = batch
             z = self.encoder(x, batch_positions=date)
 
         y_logits = self.decoder(z)

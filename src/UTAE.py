@@ -215,7 +215,7 @@ class TemporallySharedBlock(nn.Module):
                         )
                         * self.pad_value
                     )
-                    temp[~pad_mask] = self.forward(out[~pad_mask])
+                    temp[~pad_mask] = self.forward(out[~pad_mask]).to(temp.dtype)
                     out = temp
                 else:
                     out = self.forward(out)

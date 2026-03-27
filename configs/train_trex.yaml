@@ -1,0 +1,24 @@
+# Paths
+path_s2: /work/THEIA/CES/oso/hugok/s2_data/
+path_label: /work/THEIA/CES/oso/hugok/labels
+path_oso_classes: /work/THEIA/CES/oso/hugok/files_s2/oso_classes.csv
+path_logs: /work/THEIA/CES/oso/hugok/next_oso/logs/light_training
+
+# Data
+num_worker: 0
+label_type: max_class
+num_class: 25
+folds_train: [1, 2, 3]
+folds_val: [4]
+folds_test: [5]
+
+# Training
+epochs_max: 100
+batch_size: 4
+test_model: false
+accelerator:  "gpu"
+devices: 1
+nodes: 1
+strategy: "ddp_find_unused_parameters_true"
+running_on_trex_gpu: true
+learning_rate: 0.001

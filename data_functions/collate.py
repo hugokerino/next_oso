@@ -36,50 +36,35 @@ def pad_to_length(tensor, dim, length, pad_value=0):
     return padded_tensor
 
 
-def pad_nextoso_collate(batch, pad_value=0):
-    # Initialiser les listes pour stocker les données après padding
-    padded_s2 = []
-    padded_dates = []
-    padded_masks = []
-    labels = []
+def pad_nextoso_collate(batch, pad_value=0, mask_needed=True):
 
-    max_t = 0
+    # Décompactage unifié
+    inputs, label_list = zip(*batch)
+    s2_list = [inp[0] for inp in inputs]
+    date_list = [inp[1] for inp in inputs]
+    mask_list = [inp[2] for inp in inputs] if mask_needed else None
 
-    for e in batch:
-        (s2, date, mask), label = e
-        if date.shape[0] > max_t:
-            max_t = date.shape[0]
-    len_max_seq = max_t
+    len_max_seq = max(date.shape[0] for date in date_list)
 
-    for b in batch:
-        (s2, date, mask), label = b  # Décompresser les données
+    padded_s2 = [
+        pad_to_length(s2, dim=1, length=len_max_seq, pad_value=pad_value)
+        for s2 in s2_list
+    ]
+    padded_dates = [
+        pad_to_length(date, dim=0, length=len_max_seq, pad_value=pad_value)
+        for date in date_list
+    ]
 
-        # Padding pour s2 (10, t, h, w) -> (10, len_max_seq, h, w)
-        s2_padded = pad_to_length(s2, dim=1, length=len_max_seq, pad_value=pad_value)
+    output_inputs = [torch.stack(padded_s2), torch.stack(padded_dates)]
 
-        # Padding pour date (t) -> (len_max_seq)
-        date_padded = pad_to_length(
-            date, dim=0, length=len_max_seq, pad_value=pad_value
-        )
-        # Padding pour mask (t, h, w) -> (len_max_seq, h, w)
-        mask_padded = pad_to_length(
-            mask, dim=0, length=len_max_seq, pad_value=1
-        )  # Padding mask with 'invalid' == 1 not 0
+    if mask_needed:
+        padded_masks = [
+            pad_to_length(mask, dim=0, length=len_max_seq, pad_value=1)
+            for mask in mask_list
+        ]
+        output_inputs.append(torch.stack(padded_masks))
 
-        # Ajouter les données après padding aux listes
-        padded_s2.append(s2_padded)
-        padded_dates.append(date_padded)
-        padded_masks.append(mask_padded)
-        labels.append(label)
-
-    # Empiler les données pour former des tenseurs
-    s2_batch = torch.stack(padded_s2, dim=0)
-    dates_batch = torch.stack(padded_dates, dim=0)
-    masks_batch = torch.stack(padded_masks, dim=0)
-    labels_batch = torch.stack(labels, dim=0)
-
-    # Retourner les données sous forme de tuple
-    return (s2_batch, dates_batch, masks_batch), labels_batch
+    return tuple(output_inputs), torch.stack(list(label_list))
 
 
 ###Function from pastis ###
