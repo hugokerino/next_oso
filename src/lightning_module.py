@@ -72,25 +72,12 @@ class classifier(L.LightningModule):
         acc = self.acc_metric(y_pred, y)
         f1 = self.f_score_metric(y_pred, y)
 
-        self.log(
-            f"{step_name}_loss",
-            loss,
-            prog_bar=True,
-            on_epoch=log_on_epoch,
-            on_step=log_on_step,
-            sync_dist=True,
-        )
-        self.log(
-            f"{step_name}_accuracy",
-            acc,
-            prog_bar=True,
-            on_epoch=log_on_epoch,
-            on_step=log_on_step,
-            sync_dist=True,
-        )
-        self.log(
-            f"{step_name}_fscore",
-            f1,
+        self.log_dict(
+            {
+                f"{step_name}_loss": loss,
+                f"{step_name}_accuracy": acc,
+                f"{step_name}_fscore": f1,
+            },
             prog_bar=True,
             on_epoch=log_on_epoch,
             on_step=log_on_step,
@@ -176,6 +163,27 @@ class classifier(L.LightningModule):
         )  # b x nb_class x h x w
 
         return torch.softmax(y_logits, dim=1).argmax(dim=1)
+
+    def on_before_optimizer_step(self, optimizer):
+        grad_norm = torch.nn.utils.clip_grad_norm_(
+            self.parameters(),
+            max_norm=float("inf"),  # inf = no clipping
+        )
+        self.log(
+            "grad_norm_before", grad_norm, on_step=True, on_epoch=True, prog_bar=False
+        )
+
+        grad_norm_after = torch.nn.utils.clip_grad_norm_(
+            self.parameters(),
+            max_norm=1.0,  # clip
+        )
+        self.log(
+            "grad_norm_after_clip",
+            grad_norm_after,
+            on_step=True,
+            on_epoch=True,
+            prog_bar=False,
+        )
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
