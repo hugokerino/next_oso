@@ -25,12 +25,14 @@ from torchmetrics.classification import (
 from torchmetrics.segmentation import MeanIoU
 import matplotlib.gridspec as gridspec
 
+is_cluster = "SLURM_JOB_ID" in os.environ
+path_to_oso_name = (
+    "/work/THEIA/CES/oso/hugok/files_s2/oso_classes.csv"
+    if is_cluster
+    else "/home/hkerino/Documents/nextoso-dataset/data/auxiliary/OSO/oso_classes.csv"
+)
 names_class = (
-    pandas.read_csv(
-        "/work/THEIA/CES/oso/hugok/files_s2/oso_classes.csv"
-    )
-    .get("name_class")
-    .values
+    pandas.read_csv(path_to_oso_name).get("name_class").values
 )  # Doit contenir 25 entrées (0 à 24)
 num_class = len(names_class)
 
@@ -304,18 +306,18 @@ def plot_preds_labels_and_img(
         ax[i][0].imshow(imgs_batch[i])
         ax[i][0].axis("off")
 
-        ax[i][1].imshow(
-            preds_RF[batch_index * batch_size + i], cmap=cmap, vmin=0, vmax=24
-        )
+        ax[i][1].imshow(labels_batch[i], cmap=cmap, vmin=0, vmax=24)
         ax[i][1].axis("off")
 
-        ax[i][2].imshow(pred_model1_batch[i], cmap=cmap, vmin=0, vmax=24)
+        ax[i][2].imshow(
+            preds_RF[batch_index * batch_size + i], cmap=cmap, vmin=0, vmax=24
+        )
         ax[i][2].axis("off")
 
-        ax[i][3].imshow(pred_model2_batch[i], cmap=cmap, vmin=0, vmax=24)
+        ax[i][3].imshow(pred_model1_batch[i], cmap=cmap, vmin=0, vmax=24)
         ax[i][3].axis("off")
 
-        im = ax[i][4].imshow(labels_batch[i], cmap=cmap, vmin=0, vmax=24)
+        im = ax[i][4].imshow(pred_model2_batch[i], cmap=cmap, vmin=0, vmax=24)
         ax[i][4].axis("off")
 
     # Créer un axe dédié pour la colorbar (colonne 5)
@@ -325,10 +327,10 @@ def plot_preds_labels_and_img(
 
     # Titres
     ax[0][0].set_title("Images")
-    ax[0][1].set_title("Predictions RF")
-    ax[0][2].set_title("Predictions LTAE")
-    ax[0][3].set_title("Predictions UTAE")
-    ax[0][4].set_title("Labels")
+    ax[0][1].set_title("Labels")
+    ax[0][2].set_title("Predictions RF")
+    ax[0][3].set_title("Predictions LTAE")
+    ax[0][4].set_title("Predictions UTAE")
 
     plt.tight_layout()
     return fig
@@ -511,6 +513,41 @@ def mean_entropy_per_class_per_eco_zone(path_labels, path_oso_class):
             }
 
     return mean_entropy
+
+
+def density_repartion(path_labels: str, name: str, plot=True):
+
+    probas = []
+    class_idx = np.where(names_class == name)[0][0]
+    name_xr = str(class_idx) + "_" + name
+
+    for label in os.listdir(path_labels):
+        if label.endswith(".nc"):
+            patch = xr.open_dataset(os.path.join(path_labels, label))
+            if name_xr in list(patch.data_vars):
+                proba_class = patch[name_xr].values.flatten()
+                probas.append(proba_class[proba_class != 0])
+
+    probas = np.concatenate(probas)
+
+    if plot:
+        fig, ax = plt.subplots(figsize=(14, 5))
+        ax.hist(
+            probas.astype("int64"),
+            bins=50,  # bins
+            color="#3266ad",
+            edgecolor="white",
+            linewidth=0.5,
+        )
+        # Ticks lisibles en dates
+        ax.set_xlabel("Probability")
+        ax.set_ylabel("Density")
+        ax.set_title(f"{name}'s Density")
+        ax.grid(True, linestyle="--", alpha=0.5)
+        plt.tight_layout()
+        plt.show()
+
+    return probas
 
 
 def plot_entropy_per_zone_for_class(mean_entropy, classe):
