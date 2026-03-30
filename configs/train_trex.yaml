@@ -14,7 +14,7 @@ folds_test: [5]
 
 # Training
 epochs_max: 100
-batch_size: 4
+batch_size: 1
 test_model: false
 accelerator:  "gpu"
 devices: 1

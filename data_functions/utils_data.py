@@ -27,7 +27,7 @@ import matplotlib.gridspec as gridspec
 
 names_class = (
     pandas.read_csv(
-        "/home/hkerino/Documents/nextoso-dataset/data/auxiliary/OSO/oso_classes.csv"
+        "/work/THEIA/CES/oso/hugok/files_s2/oso_classes.csv"
     )
     .get("name_class")
     .values

@@ -188,7 +188,7 @@ def main(config):
     # SAVE CONFIG
     ########################################
     if not config["test_model"]:
-        with open(os.path.join(log_dir, "config_parameters.json")) as c:
+        with open(os.path.join(log_dir, "config_parameters.json"), "w") as c:
             json.dump(config, c, indent=4)
 
 
