@@ -7,15 +7,15 @@
 #SBATCH --export=none
 
 #SBATCH -N 1
-#SBATCH --tasks=16
-#SBATCH --mem-per-cpu=7G
+#SBATCH --tasks=5
+#SBATCH --mem-per-cpu=12000M
 
-#SBATCH --ntasks-per-node=1
-#SBATCH --gres=gpu:1
-#SBATCH --partition=gpu_a100
+#SBATCH --ntasks-per-node=2
+#SBATCH --gpus=a100_40g:2
+#SBATCH --partition=gpu_std
 #SBATCH --qos=gpu_all
 
-#SBATCH --time=20:00:00             # Walltime
+#SBATCH --time=15:00:00             # Walltime
 
 #SBATCH --signal=SIGUSR1@90         # For auto-resubmit
 
@@ -32,8 +32,9 @@ module load pixi
 echo "Launch python file"
 
 export PYTORCH_ALLOC_CONF=expandable_segments:True
+export PATH=$(dirname $(which pixi)):$PATH
 
-pixi run -e gpu python main_lightning_facto.py \
+srun --export=ALL pixi run -e gpu python main_lightning.py \
     --config_train configs/train_trex.yaml \
     --config_model configs/models/ALISE.yaml
  

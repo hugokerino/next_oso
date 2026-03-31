@@ -164,26 +164,23 @@ class classifier(L.LightningModule):
 
         return torch.softmax(y_logits, dim=1).argmax(dim=1)
 
-    def on_before_optimizer_step(self, optimizer):
-        grad_norm = torch.nn.utils.clip_grad_norm_(
-            self.parameters(),
-            max_norm=float("inf"),  # inf = no clipping
-        )
-        self.log(
-            "grad_norm_before", grad_norm, on_step=True, on_epoch=True, prog_bar=False
-        )
+    def on_after_backward(self):
+        # Avant clip
+        total_norm = torch.sqrt(torch.sum(torch.stack([
+            p.grad.detach().norm(2) ** 2
+            for p in self.parameters()
+            if p.grad is not None
+            ])))
+        self.log("grad_norm_before_clip", total_norm, on_step=True, prog_bar=False)
 
-        grad_norm_after = torch.nn.utils.clip_grad_norm_(
-            self.parameters(),
-            max_norm=1.0,  # clip
-        )
-        self.log(
-            "grad_norm_after_clip",
-            grad_norm_after,
-            on_step=True,
-            on_epoch=True,
-            prog_bar=False,
-        )
+    def on_before_optimizer_step(self, optimizer):
+        # Après clip (Lightning clippe entre on_after_backward et on_before_optimizer_step)
+        total_norm = torch.sqrt(torch.sum(torch.stack([
+            p.grad.detach().norm(2) ** 2
+            for p in self.parameters()
+            if p.grad is not None
+            ])))
+        self.log("grad_norm_after_clip", total_norm, on_step=True, prog_bar=False)
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
