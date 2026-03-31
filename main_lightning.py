@@ -1,7 +1,11 @@
 import torch
 import lightning as L
 from lightning.pytorch.loggers import TensorBoardLogger
-from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping, DeviceStatsMonitor	
+from lightning.pytorch.callbacks import (
+    ModelCheckpoint,
+    EarlyStopping,
+    DeviceStatsMonitor,
+)
 from lightning.pytorch.profilers import SimpleProfiler
 from lightning.pytorch.plugins.environments import SLURMEnvironment
 
@@ -77,7 +81,8 @@ def main(config):
     print("\nLOADING MODEL ...")
     sys.stdout.flush()
 
-    criterion = torch.nn.CrossEntropyLoss(ignore_index=0)
+    # criterion = torch.nn.CrossEntropyLoss(ignore_index=0)
+    criterion = torch.nn.CrossEntropyLoss()
     encoder, decoder, mask_need = build_model(config)
 
     classifier = lightning_module.classifier(
@@ -132,7 +137,11 @@ def main(config):
     early_stop = EarlyStopping(monitor="val_fscore", mode="max", patience=10)
     profiler = SimpleProfiler(dirpath=log_dir, filename="profiler")
 
-    list_callback = [checkpoint_callback, early_stop, DeviceStatsMonitor(cpu_stats=False)]
+    list_callback = [
+        checkpoint_callback,
+        early_stop,
+        DeviceStatsMonitor(cpu_stats=False),
+    ]
     limit_batches = 1.0
 
     if config["test_model"]:
@@ -147,7 +156,6 @@ def main(config):
 
     trainer = L.Trainer(
         logger=tb_logger,
-        gradient_clip_val=1.0,
         accumulate_grad_batches=2,
         log_every_n_steps=10,
         callbacks=list_callback,

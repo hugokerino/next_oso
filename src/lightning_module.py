@@ -148,7 +148,7 @@ class classifier(L.LightningModule):
             self.logger.experiment.add_figure("F-Score", f1_fig, close=True)
             self.logger.experiment.add_figure("mIoU", miou_fig, close=True)
 
-    def predict_step(self, batch):
+    def predict_step(self, batch, return_entropy=False):
         (x, date, mask), y = batch
         if self.mask_need:
             z = self.encoder(x, batch_positions=date, pad_mask=mask)  # (bhw) x d_model
@@ -162,25 +162,13 @@ class classifier(L.LightningModule):
             .contiguous()
         )  # b x nb_class x h x w
 
-        return torch.softmax(y_logits, dim=1).argmax(dim=1)
+        probas = torch.softmax(y_logits, dim=1)
 
-    def on_after_backward(self):
-        # Avant clip
-        total_norm = torch.sqrt(torch.sum(torch.stack([
-            p.grad.detach().norm(2) ** 2
-            for p in self.parameters()
-            if p.grad is not None
-            ])))
-        self.log("grad_norm_before_clip", total_norm, on_step=True, prog_bar=False)
+        if return_entropy:
+            entropy = -torch.sum(probas * torch.log(probas.clamp(min=1e-10)), dim=1)
+            return probas.argmax(dim=1), entropy
 
-    def on_before_optimizer_step(self, optimizer):
-        # Après clip (Lightning clippe entre on_after_backward et on_before_optimizer_step)
-        total_norm = torch.sqrt(torch.sum(torch.stack([
-            p.grad.detach().norm(2) ** 2
-            for p in self.parameters()
-            if p.grad is not None
-            ])))
-        self.log("grad_norm_after_clip", total_norm, on_step=True, prog_bar=False)
+        return probas.argmax(dim=1)
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)

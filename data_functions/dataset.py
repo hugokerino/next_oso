@@ -20,6 +20,7 @@ class next_oso_Dataset(tdata.Dataset):
         remove_invalid_temp=True,
         folds=None,
         mask_needed=True,
+        return_id=False,
         label_type="max_class",
         date_type="relative",
         reference_date="2019-12-31",
@@ -32,11 +33,13 @@ class next_oso_Dataset(tdata.Dataset):
         self.remove_invalid_temp = remove_invalid_temp
         self.folds = folds
         self.mask_needed = mask_needed
+        self.return_id = return_id
         self.label_type = label_type
         self.reference_date = np.datetime64(reference_date)
         self.date_type = date_type
         self.s2_files = []
         self.label_files = []
+        self.ids = []
         self.ids_per_fold = {}
         self.norms = {}
         self.name_labels = []
@@ -62,6 +65,7 @@ class next_oso_Dataset(tdata.Dataset):
                     if os.path.exists(path_s2_file):
                         self.s2_files.append(path_s2_file)
                         file_id = s2_nc_file.split("_")[1].split(".")[0]
+                        self.ids.append(file_id)
                         path_label_file = os.path.join(
                             self.path_label, f"label_{file_id}.nc"
                         )
@@ -92,14 +96,35 @@ class next_oso_Dataset(tdata.Dataset):
         with open(os.path.join(self.path_s2, "s2_ids_per_folder.json"), "r") as f:
             self.ids_per_fold.update(json.load(f))
 
+    def _get_file_mapping(self, name):
+        with open(os.path.join(self.path_s2, "file_mapping.json"), "r") as f:
+            file_mapping = json.load(f)
+            key = f"s2_{name}.nc"
+
+        folder = file_mapping[key]["folder"]
+        fold = file_mapping[key]["fold"]
+
+        return f"{folder}/fold_{fold}"
+
     def _find_keys_for_file(self, file_name, dictionary):
         return [key for key, file_list in dictionary.items() if file_name in file_list]
 
     def __len__(self):
         return len(self.s2_files)
 
-    def __getitem__(self, idx):
-        with xr.open_dataset(self.s2_files[idx]) as s2_data:
+    def __getitem__(self, idx: int | str):
+        if isinstance(idx, int):
+            to_open_s2 = self.s2_files[idx]
+            to_open_label = self.label_files[idx]
+            file_basename = os.path.basename(self.s2_files[idx])
+
+        if isinstance(idx, str):
+            complete_path = os.path.join(self.path_s2, self._get_file_mapping(idx))
+            to_open_s2 = os.path.join(complete_path, f"s2_{idx}.nc")
+            to_open_label = os.path.join(self.path_label, f"label_{idx}.nc")
+            file_basename = f"s2_{idx}.nc"
+
+        with xr.open_dataset(to_open_s2) as s2_data:
             if self.remove_invalid_temp:
                 s2_data = utils_data.remove_invalid(s2_data)
 
@@ -110,9 +135,9 @@ class next_oso_Dataset(tdata.Dataset):
             )  # c x t x h x w
 
             if self.norm:
-                fold = self._find_keys_for_file(
-                    os.path.basename(self.s2_files[idx]), self.ids_per_fold
-                )[0]  # which fold
+                fold = self._find_keys_for_file(file_basename, self.ids_per_fold)[
+                    0
+                ]  # which fold
                 norm_fold = self.norms[fold]  # get norms for fold
                 s2_normalized = np.zeros_like(s2_array, dtype=np.float32)
 
@@ -154,7 +179,7 @@ class next_oso_Dataset(tdata.Dataset):
             elif self.date_type == "raw":
                 date = s2_data["time"].data
 
-        with xr.open_dataset(self.label_files[idx]) as label_data:
+        with xr.open_dataset(to_open_label) as label_data:
             if self.label_type == "max_class":
                 label_numpy = label_data["max_class_1"].data  # NumPy
                 label_numpy = np.where(
@@ -178,7 +203,11 @@ class next_oso_Dataset(tdata.Dataset):
                 label = torch.from_numpy(label_eroded).long()  # h x w
 
         if self.mask_needed:
+            if self.return_id:
+                return_idx = self.ids[idx] if isinstance(idx, int) else idx
+                return (s2, date, mask), label, return_idx
             return (s2, date, mask), label
+
         return (s2, date), label
 
 

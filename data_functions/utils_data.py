@@ -550,6 +550,33 @@ def density_repartion(path_labels: str, name: str, plot=True):
     return probas
 
 
+def find_nan_label(dataset):
+    ids_with_nan = []
+
+    for i in range(len(dataset)):
+        (x, date, mask), y, id = dataset[i]
+        if (y == 0).any():
+            ids_with_nan.append(id)
+
+    return ids_with_nan
+
+
+def plot_nan(patch):
+    label = patch["max_class_1"]
+    cmap_mask = ListedColormap(["red", "white"])
+
+    fig, ax = plt.subplots(1, 2, figsize=(12, 8))
+
+    ax[0].imshow(label, cmap=cmap, vmin=0, vmax=24)
+    ax[0].axis("off")
+
+    patch_binary = (label != -1).astype(int)
+
+    ax[1].imshow(patch_binary, cmap=cmap_mask, vmin=0, vmax=1)
+    ax[1].tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
+    ax[1].axis("off")
+
+
 def plot_entropy_per_zone_for_class(mean_entropy, classe):
 
     zones = sorted(mean_entropy.keys())

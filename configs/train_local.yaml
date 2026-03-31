@@ -6,7 +6,7 @@ path_logs: /home/hkerino/Documents/next_oso/logs/light_training
 
 # Data
 num_worker: 21
-label_type: max_class
+label_type: probas
 num_class: 25
 folds_train: [1, 2, 3]
 folds_val: [4]
