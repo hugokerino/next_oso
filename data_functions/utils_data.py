@@ -10,7 +10,7 @@ from rasterio.features import rasterize
 import geopandas as gpd
 from collections import defaultdict
 import matplotlib.dates as mdates
-
+from sklearn.calibration import calibration_curve
 import torch
 from torch.utils.data import DataLoader
 from torchmetrics.classification import (
@@ -172,22 +172,49 @@ def count_timestep_dataloard(dataset, plot=True, num_workers=8):
     return all_dates
 
 
-def count_timestep(dataset, plot=True):
+def histogram_valid_per_pixel(dataset, plot=True, density=False, num_workers=8):
 
-    list_date = []
+    def collate_masks(batch):
+        return [item[0][2] for item in batch]  # (T,H,W)
 
-    for i in range(len(dataset)):
-        list_date.append(dataset[i][0][1])
-    np.stack(list_date)
+    loader = DataLoader(
+        dataset,
+        batch_size=8,
+        num_workers=num_workers,
+        collate_fn=collate_masks,
+    )
 
-    # if plot:
-    #     plt.figure(figsize=(12, 6))
-    #     plt.title("Normalized labels repartition")
-    #     plt.bar(range(normalized_count.shape[0]), normalized_count)
-    #     plt.xticks(range(len(normalized_count)), dataset.name_labels, rotation=90)
-    #     plt.ylabel("Labels occurence")
+    all_values = []  # 👉 on stocke les counts, pas les maps
 
-    return
+    for batch_masks in loader:
+        for mask in batch_masks:
+            # (T,H,W) → (H,W)
+            valid_count = mask.sum(axis=0)
+
+            # 👉 on flatten DIRECTEMENT
+            all_values.append(valid_count.flatten())
+
+    # concat de tous les pixels de tous les samples
+    values = np.concatenate(all_values)
+
+    if plot:
+        plt.figure(figsize=(8, 5))
+        plt.hist(
+            values,
+            bins=100,
+            color="#3266ad",
+            edgecolor="white",
+            linewidth=0.5,
+            density=density,
+        )
+        plt.xlabel("Nombre de dates valides par pixel")
+        plt.ylabel("Nombre de pixels")
+        plt.title("Dates per pixels")
+        plt.grid(True, linestyle="--", alpha=0.5)
+        plt.tight_layout()
+        plt.show()
+
+    return values
 
 
 def plot_label(patch: xr.Dataset | np.ndarray):
@@ -515,17 +542,15 @@ def mean_entropy_per_class_per_eco_zone(path_labels, path_oso_class):
     return mean_entropy
 
 
-def density_repartion(path_labels: str, name: str, plot=True):
+def density_repartition(path_labels: str, name: str, plot=True):
 
     probas = []
-    class_idx = np.where(names_class == name)[0][0]
-    name_xr = str(class_idx) + "_" + name
 
     for label in os.listdir(path_labels):
         if label.endswith(".nc"):
             patch = xr.open_dataset(os.path.join(path_labels, label))
-            if name_xr in list(patch.data_vars):
-                proba_class = patch[name_xr].values.flatten()
+            if name in list(patch.data_vars):
+                proba_class = patch[name].values.flatten()
                 probas.append(proba_class[proba_class != 0])
 
     probas = np.concatenate(probas)
@@ -533,8 +558,8 @@ def density_repartion(path_labels: str, name: str, plot=True):
     if plot:
         fig, ax = plt.subplots(figsize=(14, 5))
         ax.hist(
-            probas.astype("int64"),
-            bins=50,  # bins
+            probas,
+            bins=100,  # bins
             color="#3266ad",
             edgecolor="white",
             linewidth=0.5,
@@ -548,6 +573,59 @@ def density_repartion(path_labels: str, name: str, plot=True):
         plt.show()
 
     return probas
+
+
+def density_repartition_all_classes(path_labels: str, plot=True):
+
+    all_probas = {}
+    for name in names_class:
+        probas = []
+
+        for label in os.listdir(path_labels):
+            if label.endswith(".nc"):
+                patch = xr.open_dataset(os.path.join(path_labels, label))
+                if name in list(patch.data_vars):
+                    proba_class = patch[name].values.flatten()
+                    probas.append(proba_class[proba_class != 0])
+
+        if len(probas) > 0:
+            all_probas[name] = np.concatenate(probas)
+        else:
+            all_probas[name] = np.array([])
+
+    if plot:
+        n_classes = len(names_class)
+        n_cols = 5
+        n_rows = int(np.ceil(n_classes / n_cols))
+
+        fig, axes = plt.subplots(n_rows, n_cols, figsize=(20, n_rows * 3))
+        axes = axes.flatten()
+
+        for i, name in enumerate(names_class):
+            ax = axes[i]
+            if len(all_probas[name]) > 0:
+                ax.hist(
+                    all_probas[name],
+                    bins=50,
+                    density=True,
+                    color="#3266ad",
+                    edgecolor="white",
+                    linewidth=0.3,
+                )
+            ax.set_title(name, fontsize=9)
+            ax.set_xlim(0, 1)
+            ax.set_xlabel("Probabilité", fontsize=7)
+            ax.set_ylabel("Densité", fontsize=7)
+
+        # Masquer les axes vides si n_classes % n_cols != 0
+        for j in range(i + 1, len(axes)):
+            axes[j].set_visible(False)
+
+        plt.suptitle("Répartition des probabilités par classe", fontsize=14)
+        plt.tight_layout()
+        plt.show()
+
+    return all_probas
 
 
 def find_nan_label(dataset):
@@ -915,4 +993,53 @@ def plot_pred_and_label(y_true, y_pred, rgb_img, y_entropie, class_idx, idx_to_p
         f"({error_mask.sum()} pixels mal classifiés)"
     )
 
+    plt.show()
+
+
+def plot_reliability_diagram_multi_class(
+    y_true,  # Vraies étiquettes (1D array, shape=(N,))
+    y_prob,  # Probabilités prédites par le modèle (2D array, shape=(N, n_classes))
+    n_bins=10,  # Nombre de bins pour le diagramme
+):
+    """
+    Trace un diagramme de fiabilité pour la classification multi-classe.
+
+    Args:
+        y_true : Vraies étiquettes (1D array, shape=(N,)).
+        y_prob : Probabilités prédites (2D array, shape=(N, n_classes)).
+        n_bins : Nombre de bins pour le diagramme.
+        n_classes : Nombre de classes (si non fourni, calculé automatiquement).
+        class_names : Noms des classes (optionnel).
+    """
+
+    n_classes = y_prob.shape[1]
+
+    # Initialiser la figure
+    fig, axs = plt.subplots(1, n_classes, figsize=(5 * n_classes, 4))
+    if n_classes == 1:
+        axs = [axs]
+
+    # Tracer un diagramme de fiabilité pour chaque classe
+    for i in range(n_classes):
+        # Calculer la fréquence relative et la probabilité moyenne prédite
+        prob_true, prob_pred = calibration_curve(
+            y_true == i,  # Convertit les étiquettes en binaire pour la classe i
+            y_prob[:, i],
+            n_bins=n_bins,
+            strategy="uniform",
+        )
+
+        # Tracer
+        axs[i].plot(prob_pred, prob_true, marker="o", label=f"Classe {i}")
+        axs[i].plot(
+            [0, 1], [0, 1], linestyle="--", color="gray", label="Régression parfaite"
+        )
+        axs[i].set_xlabel("Probabilité moyenne prédite")
+        axs[i].set_ylabel("Fréquence relative")
+        axs[i].set_title(f"Diagramme de fiabilité — {names_class[i]}")
+        axs[i].legend()
+        axs[i].grid(True)
+
+    plt.suptitle("Diagrammes de fiabilité pour chaque classe")
+    plt.tight_layout()
     plt.show()

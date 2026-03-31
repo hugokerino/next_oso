@@ -88,9 +88,7 @@ class next_oso_Dataset(tdata.Dataset):
                 self.norms.update({str(i): norm_value})
 
     def _get_label_names(self):
-        labels_names = pandas.read_csv(self.path_oso_class).get("name_class")
-        for i, label_name in enumerate(labels_names):
-            self.name_labels.append(str(i) + "_" + str(label_name))
+        self.name_labels = pandas.read_csv(self.path_oso_class).get("name_class").values
 
     def _get_ids_per_fold(self):
         with open(os.path.join(self.path_s2, "s2_ids_per_folder.json"), "r") as f:

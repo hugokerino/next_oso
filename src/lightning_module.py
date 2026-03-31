@@ -148,7 +148,7 @@ class classifier(L.LightningModule):
             self.logger.experiment.add_figure("F-Score", f1_fig, close=True)
             self.logger.experiment.add_figure("mIoU", miou_fig, close=True)
 
-    def predict_step(self, batch, return_entropy=False):
+    def predict_step(self, batch, return_probas=True):
         (x, date, mask), y = batch
         if self.mask_need:
             z = self.encoder(x, batch_positions=date, pad_mask=mask)  # (bhw) x d_model
@@ -164,9 +164,8 @@ class classifier(L.LightningModule):
 
         probas = torch.softmax(y_logits, dim=1)
 
-        if return_entropy:
-            entropy = -torch.sum(probas * torch.log(probas.clamp(min=1e-10)), dim=1)
-            return probas.argmax(dim=1), entropy
+        if return_probas:
+            return probas
 
         return probas.argmax(dim=1)
 
