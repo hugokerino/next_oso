@@ -13,6 +13,7 @@ folds_val: [4]
 folds_test: [5]
 
 # Training
+criterion : cross_entropy
 epochs_max: 100
 batch_size: 4
 test_model: false
@@ -21,4 +22,6 @@ devices: 2
 nodes: 1
 strategy: "ddp_find_unused_parameters_true"
 running_on_trex_gpu: true
-learning_rate: 0.001
+num_sample_lr_finder : 100
+learning_rate: 0.000001
+logs : True

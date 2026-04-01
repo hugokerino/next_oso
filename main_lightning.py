@@ -8,7 +8,9 @@ from lightning.pytorch.callbacks import (
 )
 from lightning.pytorch.profilers import SimpleProfiler
 from lightning.pytorch.plugins.environments import SLURMEnvironment
+from lightning.pytorch.tuner import Tuner
 
+import numpy as np
 import signal
 import json
 import os
@@ -63,6 +65,23 @@ def build_model(config: dict):
     return encoder, decoder, config["mask_need"]
 
 
+def select_criterion(loss: str):
+    if loss == "cross_entropy":
+        criterion = torch.nn.CrossEntropyLoss()
+    elif loss == "weightedCE":
+        criterion = metrics.WeightedCE()
+    elif loss == "hard_and_softCE":
+        criterion = metrics.Hard_and_softCE()
+    elif loss == "maskCE":
+        criterion = metrics.MaskCE(thresholds=np.load("data_functions/thresholds.npy"))
+    elif loss == "distillationLoss":
+        criterion = metrics.DistillationLoss()
+    else:
+        raise ValueError(f"Loss inconnu : {loss}")
+
+    return criterion
+
+
 def get_precision():
     if not torch.cuda.is_available():
         return "32"  # CPU en local
@@ -82,17 +101,8 @@ def main(config):
     sys.stdout.flush()
 
     # criterion = torch.nn.CrossEntropyLoss(ignore_index=0)
-    criterion = torch.nn.CrossEntropyLoss()
+    criterion = select_criterion(config["criterion"])
     encoder, decoder, mask_need = build_model(config)
-
-    classifier = lightning_module.classifier(
-        encoder,
-        decoder,
-        batch_size=config["batch_size"],
-        loss_fn=criterion,
-        mask_need=mask_need,
-        lr=config["learning_rate"],
-    )
 
     ########################################
     # DATA
@@ -122,7 +132,16 @@ def main(config):
     print("\nTRAINING ...")
     sys.stdout.flush()
 
-    log_dir = os.path.join(config["path_logs"], f"{config['model']}_{date}")
+    base_log_dir = os.path.join(config["path_logs"], f"{config['model']}_{date}")
+    log_dir = base_log_dir
+    counter = 1
+    while os.path.exists(log_dir):
+        log_dir = f"{base_log_dir}_{counter}"
+        counter += 1
+
+    if config["logs"]:
+        os.makedirs(log_dir, exist_ok=True)
+        print("Logs will be stored in:", log_dir)
 
     checkpoint_callback = ModelCheckpoint(
         dirpath=os.path.join(log_dir, "Checkpoints/"),
@@ -173,6 +192,30 @@ def main(config):
         plugins=plugin,
     )
 
+    # Model
+    classifier = lightning_module.classifier(
+        encoder,
+        decoder,
+        batch_size=config["batch_size"],
+        loss_fn=criterion,
+        mask_need=mask_need,
+        lr=config["learning_rate"],
+    )
+
+    # Initial learning rate finder
+    lr_init = (
+        Tuner(trainer)
+        .lr_find(
+            model=classifier,
+            train_dataloaders=dl_train,
+            num_training=config["num_sample_lr_finder"],
+        )
+        .suggestion()
+    )
+    if lr_init is not None:
+        classifier.lr = lr_init
+
+    # Training
     trainer.fit(model=classifier, train_dataloaders=dl_train, val_dataloaders=dl_val)
 
     ########################################

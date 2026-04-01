@@ -148,7 +148,7 @@ class classifier(L.LightningModule):
             self.logger.experiment.add_figure("F-Score", f1_fig, close=True)
             self.logger.experiment.add_figure("mIoU", miou_fig, close=True)
 
-    def predict_step(self, batch, return_probas=True):
+    def predict_step(self, batch):
         (x, date, mask), y = batch
         if self.mask_need:
             z = self.encoder(x, batch_positions=date, pad_mask=mask)  # (bhw) x d_model
@@ -164,10 +164,26 @@ class classifier(L.LightningModule):
 
         probas = torch.softmax(y_logits, dim=1)
 
-        if return_probas:
-            return probas
+        return probas
 
-        return probas.argmax(dim=1)
+    def on_before_optimizer_step(self, optimizer):
+        # Calcul de la norme globale des gradients (pas de clipping ici)
+        grad_norm = torch.nn.utils.clip_grad_norm_(
+            self.parameters(),
+            max_norm=float("inf"),  # inf = pas de clipping
+        )
+        # Log avec Lightning (Tensorboard ou autre logger)
+        self.log("grad_norm", grad_norm, on_step=True, on_epoch=True, prog_bar=False)
+        # Log du learning rate pour chaque param_group
+
+        for i, param_group in enumerate(optimizer.param_groups):
+            self.log(
+                f"lr_group_{i}",
+                param_group["lr"],
+                on_step=True,
+                on_epoch=False,  # typiquement on n'a pas besoin d'average sur epoch
+                prog_bar=False,
+            )
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)

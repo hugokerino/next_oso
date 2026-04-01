@@ -13,12 +13,15 @@ folds_val: [4]
 folds_test: [5]
 
 # Training
-epochs_max: 1
-batch_size: 2
+criterion : weightedCE
+epochs_max: 2
+batch_size: 4
 test_model: true
 accelerator: auto
 devices: auto
 nodes: 1
 strategy: auto
 running_on_trex_gpu: false
-learning_rate: 0.001
+num_sample_lr_finder : 2
+learning_rate: 0.000001
+logs : False

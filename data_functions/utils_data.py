@@ -593,6 +593,72 @@ def density_repartition_all_classes(path_labels: str, plot=True):
         else:
             all_probas[name] = np.array([])
 
+        if plot:
+            n_classes = len(names_class)
+            n_cols = 5
+            n_rows = int(np.ceil(n_classes / n_cols))
+
+            fig, axes = plt.subplots(n_rows, n_cols, figsize=(20, n_rows * 3))
+            axes = axes.flatten()
+
+            for i, name in enumerate(names_class):
+                ax = axes[i]
+                if len(all_probas[name]) > 0:
+                    ax.hist(
+                        all_probas[name],
+                        bins=50,
+                        density=True,
+                        color="#3266ad",
+                        edgecolor="white",
+                        linewidth=0.3,
+                    )
+                ax.set_title(name, fontsize=9)
+                ax.set_xlim(0, 1)
+                ax.set_xlabel("Probabilité", fontsize=7)
+                ax.set_ylabel("Densité", fontsize=7)
+
+            # Masquer les axes vides si n_classes % n_cols != 0
+            for j in range(i + 1, len(axes)):
+                axes[j].set_visible(False)
+
+            plt.suptitle("Répartition des probabilités par classe", fontsize=14)
+            plt.tight_layout()
+            plt.show()
+
+    return all_probas
+
+
+def plot_filtered_probas(all_probas, percentile_keep=80, plot=True):
+    """
+    Calcule le seuil de probabilité par classe selon le percentile
+    et affiche la distribution des échantillons retenus.
+
+    Args:
+        all_probas (dict): clé = nom de classe, valeur = array des probabilités
+        percentile_keep (float): percentile à garder (ex: 80 → top 20% plus sûrs)
+        plot (bool): si True, affiche les histogrammes filtrés
+
+    Returns:
+        thresholds (dict): seuil de probabilité par classe
+        filtered_probas (dict): dictionnaire des probabilités filtrées par classe
+    """
+    thresholds = {}
+    filtered_probas = {}
+
+    for name in names_class:
+        probs = np.array(all_probas[name])
+        if len(probs) == 0:
+            thresholds[name] = None
+            filtered_probas[name] = np.array([])
+            continue
+
+        # Calcul du seuil
+        t = np.percentile(probs, percentile_keep)
+        thresholds[name] = float(t)
+
+        # Filtrer les probabilités supérieures au seuil
+        filtered_probas[name] = probs[probs >= t]
+
     if plot:
         n_classes = len(names_class)
         n_cols = 5
@@ -603,16 +669,21 @@ def density_repartition_all_classes(path_labels: str, plot=True):
 
         for i, name in enumerate(names_class):
             ax = axes[i]
-            if len(all_probas[name]) > 0:
+            if len(filtered_probas[name]) > 0:
                 ax.hist(
-                    all_probas[name],
+                    filtered_probas[name],
                     bins=50,
                     density=True,
-                    color="#3266ad",
+                    color="#2ca02c",  # vert pour différencier
                     edgecolor="white",
                     linewidth=0.3,
                 )
-            ax.set_title(name, fontsize=9)
+            ax.set_title(
+                f"{name} (t={thresholds[name]:.2f}) percentage_keep = {(len(filtered_probas[name]) / all_probas[name].shape[0]) * 100:.2f}"
+                if thresholds[name] is not None
+                else f"{name} (aucun pixel)",
+                fontsize=9,
+            )
             ax.set_xlim(0, 1)
             ax.set_xlabel("Probabilité", fontsize=7)
             ax.set_ylabel("Densité", fontsize=7)
@@ -621,11 +692,17 @@ def density_repartition_all_classes(path_labels: str, plot=True):
         for j in range(i + 1, len(axes)):
             axes[j].set_visible(False)
 
-        plt.suptitle("Répartition des probabilités par classe", fontsize=14)
+        plt.suptitle(
+            f"Répartition des probabilités filtrées par percentile {percentile_keep}",
+            fontsize=14,
+        )
         plt.tight_layout()
         plt.show()
 
-    return all_probas
+    thresholds["0_nan"] = 0  # Nan class, all pixel with nan class will be discarded
+    thresholds = np.array(list(thresholds.values()))
+
+    return thresholds, filtered_probas
 
 
 def find_nan_label(dataset):
