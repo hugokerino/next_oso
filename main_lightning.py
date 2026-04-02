@@ -150,9 +150,7 @@ def main(config):
         mode="max",
         save_top_k=1,
     )
-    tb_logger = TensorBoardLogger(
-        log_dir, name=f"{config['model']}_{date}", default_hp_metric=False
-    )
+    tb_logger = TensorBoardLogger(log_dir, name="tensorboards", default_hp_metric=False)
     early_stop = EarlyStopping(monitor="val_fscore", mode="max", patience=10)
     profiler = SimpleProfiler(dirpath=log_dir, filename="profiler")
 

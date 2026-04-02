@@ -6,6 +6,7 @@ import pandas
 import os
 import json
 import rioxarray
+from einops import rearrange
 from rasterio.features import rasterize
 import geopandas as gpd
 from collections import defaultdict
@@ -1074,49 +1075,156 @@ def plot_pred_and_label(y_true, y_pred, rgb_img, y_entropie, class_idx, idx_to_p
 
 
 def plot_reliability_diagram_multi_class(
-    y_true,  # Vraies étiquettes (1D array, shape=(N,))
-    y_prob,  # Probabilités prédites par le modèle (2D array, shape=(N, n_classes))
-    n_bins=10,  # Nombre de bins pour le diagramme
+    y_true,
+    y_prob,
+    n_bins=10,
 ):
-    """
-    Trace un diagramme de fiabilité pour la classification multi-classe.
-
-    Args:
-        y_true : Vraies étiquettes (1D array, shape=(N,)).
-        y_prob : Probabilités prédites (2D array, shape=(N, n_classes)).
-        n_bins : Nombre de bins pour le diagramme.
-        n_classes : Nombre de classes (si non fourni, calculé automatiquement).
-        class_names : Noms des classes (optionnel).
-    """
-
     n_classes = y_prob.shape[1]
 
-    # Initialiser la figure
-    fig, axs = plt.subplots(1, n_classes, figsize=(5 * n_classes, 4))
-    if n_classes == 1:
-        axs = [axs]
+    y_prob_flat = rearrange(y_prob, "n c h w -> (n h w) c")
 
-    # Tracer un diagramme de fiabilité pour chaque classe
+    if y_true.ndim == 4:
+        y_true_flat = rearrange(y_true.argmax(axis=1), "n h w -> (n h w)")
+    else:
+        y_true_flat = rearrange(y_true, "n h w -> (n h w)")
+
+    # Masquer les pixels nodata
+    valid_mask = y_true_flat != 0
+    y_true_flat = y_true_flat[valid_mask]
+    y_prob_flat = y_prob_flat[valid_mask]
+
+    # Grid 5 colonnes
+    n_cols = 5
+    n_rows = int(np.ceil(n_classes / n_cols))
+
+    fig, axs = plt.subplots(n_rows, n_cols, figsize=(5 * n_cols, 4 * n_rows))
+    axs = axs.flatten()
+
     for i in range(n_classes):
-        # Calculer la fréquence relative et la probabilité moyenne prédite
-        prob_true, prob_pred = calibration_curve(
-            y_true == i,  # Convertit les étiquettes en binaire pour la classe i
-            y_prob[:, i],
-            n_bins=n_bins,
-            strategy="uniform",
-        )
+        try:
+            prob_true, prob_pred = calibration_curve(
+                y_true_flat == i,
+                y_prob_flat[:, i],
+                n_bins=n_bins,
+                strategy="uniform",
+            )
+            axs[i].plot(prob_pred, prob_true, marker="o", label=f"Classe {i}")
+        except ValueError:
+            pass
 
-        # Tracer
-        axs[i].plot(prob_pred, prob_true, marker="o", label=f"Classe {i}")
-        axs[i].plot(
-            [0, 1], [0, 1], linestyle="--", color="gray", label="Régression parfaite"
-        )
+        axs[i].plot([0, 1], [0, 1], linestyle="--", color="gray", label="Parfait")
         axs[i].set_xlabel("Probabilité moyenne prédite")
         axs[i].set_ylabel("Fréquence relative")
-        axs[i].set_title(f"Diagramme de fiabilité — {names_class[i]}")
-        axs[i].legend()
+        axs[i].set_title(f"{names_class[i]}", fontsize=9)
+        axs[i].legend(fontsize=7)
         axs[i].grid(True)
+        axs[i].set_xlim(0, 1)
+        axs[i].set_ylim(0, 1)
 
-    plt.suptitle("Diagrammes de fiabilité pour chaque classe")
+    # Masquer les axes vides
+    for j in range(n_classes, len(axs)):
+        axs[j].set_visible(False)
+
+    plt.suptitle("Diagrammes de fiabilité par classe", fontsize=14)
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_reliability_diagram_multi_class_multi_preds(
+    y_true,
+    y_prob_1,
+    y_prob_2,
+    label_1="Modèle 1",
+    label_2="Modèle 2",
+    n_bins=10,
+):
+    n_classes = y_prob_1.shape[1]
+
+    # Mise à plat
+    y_prob_flat_1 = rearrange(y_prob_1, "n c h w -> (n h w) c")
+    y_prob_flat_2 = rearrange(y_prob_2, "n c h w -> (n h w) c")
+
+    if y_true.ndim == 4:
+        y_true_flat = rearrange(y_true.argmax(axis=1), "n h w -> (n h w)")
+    else:
+        y_true_flat = rearrange(y_true, "n h w -> (n h w)")
+
+    # Masquer les pixels nodata
+    valid_mask = y_true_flat != 0
+    y_true_flat = y_true_flat[valid_mask]
+    y_prob_flat_1 = y_prob_flat_1[valid_mask]
+    y_prob_flat_2 = y_prob_flat_2[valid_mask]
+
+    # Grid 5 colonnes
+    n_cols = 5
+    n_rows = int(np.ceil(n_classes / n_cols))
+
+    fig, axs = plt.subplots(n_rows, n_cols, figsize=(5 * n_cols, 4 * n_rows))
+    axs = axs.flatten()
+
+    for i in range(n_classes):
+        for y_prob_flat, label, color in zip(
+            [y_prob_flat_1, y_prob_flat_2],
+            [label_1, label_2],
+            ["#3266ad", "#c0392b"],
+        ):
+            try:
+                prob_true, prob_pred = calibration_curve(
+                    y_true_flat == i,
+                    y_prob_flat[:, i],
+                    n_bins=n_bins,
+                    strategy="uniform",
+                )
+                axs[i].plot(prob_pred, prob_true, marker="o", color=color, label=label)
+            except ValueError:
+                pass
+
+        axs[i].plot([0, 1], [0, 1], linestyle="--", color="gray", label="Parfait")
+        axs[i].set_xlabel("Probabilité moyenne prédite")
+        axs[i].set_ylabel("Fréquence relative")
+        axs[i].set_title(f"{names_class[i]}", fontsize=9)
+        axs[i].legend(fontsize=7)
+        axs[i].grid(True)
+        axs[i].set_xlim(0, 1)
+        axs[i].set_ylim(0, 1)
+
+    for j in range(n_classes, len(axs)):
+        axs[j].set_visible(False)
+
+    plt.suptitle("reliability diagram", fontsize=14)
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_fscore_comparaison(pred_1, pred_2, label):
+
+    f_score = MulticlassF1Score(num_classes=num_class, average="none", ignore_index=0)
+
+    # Plot
+    x = np.arange(num_class)
+    width = 0.35
+
+    plt.figure(figsize=(12, 5))
+    plt.bar(
+        x - width / 2,
+        f_score(pred_1, label.argmax(dim=1)),
+        width,
+        label="Hard Label",
+        color="#1f77b4",
+    )
+    plt.bar(
+        x + width / 2,
+        f_score(pred_2, label.argmax(dim=1)),
+        width,
+        label="Soft Label",
+        color="#ff7f0e",
+    )
+
+    plt.xlabel("Classes")
+    plt.ylabel("F1-score")
+    plt.title("Comparaison F1-score par classe")
+    plt.legend()
+
+    plt.xticks(x, names_class, rotation=45, ha="right")
     plt.tight_layout()
     plt.show()
