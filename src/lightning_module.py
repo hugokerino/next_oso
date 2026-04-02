@@ -7,6 +7,7 @@ from torchmetrics.classification import (
     MulticlassCohenKappa,
 )
 from torchmetrics.segmentation import MeanIoU
+import numpy as np
 from src import metrics
 
 
@@ -176,12 +177,35 @@ class classifier(L.LightningModule):
         self.log("grad_norm", grad_norm, on_step=True, on_epoch=True, prog_bar=False)
         # Log du learning rate pour chaque param_group
 
-        for i, param_group in enumerate(optimizer.param_groups):
+        # Learning rate effectif par paramètre — norme globale
+        effective_lr_norms = []
+
+        for group in optimizer.param_groups:
+            lr = group["lr"]
+            for p in group["params"]:
+                if p.grad is None:
+                    continue
+
+                # Récupérer les états internes d'Adam
+                state = optimizer.state[p]
+                if len(state) == 0:
+                    continue  # pas encore initialisé (avant le 1er step)
+
+                v_hat = state["exp_avg_sq"]  # variance estimée (v_t)
+                eps = group["eps"]
+
+                # Learning rate effectif : lr / (sqrt(v_hat) + eps)
+                effective_lr = lr / (v_hat.sqrt() + eps)  # shape = shape du paramètre
+                effective_lr_norms.append(effective_lr.norm(2).item())
+
+        if len(effective_lr_norms) > 0:
+            # Norme globale des lr effectifs
+            global_effective_lr_norm = np.mean(effective_lr_norms)
             self.log(
-                f"lr_group_{i}",
-                param_group["lr"],
+                "effective_lr_norm",
+                global_effective_lr_norm,
                 on_step=True,
-                on_epoch=False,  # typiquement on n'a pas besoin d'average sur epoch
+                on_epoch=True,
                 prog_bar=False,
             )
 

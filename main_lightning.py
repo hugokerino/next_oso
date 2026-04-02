@@ -151,7 +151,7 @@ def main(config):
         save_top_k=1,
     )
     tb_logger = TensorBoardLogger(
-        config["path_logs"], name=f"{config['model']}_{date}", default_hp_metric=False
+        log_dir, name=f"{config['model']}_{date}", default_hp_metric=False
     )
     early_stop = EarlyStopping(monitor="val_fscore", mode="max", patience=10)
     profiler = SimpleProfiler(dirpath=log_dir, filename="profiler")
@@ -213,6 +213,7 @@ def main(config):
         .suggestion()
     )
     if lr_init is not None:
+        print(f"Initial learning rate found = {lr_init}")
         classifier.lr = lr_init
 
     # Training
