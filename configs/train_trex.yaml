@@ -13,7 +13,7 @@ folds_val: [4]
 folds_test: [5]
 
 # Training
-criterion : cross_entropy
+criterion : weightedCE
 epochs_max: 100
 batch_size: 4
 test_model: false
