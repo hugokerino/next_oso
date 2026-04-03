@@ -7,12 +7,12 @@
 #SBATCH --export=none
 
 #SBATCH -N 1
-#SBATCH --tasks=5
-#SBATCH --mem-per-cpu=12000M
+#SBATCH --tasks=16
+#SBATCH --mem-per-cpu=7G
 
-#SBATCH --ntasks-per-node=2
-#SBATCH --gpus=a100_40g:2
-#SBATCH --partition=gpu_std
+#SBATCH --ntasks-per-node=1
+#SBATCH --gres=gpu:1
+#SBATCH --partition=gpu_a100
 #SBATCH --qos=gpu_all
 
 #SBATCH --time=15:00:00             # Walltime
