@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import copy
+from Alise import temporal_proj
 
 
 # Classical position encoding
@@ -79,3 +80,18 @@ def recursive_todevice(x, device):
         return x.to(device)
     else:
         return [recursive_todevice(c, device) for c in x]
+
+
+class Temp_Proj_and_MLPDecoder(nn.Module):
+    def __init__(self, n_head=4, d_k=8, d_in=64, n_q=1, mlp=[128, 64, 25], dropout=0.2):
+        super().__init__()
+        self.temporal_proj = temporal_proj.LearnedQMultiHeadAttention(
+            n_head=n_head, d_k=d_k, d_in=d_in, n_q=n_q
+        )
+        self.mlp_decoder = MLPDecoder(mlp=mlp, dropout=dropout)
+
+    def forward(self, x, pad_mask=None):
+        x = self.temporal_proj(x, pad_mask=pad_mask)
+        print(x.shape)
+        x = self.mlp_decoder(x)
+        return x

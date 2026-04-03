@@ -14,8 +14,8 @@ folds_test: [5]
 
 # Training
 criterion : weightedCE
-epochs_max: 2
-batch_size: 4
+epochs_max: 1
+batch_size: 1
 test_model: true
 accelerator: auto
 devices: auto
