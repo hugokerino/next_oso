@@ -115,13 +115,17 @@ def main(config):
 
     criterion = select_criterion(config["criterion"])
     encoder, decoder, mask_need = build_model(config)
+
+    # config["selected_fold"] holds the actual tuple/list of [train, val, test] for this job
+    selected_fold = config["selected_fold"]
+
     dl_train, dl_val, dl_test = dataset.get_loaders(
         path_s2=config["path_s2"],
         path_label=config["path_label"],
         path_oso_class=config["path_oso_classes"],
-        folds_train=config["folds"][0],
-        folds_val=config["folds"][1],
-        folds_test=config["folds"][2],
+        folds_train=selected_fold[0],
+        folds_val=selected_fold[1],
+        folds_test=selected_fold[2],
         batch_size=config["batch_size"],
         num_worker=config["num_worker"],
         label_type=config["label_type"],
@@ -252,10 +256,8 @@ if __name__ == "__main__":
         raise ValueError(
             f"Invalid fold_index {args.fold_index}. Must be between 0 and {len(config['folds']) - 1}."
         )
-    config["folds"] = [
-        config["folds"][args.fold_index]
-    ]  # Override to run only this fold
 
+    config["selected_fold"] = config["folds"][args.fold_index]
     config["fold_index"] = args.fold_index
 
     pprint.pprint(config)
