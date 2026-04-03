@@ -174,7 +174,14 @@ class classifier(L.LightningModule):
             max_norm=float("inf"),  # inf = pas de clipping
         )
         # Log avec Lightning (Tensorboard ou autre logger)
-        self.log("grad_norm", grad_norm, on_step=True, on_epoch=True, prog_bar=False)
+        self.log(
+            "grad_norm",
+            grad_norm,
+            on_step=True,
+            on_epoch=True,
+            prog_bar=False,
+            sync_dist=True,
+        )
         # Log du learning rate pour chaque param_group
 
         # Learning rate effectif par paramètre — norme globale
@@ -207,6 +214,7 @@ class classifier(L.LightningModule):
                 on_step=True,
                 on_epoch=True,
                 prog_bar=False,
+                sync_dist=True,
             )
 
     def configure_optimizers(self):

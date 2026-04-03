@@ -1,0 +1,31 @@
+# Paths
+path_s2: /work/THEIA/CES/oso/hugok/s2_data/
+path_label: /work/THEIA/CES/oso/hugok/labels
+path_oso_classes: /work/THEIA/CES/oso/hugok/files_s2/oso_classes.csv
+path_logs: /work/THEIA/CES/oso/hugok/next_oso/logs/light_training
+
+# Data
+num_worker: 2
+label_type: max_class
+num_class: 25
+folds : 
+  - [[1,2,3], [4], [5]]
+  - [[2,3,4], [5], [1]]
+  - [[3,4,5], [1], [2]]
+  - [[4,5,1], [2], [3]]
+  - [[5,1,2], [3], [4]]
+
+
+# Training
+criterion : cross_entropy
+epochs_max: 100
+batch_size: 4
+test_model: false
+accelerator:  "gpu"
+devices: 1
+nodes: 1
+strategy: "ddp_find_unused_parameters_true"
+running_on_trex_gpu: true
+num_sample_lr_finder : 100
+learning_rate: 0.00001
+logs : True
