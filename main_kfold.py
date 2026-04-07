@@ -205,6 +205,7 @@ def main(config):
     if lr_init is not None:
         print(f"Initial learning rate found = {lr_init}")
         classifier.lr = lr_init
+
     # Training
     trainer.fit(model=classifier, train_dataloaders=dl_train, val_dataloaders=dl_val)
 

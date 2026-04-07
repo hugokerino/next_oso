@@ -1228,3 +1228,28 @@ def plot_fscore_comparaison(pred_1, pred_2, label):
     plt.xticks(x, names_class, rotation=45, ha="right")
     plt.tight_layout()
     plt.show()
+
+
+def normalize_s2(s2):
+    stats = json.load(
+        open(
+            "/home/hkerino/Documents/nextoso-dataset/data/10m/s2/stats_global.json", "r"
+        )
+    )
+
+    s2_normalized = np.zeros_like(s2, dtype=np.float32)
+    # Normalize per band
+    for band_idx in range(s2.shape[0]):
+        band_data = s2[band_idx, :, :, :]  # Shape: (t, h, w)
+        # Clipping btw p5 & p95
+        p_min = stats["p_min"][band_idx]
+        p_max = stats["p_max"][band_idx]
+        band_clipped = np.clip(band_data, p_min, p_max)
+
+        # normalise
+        median = stats["median"][band_idx]
+        scale = p_max - p_min
+        band_normalized = ((band_clipped - median) / scale).astype(np.float32)
+
+        s2_normalized[band_idx, :, :, :] = band_normalized
+    return s2_normalized

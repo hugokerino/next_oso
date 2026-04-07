@@ -21,6 +21,7 @@ class next_oso_Dataset(tdata.Dataset):
         folds=None,
         mask_needed=True,
         return_id=False,
+        use_spatial_coords=False,
         label_type="max_class",
         date_type="relative",
         reference_date="2019-12-31",
@@ -34,6 +35,7 @@ class next_oso_Dataset(tdata.Dataset):
         self.folds = folds
         self.mask_needed = mask_needed
         self.return_id = return_id
+        self.use_spatial_coords = use_spatial_coords
         self.label_type = label_type
         self.reference_date = np.datetime64(reference_date)
         self.date_type = date_type
@@ -51,7 +53,7 @@ class next_oso_Dataset(tdata.Dataset):
             self._get_norm()
 
     def _collect_files(self):
-        for zone in range(1, 9):
+        for zone in range(1, 10):
             zone_dir = os.path.join(self.path_s2, str(zone))
             if self.folds is None:
                 self.folds = list(range(1, 6))
