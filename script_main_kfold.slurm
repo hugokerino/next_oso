@@ -7,7 +7,8 @@
 #SBATCH --export=none
 
 #SBATCH -N 1
-#SBATCH --tasks=16
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=16
 #SBATCH --mem-per-cpu=7G
 #SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:1  # 1 GPU per job
@@ -33,7 +34,7 @@ export PATH=$(dirname $(which pixi)):$PATH
 
 srun --export=ALL pixi run -e gpu python main_kfold.py \
     --config_train configs/train_trex_kfold.yaml \
-    --config_model configs/models/ALISE.yaml \
+    --config_model configs/models/UTAE.yaml \
     --fold_index $SLURM_ARRAY_TASK_ID  # Pass the fold index from the array
 
 echo "End"
