@@ -1,5 +1,6 @@
-from einops import rearrange
 import lightning as L
+from torch.optim.lr_scheduler import LinearLR, CosineAnnealingLR, SequentialLR
+
 import torch
 import onnxruntime
 
@@ -25,6 +26,7 @@ class classifier(L.LightningModule):
         loss_fn,
         mask_need,
         lr=1e-3,
+        max_epochs=100,
         num_classe=25,
         H=128,
         W=128,
@@ -47,6 +49,7 @@ class classifier(L.LightningModule):
         self.mask_need = mask_need
         self.loss_fn = loss_fn
         self.lr = lr
+        self.max_epochs = max_epochs
         self.y_pred_test = []
         self.y_true_test = []
         self.acc_metric = MulticlassAccuracy(num_classes=self.num_class, ignore_index=0)
@@ -195,41 +198,34 @@ class classifier(L.LightningModule):
             prog_bar=False,
             sync_dist=True,
         )
-        # Log du learning rate pour chaque param_group
 
-        # Learning rate effectif par paramètre — norme globale
-        effective_lr_norms = []
-
-        for group in optimizer.param_groups:
-            lr = group["lr"]
-            for p in group["params"]:
-                if p.grad is None:
-                    continue
-
-                # Récupérer les états internes d'Adam
-                state = optimizer.state[p]
-                if len(state) == 0:
-                    continue  # pas encore initialisé (avant le 1er step)
-
-                v_hat = state["exp_avg_sq"]  # variance estimée (v_t)
-                eps = group["eps"]
-
-                # Learning rate effectif : lr / (sqrt(v_hat) + eps)
-                effective_lr = lr / (v_hat.sqrt() + eps)  # shape = shape du paramètre
-                effective_lr_norms.append(effective_lr.norm(2).item())
-
-        if len(effective_lr_norms) > 0:
-            # Norme globale des lr effectifs
-            global_effective_lr_norm = np.mean(effective_lr_norms)
-            self.log(
-                "effective_lr_norm",
-                global_effective_lr_norm,
-                on_step=True,
-                on_epoch=True,
-                prog_bar=False,
-                sync_dist=True,
-            )
+        # Log learning rate from scheduler
+        current_lr = optimizer.param_groups[0]["lr"]
+        self.log(
+            "learning_rate",
+            current_lr,
+            on_step=True,
+            on_epoch=True,
+            prog_bar=True,
+            sync_dist=True,
+        )
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
-        return optimizer
+
+        warmup_step = 10
+
+        scheduler = SequentialLR(
+            optimizer=optimizer,
+            schedulers=[
+                LinearLR(optimizer, start_factor=0.1, total_iters=10),
+                CosineAnnealingLR(
+                    optimizer,
+                    T_max=self.max_epochs - warmup_step,
+                    eta_min=self.lr * 1e-3,
+                ),
+            ],
+            milestones=[warmup_step],
+        )
+
+        return [optimizer], [{"scheduler": scheduler, "interval": "epoch"}]

@@ -215,6 +215,7 @@ def main(config):
         loss_fn=criterion,
         mask_need=mask_need,
         lr=config["learning_rate"],
+        max_epochs=config["epochs_max"],
     )
 
     # Initial learning rate finder
@@ -228,7 +229,8 @@ def main(config):
         .suggestion()
     )
     if lr_init is not None:
-        print(f"Initial learning rate found = {lr_init}")
+        lr_init = lr_init * 10
+        tb_logger.log_hyperparams({"initial_lr": lr_init})
         classifier.lr = lr_init
 
     # Training
