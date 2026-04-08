@@ -6,14 +6,14 @@ path_logs: /work/THEIA/CES/oso/hugok/next_oso/logs/light_training
 
 # Data
 num_worker: 2
-label_type: probas
+label_type: max_class
 num_class: 25
 folds_train: [1, 2, 3]
 folds_val: [4]
 folds_test: [5]
 
 # Training
-criterion : distillationLoss
+criterion : cross_entropy
 epochs_max: 100
 batch_size: 4
 test_model: false
