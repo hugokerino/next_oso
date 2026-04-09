@@ -211,9 +211,9 @@ class classifier(L.LightningModule):
         )
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
+        optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr, weight_decay=0.01)
 
-        warmup_step = 10
+        warmup_step = 5
 
         scheduler = SequentialLR(
             optimizer=optimizer,
