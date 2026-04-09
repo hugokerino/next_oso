@@ -245,8 +245,6 @@ def get_loaders(
             num_workers=num_worker,
         )
 
-    dl_train = make_loader(folds_train, shuffle=shuffle)
-    dl_val = make_loader(folds_val, shuffle=False)
-    dl_test = make_loader(folds_test, shuffle=False)
-
-    return dl_train, dl_val, dl_test
+    return map(
+        make_loader, [folds_train, folds_val, folds_test], [shuffle, False, False]
+    )
