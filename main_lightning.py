@@ -24,7 +24,7 @@ import onnxruntime
 from data_functions import dataset
 from src import LTAE, UTAE, utils_model, lightning_module, metrics
 from Alise import ALISE, sse, transformer, temporal_proj
-from src.lightning_module import ONNXEncoderWrapper
+from Alise.utils import ONNXEncoderWrapper
 
 
 torch.serialization.add_safe_globals([metrics.FocalLoss])
