@@ -4,9 +4,7 @@ from lightning.pytorch.loggers import TensorBoardLogger
 from lightning.pytorch.callbacks import (
     ModelCheckpoint,
     EarlyStopping,
-    DeviceStatsMonitor,
 )
-from lightning.pytorch.profilers import SimpleProfiler
 from lightning.pytorch.plugins.environments import SLURMEnvironment
 from lightning.pytorch.tuner import Tuner
 
@@ -97,12 +95,7 @@ def main(config):
     ########################################
     #  PATH TO SAVE
     ########################################
-    base_log_dir = os.path.join(config["path_logs"], f"{config['model']}_{date}")
-    log_dir = base_log_dir
-    counter = 1
-    while os.path.exists(log_dir):
-        log_dir = f"{base_log_dir}_{counter}"
-        counter += 1
+    log_dir = os.path.join(config["path_logs"], f"{config['model']}_{date}_kfold")
 
     if config["logs"]:
         os.makedirs(log_dir, exist_ok=True)
@@ -145,21 +138,20 @@ def main(config):
         log_fold, name="tensorboards", default_hp_metric=False
     )
     early_stop = EarlyStopping(monitor="val_fscore", mode="max", patience=10)
-    profiler = SimpleProfiler(dirpath=log_fold, filename="profiler")
     list_callback = [
         checkpoint_callback,
         early_stop,
-        DeviceStatsMonitor(cpu_stats=False),
     ]
+
     limit_batches = 1.0
     if config["test_model"]:
         tb_logger = None
         list_callback = None
-        profiler = None
         limit_batches = 2
     plugin = None
     if config["running_on_trex_gpu"]:
         plugin = [SLURMEnvironment(requeue_signal=signal.SIGHUP, auto_requeue=True)]
+
     trainer = L.Trainer(
         logger=tb_logger,
         accumulate_grad_batches=2,
@@ -170,7 +162,6 @@ def main(config):
         devices=config["devices"],
         num_nodes=config["nodes"],
         strategy=config["strategy"],
-        profiler=profiler,
         num_sanity_val_steps=limit_batches,
         limit_train_batches=limit_batches,
         limit_val_batches=limit_batches,
@@ -203,7 +194,7 @@ def main(config):
         .suggestion()
     )
     if lr_init is not None:
-        print(f"Initial learning rate found = {lr_init}")
+        lr_init = 100 * lr_init
         classifier.lr = lr_init
 
     # Training

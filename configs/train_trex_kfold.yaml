@@ -27,5 +27,5 @@ nodes: 1
 strategy: "ddp_find_unused_parameters_true"
 running_on_trex_gpu: true
 num_sample_lr_finder : 100
-learning_rate: 0.00001
+learning_rate: 1e-4
 logs : True
