@@ -1,5 +1,6 @@
 # Paths
 path_s2: /home/hkerino/Documents/nextoso-dataset/data/10m/s2
+path_mnt : /home/hkerino/Documents/nextoso-dataset/data/10m/mnt
 path_label: /home/hkerino/Documents/nextoso-dataset/data/10m/labels
 path_oso_classes: /home/hkerino/Documents/nextoso-dataset/data/auxiliary/OSO/oso_classes.csv
 path_logs: /home/hkerino/Documents/next_oso/logs/light_training
@@ -13,7 +14,7 @@ folds_val: [4]
 folds_test: [5]
 
 # Training
-criterion : weightedCE
+criterion : cross_entropy
 epochs_max: 1
 batch_size: 1
 test_model: true
@@ -25,3 +26,4 @@ running_on_trex_gpu: false
 num_sample_lr_finder : 2
 learning_rate: 0.000001
 logs : False
+use_spatial_coords : True

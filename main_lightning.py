@@ -43,6 +43,9 @@ def build_model(config: dict):
     enc_cfg = config["encoder"]
     dec_cfg = config["decoder"]
 
+    if config["use_spatial_coords"]:
+        dec_cfg["mlp"][0] += 4  # Ajouter 4 dimensions pour les coordonnées spatiales
+
     if model_name == "LTAE":
         encoder = LTAE.LTAE2d(**enc_cfg)
         decoder = utils_model.MLPDecoder(**dec_cfg)
@@ -129,6 +132,7 @@ def main(config):
 
     dl_train, dl_val, dl_test = dataset.get_loaders(
         path_s2=config["path_s2"],
+        path_mnt=config["path_mnt"],
         path_label=config["path_label"],
         path_oso_class=config["path_oso_classes"],
         folds_train=config["folds_train"],
@@ -138,6 +142,7 @@ def main(config):
         num_worker=config["num_worker"],
         label_type=config["label_type"],
         mask_needed=mask_need,
+        use_spatial_coords=config["use_spatial_coords"],
         norm=True,
         remove_invalid_temp=True,
         shuffle=True,
@@ -214,6 +219,7 @@ def main(config):
         batch_size=config["batch_size"],
         loss_fn=criterion,
         mask_need=mask_need,
+        use_spatial_coords=config["use_spatial_coords"],
         lr=config["learning_rate"],
         max_epochs=config["epochs_max"],
     )

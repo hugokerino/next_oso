@@ -6,25 +6,246 @@ import pandas
 import os
 import json
 import rioxarray
-from einops import rearrange
 from rasterio.features import rasterize
 import geopandas as gpd
 from collections import defaultdict
 import matplotlib.dates as mdates
-from sklearn.calibration import calibration_curve
 import torch
 from torch.utils.data import DataLoader
-from torchmetrics.classification import (
-    MulticlassRecall,
-    MulticlassPrecision,
-    MulticlassF1Score,
-    MulticlassAccuracy,
-    MulticlassConfusionMatrix,
-    MulticlassCohenKappa,
-)
 
-from torchmetrics.segmentation import MeanIoU
 import matplotlib.gridspec as gridspec
+
+
+# For RGB array
+def to_RGB(img_multi_spec: np.ndarray | torch.Tensor | xr.Dataset, norm=True):
+
+    img_rgb = np.empty([128, 128, 3])
+
+    if isinstance(img_multi_spec, xr.Dataset):
+        img_rgb[:, :, 0] = img_multi_spec["B4"].values  # b
+        img_rgb[:, :, 1] = img_multi_spec["B3"].values  # g
+        img_rgb[:, :, 2] = img_multi_spec["B2"].values  # r
+
+    if isinstance(img_multi_spec, np.ndarray):
+        img_rgb[:, :, 0] = img_multi_spec[2, :, :]  # b
+        img_rgb[:, :, 1] = img_multi_spec[1, :, :]  # g
+        img_rgb[:, :, 2] = img_multi_spec[0, :, :]  # r
+
+    if isinstance(img_multi_spec, torch.Tensor):
+        img_multi_spec = img_multi_spec.numpy()
+        img_rgb[:, :, 0] = img_multi_spec[2, :, :]  # b
+        img_rgb[:, :, 1] = img_multi_spec[1, :, :]  # g
+        img_rgb[:, :, 2] = img_multi_spec[0, :, :]  # r
+
+    if norm:
+        qmin = np.nanquantile(img_rgb, 0.05)
+        qmax = np.nanquantile(img_rgb, 1 - 0.05)
+        img_rgb = (img_rgb - qmin) / (qmax - qmin)
+
+        return np.clip(img_rgb, 0, 1)
+    else:
+        return img_rgb
+
+
+def remove_invalid(s2_xarray):
+    "Remove temporel step with full invalid mask"
+    mask_all_ones = (s2_xarray["S2_mask"] == 1).all(dim=["y", "x"])
+    return s2_xarray.where(~mask_all_ones, drop=True)
+
+
+def find_clear_img(batch):
+    (sits, dates, mask), _ = batch  # sits : b, c, t, h, w ; mask : b, t, h, w
+    clear_imgs = []
+
+    for i in range(sits.shape[0]):
+        # Trouver les indices t où mask[i][t, :, :] == 0 partout
+        idxs_t = (mask[i] == 0).all(dim=(1, 2)).nonzero(as_tuple=True)[0]
+
+        if idxs_t.numel() > 0:
+            # Si au moins un t satisfait la condition, prendre le premier
+            t_idx = idxs_t[0]
+        else:
+            # Sinon, trouver l'index t avec le maximum de valeurs 0
+            # Compter le nombre de 0 pour chaque t
+            num_zeros = (mask[i] == 0).sum(dim=(1, 2))  # Shape : (t,)
+            t_idx = num_zeros.argmax()  # Index du max de 0
+
+        clear_imgs.append(to_RGB(sits[i, :, t_idx, :, :].cpu().numpy()))
+
+    return clear_imgs
+
+
+def s2_spectrale_indice(s2):
+    ndvi = (s2["B8"] - s2["B4"]) / (s2["B4"] + s2["B8"])
+    ndwi = (s2["B3"] - s2["B8"]) / (s2["B3"] + s2["B8"])
+    brgt = np.sqrt(
+        np.pow(s2[["B2", "B3", "B4", "B5", "B6", "B7", "B8", "B8A", "B11", "B12"]], 2)
+        .to_array()
+        .sum("variable")
+    )
+    s2["ndvi"] = ndvi
+    s2["ndwi"] = ndwi
+    s2["brightness"] = brgt
+    return s2
+
+
+def mean_entropy_per_class_per_eco_zone(path_labels, path_oso_class):
+
+    entropy_per_zone_class = defaultdict(lambda: defaultdict(list))
+
+    # Chemin vers le dossier racine contenant les dossiers 1-9
+    path_list_ids_per_ecozone = (
+        "/home/hkerino/Documents/nextoso-dataset/data/10m/s2/eco_zone.json"
+    )
+    with open(path_list_ids_per_ecozone, "r") as f:
+        eco_zone_dict = json.load(f)
+
+    for zone in eco_zone_dict:
+        for id in eco_zone_dict[str(zone)]:
+            path_label_file = os.path.join(path_labels, f"label_{id}.nc")
+            if os.path.exists(path_label_file):
+                patch = xr.open_dataset(path_label_file)
+                max_class = patch["max_class_1"].values.flatten()
+                entropy = patch["entropy_proba"].values.flatten()
+                max_class = np.where(max_class == -1, 0, max_class)
+
+                for c in np.unique(max_class):
+                    mask = max_class == c
+                    entropy_per_zone_class[zone][c].extend(entropy[mask].tolist())
+
+    # Calcul des moyennes
+    mean_entropy = {}
+    for zone in sorted(entropy_per_zone_class.keys()):
+        mean_entropy[zone] = {}
+        for c in sorted(entropy_per_zone_class[zone].keys()):
+            values = np.array(entropy_per_zone_class[zone][c])
+            mean_entropy[zone][c] = {
+                "mean": values.mean(),
+                "std": values.std(),
+                "n": len(values),
+            }
+
+    return mean_entropy
+
+
+def find_nan_label(dataset):
+    ids_with_nan = []
+
+    for i in range(len(dataset)):
+        (x, date, mask), y, id = dataset[i]
+        if (y == 0).any():
+            ids_with_nan.append(id)
+
+    return ids_with_nan
+
+
+def erode_class_max(
+    labels: str | xr.Dataset, variable: str = "max_class_1", buff: int = -10
+) -> xr.DataArray:
+
+    if isinstance(labels, str):
+        ds = rioxarray.open_rasterio(labels)
+
+    if isinstance(labels, xr.Dataset):
+        ds = labels
+
+    x, y, max_class = ds[variable].x.values, ds[variable].y.values, ds[variable]
+    x, y = np.meshgrid(x, y)
+    x, y, max_class = x.flatten(), y.flatten(), max_class.values.flatten()
+    max_pd = pandas.DataFrame.from_dict({"classe": max_class, "x": x, "y": y})
+    max_vector = gpd.GeoDataFrame(
+        max_pd["classe"],
+        geometry=gpd.GeoSeries.from_xy(max_pd["x"], max_pd["y"], crs=ds.rio.crs),
+    )
+
+    max_vector["geom"] = max_vector.buffer(5, cap_style="square")
+
+    max_vector = max_vector.drop(["geometry"], axis=1)
+    max_vector.rename(columns={"geom": "geometry"}, inplace=True)
+
+    max_vector = max_vector.dissolve(by="classe")
+
+    max_vector["geometry"] = max_vector.geometry.buffer(buff, cap_style="square")
+    max_vector = max_vector.reset_index()
+
+    # rasterize
+    shapes = (
+        (geom, value)
+        for geom, value in zip(max_vector.geometry, max_vector.classe)
+        if not geom.is_empty and geom.is_valid
+    )
+
+    raster = rasterize(
+        shapes,
+        out_shape=(ds.max_class_1.shape[0], ds.max_class_1.shape[1]),
+        transform=ds.rio.transform(),
+        fill=0,
+        dtype=ds.dtypes.get("max_class_1").name,
+    )
+
+    rasterized_da: xr.DataArray = xr.DataArray(
+        raster,
+        coords={"classe": variable, "y": ds.y, "x": ds.x},
+        dims=["y", "x"],
+    )
+    rasterized_da = rasterized_da.rio.write_crs(ds.rio.crs)
+
+    return rasterized_da
+
+
+def normalize_s2(s2):
+    stats = json.load(
+        open(
+            "/home/hkerino/Documents/nextoso-dataset/data/10m/s2/stats_global.json", "r"
+        )
+    )
+
+    s2_normalized = np.zeros_like(s2, dtype=np.float32)
+    # Normalize per band
+    for band_idx in range(s2.shape[0]):
+        band_data = s2[band_idx, :, :, :]  # Shape: (t, h, w)
+        # Clipping btw p5 & p95
+        p_min = stats["p_min"][band_idx]
+        p_max = stats["p_max"][band_idx]
+        band_clipped = np.clip(band_data, p_min, p_max)
+
+        # normalise
+        median = stats["median"][band_idx]
+        scale = p_max - p_min
+        band_normalized = ((band_clipped - median) / scale).astype(np.float32)
+
+        s2_normalized[band_idx, :, :, :] = band_normalized
+    return s2_normalized
+
+
+def geographical_information(s2: xr.Dataset, id: str, path_mnt: str, h=128, w=128):
+    X_MIN, X_MAX = 1e5, 1.3e6
+    Y_MIN, Y_MAX = 6e6, 7.2e6
+    ELEV_MAX = 3000
+    SLOPE_MAX = 90
+
+    x = np.expand_dims(s2["x"].values, axis=1).repeat(h, axis=1)  # (h, w)
+    y = np.expand_dims(s2["y"].values, axis=1).repeat(w, axis=1)  # (h, w)
+
+    x = (x - X_MIN) / (X_MAX - X_MIN)
+    y = (y - Y_MIN) / (Y_MAX - Y_MIN)
+
+    elev = np.load(f"{path_mnt}/elev/elev_{id}.npy") / ELEV_MAX
+    slope = np.load(f"{path_mnt}/slope/slope_{id}.npy") / SLOPE_MAX
+
+    return torch.from_numpy(np.stack([x, y, elev, slope])).float()
+
+
+#
+#
+#
+###########################################################################################################################
+# PLOT FUNCTIONS
+###########################################################################################################################
+#
+#
+#
+
 
 is_cluster = "SLURM_JOB_ID" in os.environ
 path_to_oso_name = (
@@ -74,37 +295,6 @@ normalized_colors = [
 ]
 
 cmap = ListedColormap(normalized_colors)
-
-
-# For RGB array
-def to_RGB(img_multi_spec: np.ndarray | torch.Tensor | xr.Dataset, norm=True):
-
-    img_rgb = np.empty([128, 128, 3])
-
-    if isinstance(img_multi_spec, xr.Dataset):
-        img_rgb[:, :, 0] = img_multi_spec["B4"].values  # b
-        img_rgb[:, :, 1] = img_multi_spec["B3"].values  # g
-        img_rgb[:, :, 2] = img_multi_spec["B2"].values  # r
-
-    if isinstance(img_multi_spec, np.ndarray):
-        img_rgb[:, :, 0] = img_multi_spec[2, :, :]  # b
-        img_rgb[:, :, 1] = img_multi_spec[1, :, :]  # g
-        img_rgb[:, :, 2] = img_multi_spec[0, :, :]  # r
-
-    if isinstance(img_multi_spec, torch.Tensor):
-        img_multi_spec = img_multi_spec.numpy()
-        img_rgb[:, :, 0] = img_multi_spec[2, :, :]  # b
-        img_rgb[:, :, 1] = img_multi_spec[1, :, :]  # g
-        img_rgb[:, :, 2] = img_multi_spec[0, :, :]  # r
-
-    if norm:
-        qmin = np.nanquantile(img_rgb, 0.05)
-        qmax = np.nanquantile(img_rgb, 1 - 0.05)
-        img_rgb = (img_rgb - qmin) / (qmax - qmin)
-
-        return np.clip(img_rgb, 0, 1)
-    else:
-        return img_rgb
 
 
 def count_label(dataset, plot=True):
@@ -274,34 +464,6 @@ def plot_nextoso(dataset, idx=0, first_date=0, lenght=5):
     return fig1, fig2
 
 
-def remove_invalid(s2_xarray):
-    "Remove temporel step with full invalid mask"
-    mask_all_ones = (s2_xarray["S2_mask"] == 1).all(dim=["y", "x"])
-    return s2_xarray.where(~mask_all_ones, drop=True)
-
-
-def find_clear_img(batch):
-    (sits, dates, mask), _ = batch  # sits : b, c, t, h, w ; mask : b, t, h, w
-    clear_imgs = []
-
-    for i in range(sits.shape[0]):
-        # Trouver les indices t où mask[i][t, :, :] == 0 partout
-        idxs_t = (mask[i] == 0).all(dim=(1, 2)).nonzero(as_tuple=True)[0]
-
-        if idxs_t.numel() > 0:
-            # Si au moins un t satisfait la condition, prendre le premier
-            t_idx = idxs_t[0]
-        else:
-            # Sinon, trouver l'index t avec le maximum de valeurs 0
-            # Compter le nombre de 0 pour chaque t
-            num_zeros = (mask[i] == 0).sum(dim=(1, 2))  # Shape : (t,)
-            t_idx = num_zeros.argmax()  # Index du max de 0
-
-        clear_imgs.append(to_RGB(sits[i, :, t_idx, :, :].cpu().numpy()))
-
-    return clear_imgs
-
-
 def plot_preds_labels_and_img(
     preds_RF,
     preds_model_1,
@@ -364,111 +526,6 @@ def plot_preds_labels_and_img(
     return fig
 
 
-def plot_metrics_per_class(
-    preds_RF,
-    labels_RF,
-    preds_model_1,
-    preds_model_2,
-    labels_model,
-):
-    n_classes = 25
-
-    # ── Mise à plat des prédictions et labels ──
-    preds_m1_flat = np.concatenate(preds_model_1, axis=0).reshape(-1)
-    preds_m2_flat = np.concatenate(preds_model_2, axis=0).reshape(-1)
-    preds_RF_flat = preds_RF.reshape(-1)
-    labels_model_flat = np.concatenate(labels_model, axis=0).reshape(-1)
-    labels_RF_flat = labels_RF.reshape(-1)
-
-    # ── Calcul des métriques par classe avec torchmetrics ──
-    def compute_metrics(preds, labels):
-        # Convertir en tensors PyTorch (avec dtype=long pour les labels)
-        preds_tensor = torch.tensor(preds, dtype=torch.long)
-        labels_tensor = torch.tensor(labels, dtype=torch.long)
-
-        # Calculer précision
-        precision_metric = MulticlassPrecision(
-            num_classes=n_classes, average="none", ignore_index=0
-        )
-        precision = precision_metric(preds_tensor, labels_tensor).numpy()
-
-        # Calculer recall
-        recall_metric = MulticlassRecall(
-            num_classes=n_classes, average="none", ignore_index=0
-        )
-        recall = recall_metric(preds_tensor, labels_tensor).numpy()
-
-        # Calculer F-score
-        f1_metric = MulticlassF1Score(
-            num_classes=n_classes, average="none", ignore_index=0
-        )
-        fscore = f1_metric(preds_tensor, labels_tensor).numpy()
-
-        return precision, recall, fscore
-
-    precision_RF, recall_RF, fscore_RF = compute_metrics(preds_RF_flat, labels_RF_flat)
-    precision_m1, recall_m1, fscore_m1 = compute_metrics(
-        preds_m1_flat, labels_model_flat
-    )
-    precision_m2, recall_m2, fscore_m2 = compute_metrics(
-        preds_m2_flat, labels_model_flat
-    )
-
-    # ── Plot ──
-    x = np.arange(1, n_classes)
-    model_names = ["Random Forest", "LTAE", "UTAE"]
-    metrics_data = [
-        (precision_RF, recall_RF, fscore_RF),
-        (precision_m1, recall_m1, fscore_m1),
-        (precision_m2, recall_m2, fscore_m2),
-    ]
-    metric_names = ["Precision", "Recall", "F-score"]
-    colors = ["#3266ad", "#c0392b", "#27ae60"]
-
-    fig, axes = plt.subplots(3, 3, figsize=(22, 14))
-
-    for row, (model_name, (precision, recall, fscore)) in enumerate(
-        zip(model_names, metrics_data)
-    ):
-        for col, (metric_values, metric_name, color) in enumerate(
-            zip([precision, recall, fscore], metric_names, colors)
-        ):
-            ax = axes[row, col]
-            ax.bar(x, metric_values[1:], color=color, width=0.7)
-            ax.set_ylim(0, 1)
-            ax.set_xticks(x)
-            ax.set_xticklabels(names_class[1:], rotation=45, ha="right", fontsize=8)
-            ax.set_ylabel(metric_name)
-            ax.set_title(f"{model_name} — {metric_name}")
-            ax.grid(True, linestyle="--", alpha=0.5)
-
-    plt.suptitle(
-        "Métriques par classe et par modèle (sans classe 0)", fontsize=14, y=1.01
-    )
-    plt.tight_layout()
-    plt.show()
-
-    return {
-        "RF": {"precision": precision_RF, "recall": recall_RF, "fscore": fscore_RF},
-        "LTAE": {"precision": precision_m1, "recall": recall_m1, "fscore": fscore_m1},
-        "UTAE": {"precision": precision_m2, "recall": recall_m2, "fscore": fscore_m2},
-    }
-
-
-def s2_spectrale_indice(s2):
-    ndvi = (s2["B8"] - s2["B4"]) / (s2["B4"] + s2["B8"])
-    ndwi = (s2["B3"] - s2["B8"]) / (s2["B3"] + s2["B8"])
-    brgt = np.sqrt(
-        np.pow(s2[["B2", "B3", "B4", "B5", "B6", "B7", "B8", "B8A", "B11", "B12"]], 2)
-        .to_array()
-        .sum("variable")
-    )
-    s2["ndvi"] = ndvi
-    s2["ndwi"] = ndwi
-    s2["brightness"] = brgt
-    return s2
-
-
 def mean_entropy_per_class(path_labels, path_oso_class):
 
     entropy_per_class = defaultdict(list)
@@ -502,45 +559,6 @@ def mean_entropy_per_class(path_labels, path_oso_class):
     plt.show()
 
     return means
-
-
-def mean_entropy_per_class_per_eco_zone(path_labels, path_oso_class):
-
-    entropy_per_zone_class = defaultdict(lambda: defaultdict(list))
-
-    # Chemin vers le dossier racine contenant les dossiers 1-9
-    path_list_ids_per_ecozone = (
-        "/home/hkerino/Documents/nextoso-dataset/data/10m/s2/eco_zone.json"
-    )
-    with open(path_list_ids_per_ecozone, "r") as f:
-        eco_zone_dict = json.load(f)
-
-    for zone in eco_zone_dict:
-        for id in eco_zone_dict[str(zone)]:
-            path_label_file = os.path.join(path_labels, f"label_{id}.nc")
-            if os.path.exists(path_label_file):
-                patch = xr.open_dataset(path_label_file)
-                max_class = patch["max_class_1"].values.flatten()
-                entropy = patch["entropy_proba"].values.flatten()
-                max_class = np.where(max_class == -1, 0, max_class)
-
-                for c in np.unique(max_class):
-                    mask = max_class == c
-                    entropy_per_zone_class[zone][c].extend(entropy[mask].tolist())
-
-    # Calcul des moyennes
-    mean_entropy = {}
-    for zone in sorted(entropy_per_zone_class.keys()):
-        mean_entropy[zone] = {}
-        for c in sorted(entropy_per_zone_class[zone].keys()):
-            values = np.array(entropy_per_zone_class[zone][c])
-            mean_entropy[zone][c] = {
-                "mean": values.mean(),
-                "std": values.std(),
-                "n": len(values),
-            }
-
-    return mean_entropy
 
 
 def density_repartition(path_labels: str, name: str, plot=True):
@@ -706,17 +724,6 @@ def plot_filtered_probas(all_probas, percentile_keep=80, plot=True):
     return thresholds, filtered_probas
 
 
-def find_nan_label(dataset):
-    ids_with_nan = []
-
-    for i in range(len(dataset)):
-        (x, date, mask), y, id = dataset[i]
-        if (y == 0).any():
-            ids_with_nan.append(id)
-
-    return ids_with_nan
-
-
 def plot_nan(patch):
     label = patch["max_class_1"]
     cmap_mask = ListedColormap(["red", "white"])
@@ -868,120 +875,6 @@ def plot_label_confusion(
     return confusion_counts
 
 
-def erode_class_max(
-    labels: str | xr.Dataset, variable: str = "max_class_1", buff: int = -10
-) -> xr.DataArray:
-
-    if isinstance(labels, str):
-        ds = rioxarray.open_rasterio(labels)
-
-    if isinstance(labels, xr.Dataset):
-        ds = labels
-
-    x, y, max_class = ds[variable].x.values, ds[variable].y.values, ds[variable]
-    x, y = np.meshgrid(x, y)
-    x, y, max_class = x.flatten(), y.flatten(), max_class.values.flatten()
-    max_pd = pandas.DataFrame.from_dict({"classe": max_class, "x": x, "y": y})
-    max_vector = gpd.GeoDataFrame(
-        max_pd["classe"],
-        geometry=gpd.GeoSeries.from_xy(max_pd["x"], max_pd["y"], crs=ds.rio.crs),
-    )
-
-    max_vector["geom"] = max_vector.buffer(5, cap_style="square")
-
-    max_vector = max_vector.drop(["geometry"], axis=1)
-    max_vector.rename(columns={"geom": "geometry"}, inplace=True)
-
-    max_vector = max_vector.dissolve(by="classe")
-
-    max_vector["geometry"] = max_vector.geometry.buffer(buff, cap_style="square")
-    max_vector = max_vector.reset_index()
-
-    # rasterize
-    shapes = (
-        (geom, value)
-        for geom, value in zip(max_vector.geometry, max_vector.classe)
-        if not geom.is_empty and geom.is_valid
-    )
-
-    raster = rasterize(
-        shapes,
-        out_shape=(ds.max_class_1.shape[0], ds.max_class_1.shape[1]),
-        transform=ds.rio.transform(),
-        fill=0,
-        dtype=ds.dtypes.get("max_class_1").name,
-    )
-
-    rasterized_da: xr.DataArray = xr.DataArray(
-        raster,
-        coords={"classe": variable, "y": ds.y, "x": ds.x},
-        dims=["y", "x"],
-    )
-    rasterized_da = rasterized_da.rio.write_crs(ds.rio.crs)
-
-    return rasterized_da
-
-
-def metrics_on_oso(PATH_TO_OSO, PATH_TO_LABELS):
-
-    list_labels = []
-    list_oso = []
-
-    OSO_files = sorted([f for f in os.listdir(PATH_TO_OSO) if f.endswith(".nc")])
-
-    for file in OSO_files:
-        oso = xr.open_dataset(os.path.join(PATH_TO_OSO, file))[
-            "__xarray_dataarray_variable__"
-        ].values.squeeze()
-        label = xr.open_dataset(
-            os.path.join(
-                PATH_TO_LABELS,
-                f"label_{file.split('_')[1].split('.')[0]}.nc",
-            )
-        )["max_class_1"].data
-        label = np.where(label == -1, 0, label)  # Replace -1 by 0
-
-        list_oso.append(oso.flatten())
-        list_labels.append(label.flatten())
-
-    # From list to tensors
-    y_preds = torch.Tensor(np.concatenate(list_oso, axis=0))
-    y_trues = torch.Tensor(np.concatenate(list_labels, axis=0))
-
-    # Metrics
-    acc_metric = MulticlassAccuracy(num_classes=num_class, ignore_index=0)
-    cm_metric = MulticlassConfusionMatrix(
-        num_classes=num_class, ignore_index=0, normalize="none"
-    )
-    kappa = MulticlassCohenKappa(num_classes=num_class, ignore_index=0)
-    precision_metric = MulticlassPrecision(
-        num_classes=num_class, average="none", ignore_index=0
-    )
-    recall_metric = MulticlassRecall(
-        num_classes=num_class, average="none", ignore_index=0
-    )
-    f1_metric = MulticlassF1Score(num_classes=num_class, average="none", ignore_index=0)
-
-    # Global metrics
-    acc = acc_metric(y_preds, y_trues)
-    cm = cm_metric(y_preds, y_trues)
-    f1 = f1_metric(y_preds, y_trues)
-    kappa = kappa(y_preds, y_trues)
-
-    # Log des métriques globales
-    test_metrics = {
-        "Test_accuracy": acc,
-        "Test_f1_score": f1[1:-1].mean(),
-        "Test Kappa": kappa,
-    }
-
-    print(test_metrics)
-
-    # Metrics per class
-
-    return f1, cm
-
-
 def plot_pred_and_label(y_true, y_pred, rgb_img, y_entropie, class_idx, idx_to_plot):
 
     samples_with_class = []
@@ -1072,184 +965,3 @@ def plot_pred_and_label(y_true, y_pred, rgb_img, y_entropie, class_idx, idx_to_p
     )
 
     plt.show()
-
-
-def plot_reliability_diagram_multi_class(
-    y_true,
-    y_prob,
-    n_bins=10,
-):
-    n_classes = y_prob.shape[1]
-
-    y_prob_flat = rearrange(y_prob, "n c h w -> (n h w) c")
-
-    if y_true.ndim == 4:
-        y_true_flat = rearrange(y_true.argmax(axis=1), "n h w -> (n h w)")
-    else:
-        y_true_flat = rearrange(y_true, "n h w -> (n h w)")
-
-    # Masquer les pixels nodata
-    valid_mask = y_true_flat != 0
-    y_true_flat = y_true_flat[valid_mask]
-    y_prob_flat = y_prob_flat[valid_mask]
-
-    # Grid 5 colonnes
-    n_cols = 5
-    n_rows = int(np.ceil(n_classes / n_cols))
-
-    fig, axs = plt.subplots(n_rows, n_cols, figsize=(5 * n_cols, 4 * n_rows))
-    axs = axs.flatten()
-
-    for i in range(n_classes):
-        try:
-            prob_true, prob_pred = calibration_curve(
-                y_true_flat == i,
-                y_prob_flat[:, i],
-                n_bins=n_bins,
-                strategy="uniform",
-            )
-            axs[i].plot(prob_pred, prob_true, marker="o", label=f"Classe {i}")
-        except ValueError:
-            pass
-
-        axs[i].plot([0, 1], [0, 1], linestyle="--", color="gray", label="Parfait")
-        axs[i].set_xlabel("Probabilité moyenne prédite")
-        axs[i].set_ylabel("Fréquence relative")
-        axs[i].set_title(f"{names_class[i]}", fontsize=9)
-        axs[i].legend(fontsize=7)
-        axs[i].grid(True)
-        axs[i].set_xlim(0, 1)
-        axs[i].set_ylim(0, 1)
-
-    # Masquer les axes vides
-    for j in range(n_classes, len(axs)):
-        axs[j].set_visible(False)
-
-    plt.suptitle("Diagrammes de fiabilité par classe", fontsize=14)
-    plt.tight_layout()
-    plt.show()
-
-
-def plot_reliability_diagram_multi_class_multi_preds(
-    y_true,
-    y_prob_1,
-    y_prob_2,
-    label_1="Modèle 1",
-    label_2="Modèle 2",
-    n_bins=10,
-):
-    n_classes = y_prob_1.shape[1]
-
-    # Mise à plat
-    y_prob_flat_1 = rearrange(y_prob_1, "n c h w -> (n h w) c")
-    y_prob_flat_2 = rearrange(y_prob_2, "n c h w -> (n h w) c")
-
-    if y_true.ndim == 4:
-        y_true_flat = rearrange(y_true.argmax(axis=1), "n h w -> (n h w)")
-    else:
-        y_true_flat = rearrange(y_true, "n h w -> (n h w)")
-
-    # Masquer les pixels nodata
-    valid_mask = y_true_flat != 0
-    y_true_flat = y_true_flat[valid_mask]
-    y_prob_flat_1 = y_prob_flat_1[valid_mask]
-    y_prob_flat_2 = y_prob_flat_2[valid_mask]
-
-    # Grid 5 colonnes
-    n_cols = 5
-    n_rows = int(np.ceil(n_classes / n_cols))
-
-    fig, axs = plt.subplots(n_rows, n_cols, figsize=(5 * n_cols, 4 * n_rows))
-    axs = axs.flatten()
-
-    for i in range(n_classes):
-        for y_prob_flat, label, color in zip(
-            [y_prob_flat_1, y_prob_flat_2],
-            [label_1, label_2],
-            ["#3266ad", "#c0392b"],
-        ):
-            try:
-                prob_true, prob_pred = calibration_curve(
-                    y_true_flat == i,
-                    y_prob_flat[:, i],
-                    n_bins=n_bins,
-                    strategy="uniform",
-                )
-                axs[i].plot(prob_pred, prob_true, marker="o", color=color, label=label)
-            except ValueError:
-                pass
-
-        axs[i].plot([0, 1], [0, 1], linestyle="--", color="gray", label="Parfait")
-        axs[i].set_xlabel("Probabilité moyenne prédite")
-        axs[i].set_ylabel("Fréquence relative")
-        axs[i].set_title(f"{names_class[i]}", fontsize=9)
-        axs[i].legend(fontsize=7)
-        axs[i].grid(True)
-        axs[i].set_xlim(0, 1)
-        axs[i].set_ylim(0, 1)
-
-    for j in range(n_classes, len(axs)):
-        axs[j].set_visible(False)
-
-    plt.suptitle("reliability diagram", fontsize=14)
-    plt.tight_layout()
-    plt.show()
-
-
-def plot_fscore_comparaison(pred_1, pred_2, label):
-
-    f_score = MulticlassF1Score(num_classes=num_class, average="none", ignore_index=0)
-
-    # Plot
-    x = np.arange(num_class)
-    width = 0.35
-
-    plt.figure(figsize=(12, 5))
-    plt.bar(
-        x - width / 2,
-        f_score(pred_1, label.argmax(dim=1)),
-        width,
-        label="Hard Label",
-        color="#1f77b4",
-    )
-    plt.bar(
-        x + width / 2,
-        f_score(pred_2, label.argmax(dim=1)),
-        width,
-        label="Soft Label",
-        color="#ff7f0e",
-    )
-
-    plt.xlabel("Classes")
-    plt.ylabel("F1-score")
-    plt.title("Comparaison F1-score par classe")
-    plt.legend()
-
-    plt.xticks(x, names_class, rotation=45, ha="right")
-    plt.tight_layout()
-    plt.show()
-
-
-def normalize_s2(s2):
-    stats = json.load(
-        open(
-            "/home/hkerino/Documents/nextoso-dataset/data/10m/s2/stats_global.json", "r"
-        )
-    )
-
-    s2_normalized = np.zeros_like(s2, dtype=np.float32)
-    # Normalize per band
-    for band_idx in range(s2.shape[0]):
-        band_data = s2[band_idx, :, :, :]  # Shape: (t, h, w)
-        # Clipping btw p5 & p95
-        p_min = stats["p_min"][band_idx]
-        p_max = stats["p_max"][band_idx]
-        band_clipped = np.clip(band_data, p_min, p_max)
-
-        # normalise
-        median = stats["median"][band_idx]
-        scale = p_max - p_min
-        band_normalized = ((band_clipped - median) / scale).astype(np.float32)
-
-        s2_normalized[band_idx, :, :, :] = band_normalized
-    return s2_normalized

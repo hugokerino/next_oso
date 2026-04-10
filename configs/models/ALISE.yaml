@@ -21,7 +21,7 @@ encoder:
     dim_feedforward: 128
     dropout: 0.2
     batch_first: true
-    num_layers: 3
+    num_layers: 2
   temporal_projector:
     n_head: 8
     d_k: 8

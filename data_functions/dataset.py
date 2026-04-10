@@ -14,6 +14,7 @@ class next_oso_Dataset(tdata.Dataset):
     def __init__(
         self,
         path_s2,
+        path_mnt,
         path_label,
         path_oso_class,
         norm=True,
@@ -28,6 +29,7 @@ class next_oso_Dataset(tdata.Dataset):
     ):
         super(next_oso_Dataset, self).__init__()
         self.path_s2 = path_s2
+        self.path_mnt = path_mnt
         self.path_label = path_label
         self.path_oso_class = path_oso_class
         self.norm = norm
@@ -117,12 +119,14 @@ class next_oso_Dataset(tdata.Dataset):
             to_open_s2 = self.s2_files[idx]
             to_open_label = self.label_files[idx]
             file_basename = os.path.basename(self.s2_files[idx])
+            id = self.ids[idx]
 
         if isinstance(idx, str):
             complete_path = os.path.join(self.path_s2, self._get_file_mapping(idx))
             to_open_s2 = os.path.join(complete_path, f"s2_{idx}.nc")
             to_open_label = os.path.join(self.path_label, f"label_{idx}.nc")
             file_basename = f"s2_{idx}.nc"
+            id = idx
 
         with xr.open_dataset(to_open_s2) as s2_data:
             if self.remove_invalid_temp:
@@ -165,6 +169,11 @@ class next_oso_Dataset(tdata.Dataset):
             else:
                 s2 = torch.from_numpy(s2_array).float()
 
+            geo = None
+            if self.use_spatial_coords:
+                geo = utils_data.geographical_information(s2_data, id, self.path_mnt)
+
+            mask = None
             if self.mask_needed:
                 mask = torch.from_numpy(
                     s2_data["S2_mask"].to_numpy()
@@ -202,17 +211,17 @@ class next_oso_Dataset(tdata.Dataset):
                 )  # Replace -1 by 0
                 label = torch.from_numpy(label_eroded).long()  # h x w
 
-        if self.mask_needed:
-            if self.return_id:
-                return_idx = self.ids[idx] if isinstance(idx, int) else idx
-                return (s2, date, mask), label, return_idx
-            return (s2, date, mask), label
+        sample = (s2, date, mask, geo)
 
-        return (s2, date), label
+        if self.return_id:
+            return sample, label, self.ids[idx] if isinstance(idx, int) else idx
+
+        return sample, label
 
 
 def get_loaders(
     path_s2,
+    path_mnt,
     path_label,
     path_oso_class,
     folds_train,
@@ -223,17 +232,20 @@ def get_loaders(
     label_type,
     norm=True,
     mask_needed=True,
+    use_spatial_coords=False,
     remove_invalid_temp=True,
     shuffle=True,
 ):
     def make_loader(folds, shuffle):
         dataset = next_oso_Dataset(
             path_s2=path_s2,
+            path_mnt=path_mnt,
             path_label=path_label,
             path_oso_class=path_oso_class,
             norm=norm,
             remove_invalid_temp=remove_invalid_temp,
             folds=folds,
+            use_spatial_coords=use_spatial_coords,
             mask_needed=mask_needed,
             label_type=label_type,
         )

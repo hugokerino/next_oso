@@ -11,9 +11,9 @@ from torchmetrics.classification import (
     MulticlassCohenKappa,
 )
 from torchmetrics.segmentation import MeanIoU
-import numpy as np
-from src import metrics
+from einops import rearrange
 
+from src import metrics
 from Alise import utils
 
 
@@ -25,6 +25,7 @@ class classifier(L.LightningModule):
         batch_size,
         loss_fn,
         mask_need,
+        use_spatial_coords=False,
         lr=1e-3,
         max_epochs=100,
         num_classe=25,
@@ -47,6 +48,7 @@ class classifier(L.LightningModule):
         self.H = H
         self.W = W
         self.mask_need = mask_need
+        self.use_spatial_coords = use_spatial_coords
         self.loss_fn = loss_fn
         self.lr = lr
         self.max_epochs = max_epochs
@@ -63,21 +65,37 @@ class classifier(L.LightningModule):
         self.kappa = MulticlassCohenKappa(num_classes=self.num_class, ignore_index=0)
         self.save_hyperparameters(ignore=["encoder", "decoder", "loss_fn"])
 
-    def _shared_step(self, batch, step_name, log_on_step, log_on_epoch):
-        if self.mask_need:
-            (x, date, mask), y = batch
-            z = self.encoder(x, batch_positions=date, pad_mask=mask)  # (bhw) x d_model
-        else:
-            (x, date), y = batch
-            z = self.encoder(x, batch_positions=date)  # (bhw) * out_conv[-1]
+    def _forward(self, batch):
+        inputs, y = batch
+        x, dates = inputs[0], inputs[1]
 
-        y_logits = self.decoder(z)  # (bhw) x nb_class
+        # Dynamically handle optional mask and geo
+        kwargs = {}
+        geo = None
+        if len(inputs) >= 3:
+            if inputs[2].dtype == torch.bool:
+                kwargs["pad_mask"] = inputs[2]
+            else:
+                geo = inputs[2]
+        if len(inputs) >= 4:
+            geo = inputs[3]
 
+        z = self.encoder(x, batch_positions=dates, **kwargs)  # bhw x d
+
+        if self.use_spatial_coords and geo is not None:
+            geo = rearrange(geo, "b c h w -> (b h w) c")  # bhw x 4
+            z = torch.cat([z, geo], dim=1)  # bhw x (d+4)
+
+        y_logits = self.decoder(z)
         y_logits = (
             y_logits.view(x.shape[0], self.H, self.W, self.num_class)
             .permute(0, 3, 1, 2)
             .contiguous()
-        )  # b x nb_class x h x w
+        )
+        return y_logits, y
+
+    def _shared_step(self, batch, step_name, log_on_step, log_on_epoch):
+        y_logits, y = self._forward(batch)
 
         loss = self.loss_fn(y_logits, y)
 
@@ -112,20 +130,7 @@ class classifier(L.LightningModule):
         self._shared_step(batch, step_name="val", log_on_step=False, log_on_epoch=True)
 
     def test_step(self, batch):
-
-        if self.mask_need:
-            (x, date, mask), y = batch
-            z = self.encoder(x, batch_positions=date, pad_mask=mask)
-        else:
-            (x, date), y = batch
-            z = self.encoder(x, batch_positions=date)
-
-        y_logits = self.decoder(z)
-        y_logits = (
-            y_logits.view(x.shape[0], self.H, self.W, self.num_class)
-            .permute(0, 3, 1, 2)
-            .contiguous()
-        )
+        y_logits, y = self._forward(batch)
         self.y_pred_test.append(torch.softmax(y_logits, dim=1).argmax(dim=1))
 
         if y.ndim == 4:  # means that we are using probability label
@@ -166,21 +171,8 @@ class classifier(L.LightningModule):
             self.logger.experiment.add_figure("mIoU", miou_fig, close=True)
 
     def predict_step(self, batch):
-        (x, date, mask), y = batch
-        if self.mask_need:
-            z = self.encoder(x, batch_positions=date, pad_mask=mask)  # (bhw) x d_model
-        else:
-            z = self.encoder(x, batch_positions=date)
-
-        y_logits = self.decoder(z)  # (bhw) x nb_class
-        y_logits = (
-            y_logits.view(x.shape[0], self.H, self.W, self.num_class)
-            .permute(0, 3, 1, 2)
-            .contiguous()
-        )  # b x nb_class x h x w
-
+        y_logits, _ = self._forward(batch)
         probas = torch.softmax(y_logits, dim=1)
-
         return probas
 
     def on_before_optimizer_step(self, optimizer):

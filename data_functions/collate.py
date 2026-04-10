@@ -40,9 +40,11 @@ def pad_nextoso_collate(batch, pad_value=0, mask_needed=True):
 
     # Décompactage unifié
     inputs, label_list = zip(*batch)
+
     s2_list = [inp[0] for inp in inputs]
     date_list = [inp[1] for inp in inputs]
-    mask_list = [inp[2] for inp in inputs] if mask_needed else None
+    mask_list = [inp[2] for inp in inputs]
+    geo_list = [inp[3] for inp in inputs]
 
     len_max_seq = max(date.shape[0] for date in date_list)
 
@@ -58,18 +60,28 @@ def pad_nextoso_collate(batch, pad_value=0, mask_needed=True):
     output_inputs = [torch.stack(padded_s2), torch.stack(padded_dates)]
 
     if mask_needed:
+        if any(mask is None for mask in mask_list):
+            raise RuntimeError("Mask is required but some samples have None mask.")
         padded_masks = [
             pad_to_length(mask, dim=0, length=len_max_seq, pad_value=1)
             for mask in mask_list
         ]
         output_inputs.append(torch.stack(padded_masks))
 
+    any_geo = any(geo is not None for geo in geo_list)
+    if any_geo:
+        if any(geo is None for geo in geo_list):
+            raise RuntimeError("Inconsistent geo presence.")
+        # Stack geo into (batch_size, 4, 128, 128)
+        stacked_geo = torch.stack(geo_list)
+        output_inputs.append(stacked_geo)
+
     return tuple(output_inputs), torch.stack(list(label_list))
 
 
 ###Function from pastis ###
-def pad_tensor(x, l, pad_value=0):
-    padlen = l - x.shape[0]
+def pad_tensor(x, length, pad_value=0):
+    padlen = length - x.shape[0]
     pad = [0 for _ in range(2 * len(x.shape[1:]))] + [0, padlen]
     return F.pad(x, pad=pad, value=pad_value)
 
