@@ -229,7 +229,7 @@ def main(config):
         .suggestion()
     )
     if lr_init is not None:
-        lr_init = lr_init * 10
+        lr_init = lr_init * 100
         tb_logger.log_hyperparams({"initial_lr": lr_init})
         classifier.lr = lr_init
 
