@@ -231,6 +231,7 @@ def get_loaders(
     num_worker,
     label_type,
     norm=True,
+    sequence_packing=False,
     mask_needed=True,
     use_spatial_coords=False,
     remove_invalid_temp=True,
@@ -249,11 +250,16 @@ def get_loaders(
             mask_needed=mask_needed,
             label_type=label_type,
         )
+        if sequence_packing:
+            lengths = [x.shape[2] for (x, _, _, _), _ in dataset]
+            sampler = collate.BucketSampler(lengths, batch_size, shuffle=shuffle)
+
         return torch.utils.data.DataLoader(
             dataset,
-            batch_size=batch_size,
+            batch_size=batch_size if not sequence_packing else 1,
             collate_fn=partial(collate.pad_nextoso_collate, mask_needed=mask_needed),
-            shuffle=shuffle,
+            batch_sampler=sampler if sequence_packing else None,
+            shuffle=shuffle if not sequence_packing else False,
             num_workers=num_worker,
         )
 

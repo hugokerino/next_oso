@@ -1,5 +1,8 @@
+import random
+
 import torch
 from torch.nn import functional as F
+from torch.utils.data import Sampler
 
 import collections.abc
 import re
@@ -79,7 +82,35 @@ def pad_nextoso_collate(batch, pad_value=0, mask_needed=True):
     return tuple(output_inputs), torch.stack(list(label_list))
 
 
+class BucketSampler(Sampler):
+    def __init__(self, lengths, batch_size, shuffle=True):
+        self.lengths = lengths
+        self.batch_size = batch_size
+        self.shuffle = shuffle
+
+        # Trier les indices par longueur
+        self.sorted_indices = sorted(range(len(lengths)), key=lambda i: lengths[i])
+
+    def __iter__(self):
+        # Découper en buckets
+        batches = [
+            self.sorted_indices[i : i + self.batch_size]
+            for i in range(0, len(self.sorted_indices), self.batch_size)
+        ]
+
+        if self.shuffle:
+            random.shuffle(batches)
+
+        for batch in batches:
+            yield batch
+
+    def __len__(self):
+        return (len(self.lengths) + self.batch_size - 1) // self.batch_size
+
+
+#############################################################
 ###Function from pastis ###
+#############################################################
 def pad_tensor(x, length, pad_value=0):
     padlen = length - x.shape[0]
     pad = [0 for _ in range(2 * len(x.shape[1:]))] + [0, padlen]

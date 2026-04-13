@@ -12,6 +12,7 @@ num_class: 25
 folds_train: [1, 2, 3]
 folds_val: [4]
 folds_test: [5]
+sequence_packing: true
 
 # Training
 criterion : cross_entropy

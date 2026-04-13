@@ -28,7 +28,8 @@ from Alise.utils import ONNXEncoderWrapper
 
 
 torch.serialization.add_safe_globals([metrics.FocalLoss])
-torch.set_float32_matmul_precision('high')
+torch.set_float32_matmul_precision("high")
+
 
 def load_config(train_cfg_path: str, model_cfg_path: str) -> dict:
     with open(train_cfg_path, "r") as f:
@@ -144,6 +145,7 @@ def main(config):
         mask_needed=mask_need,
         use_spatial_coords=config["use_spatial_coords"],
         norm=True,
+        sequence_packing=config["sequence_packing"],
         remove_invalid_temp=True,
         shuffle=True,
     )
