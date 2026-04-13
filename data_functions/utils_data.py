@@ -597,6 +597,7 @@ def density_repartition(path_labels: str, name: str, plot=True):
 def density_repartition_all_classes(path_labels: str, plot=True):
 
     all_probas = {}
+
     for name in names_class:
         probas = []
 
@@ -612,37 +613,33 @@ def density_repartition_all_classes(path_labels: str, plot=True):
         else:
             all_probas[name] = np.array([])
 
-        if plot:
-            n_classes = len(names_class)
-            n_cols = 5
-            n_rows = int(np.ceil(n_classes / n_cols))
-
-            fig, axes = plt.subplots(n_rows, n_cols, figsize=(20, n_rows * 3))
-            axes = axes.flatten()
-
-            for i, name in enumerate(names_class):
-                ax = axes[i]
-                if len(all_probas[name]) > 0:
-                    ax.hist(
-                        all_probas[name],
-                        bins=50,
-                        density=True,
-                        color="#3266ad",
-                        edgecolor="white",
-                        linewidth=0.3,
-                    )
-                ax.set_title(name, fontsize=9)
-                ax.set_xlim(0, 1)
-                ax.set_xlabel("Probabilité", fontsize=7)
-                ax.set_ylabel("Densité", fontsize=7)
-
-            # Masquer les axes vides si n_classes % n_cols != 0
-            for j in range(i + 1, len(axes)):
-                axes[j].set_visible(False)
-
-            plt.suptitle("Répartition des probabilités par classe", fontsize=14)
-            plt.tight_layout()
-            plt.show()
+    if plot:
+        n_classes = len(names_class)
+        n_cols = 5
+        n_rows = int(np.ceil(n_classes / n_cols))
+        fig, axes = plt.subplots(n_rows, n_cols, figsize=(20, n_rows * 3))
+        axes = axes.flatten()
+        for i, name in enumerate(names_class):
+            ax = axes[i]
+            if len(all_probas[name]) > 0:
+                ax.hist(
+                    all_probas[name],
+                    bins=50,
+                    density=True,
+                    color="#3266ad",
+                    edgecolor="white",
+                    linewidth=0.3,
+                )
+            ax.set_title(name, fontsize=9)
+            ax.set_xlim(0, 1)
+            ax.set_xlabel("Probabilité", fontsize=7)
+            ax.set_ylabel("Densité", fontsize=7)
+        # Masquer les axes vides si n_classes % n_cols != 0
+        for j in range(i + 1, len(axes)):
+            axes[j].set_visible(False)
+        plt.suptitle("Répartition des probabilités par classe", fontsize=14)
+        plt.tight_layout()
+        plt.show()
 
     return all_probas
 
@@ -663,7 +660,6 @@ def plot_filtered_probas(all_probas, percentile_keep=80, plot=True):
     """
     thresholds = {}
     filtered_probas = {}
-
     for name in names_class:
         probs = np.array(all_probas[name])
         if len(probs) == 0:
