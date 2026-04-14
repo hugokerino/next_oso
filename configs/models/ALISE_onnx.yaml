@@ -2,7 +2,7 @@ model: ALISE_pretrained
 mask_need: false
 
 encoder:
-  onnx_path: /home/hkerino/Documents/model_data/alise_weights.onnx
+  onnx_path: /work/THEIA/CES/oso/hugok/alise_weights/alise_weights.onnx
 decoder:
   n_head: 8
   d_k: 8
