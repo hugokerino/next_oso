@@ -12,7 +12,7 @@ num_class: 25
 folds_train: [1]
 folds_val: [4]
 folds_test: [5]
-sequence_packing: true
+sequence_packing: false
 
 # Training
 criterion : cross_entropy
@@ -27,4 +27,4 @@ running_on_trex_gpu: false
 num_sample_lr_finder : 2
 learning_rate: 0.000001
 logs : False
-use_spatial_coords : True
+use_spatial_coords : false

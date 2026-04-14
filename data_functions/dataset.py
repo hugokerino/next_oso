@@ -18,6 +18,7 @@ class next_oso_Dataset(tdata.Dataset):
         path_label,
         path_oso_class,
         norm=True,
+        norm_pretrained_alise=False,
         remove_invalid_temp=True,
         folds=None,
         mask_needed=True,
@@ -33,6 +34,7 @@ class next_oso_Dataset(tdata.Dataset):
         self.path_label = path_label
         self.path_oso_class = path_oso_class
         self.norm = norm
+        self.norm_pretrained_alise = norm_pretrained_alise
         self.remove_invalid_temp = remove_invalid_temp
         self.folds = folds
         self.mask_needed = mask_needed
@@ -47,12 +49,21 @@ class next_oso_Dataset(tdata.Dataset):
         self.ids_per_fold = {}
         self.norms = {}
         self.name_labels = []
+        self.norm_alise = None
+
         self._collect_files()
         self._get_ids_per_fold()
         self._get_label_names()
 
         if self.norm:
             self._get_norm()
+
+        if self.norm_pretrained_alise:
+            self._get_norm_pretrained_alise()
+
+        assert self.norm != self.norm_pretrained_alise, (
+            "Cannot use both norm and norm_pretrained_alise at the same time."
+        )
 
     def _collect_files(self):
         for zone in range(1, 10):
@@ -90,6 +101,17 @@ class next_oso_Dataset(tdata.Dataset):
             for i in self.folds:
                 norm_value = data_norms.get(f"fold_{i}")
                 self.norms.update({str(i): norm_value})
+
+    def _get_norm_pretrained_alise(self):
+        path_norm_alise = os.path.join(self.path_s2, "norm_alise.csv")
+        if not os.path.exists(path_norm_alise):
+            raise FileNotFoundError(
+                f"Norm file for pretrained ALISE not found at {path_norm_alise}"
+            )
+
+        self.norm_alise = (
+            pandas.read_csv(path_norm_alise).iloc[:, 1:].to_numpy(dtype=np.float32)
+        )
 
     def _get_label_names(self):
         self.name_labels = pandas.read_csv(self.path_oso_class).get("name_class").values
@@ -166,6 +188,15 @@ class next_oso_Dataset(tdata.Dataset):
 
                 s2 = torch.from_numpy(s2_normalized).float()
 
+            elif self.norm_pretrained_alise:
+                s2 = torch.from_numpy(
+                    (s2_array - self.norm_alise[0][:, None, None, None])
+                    / (
+                        self.norm_alise[2][:, None, None, None]
+                        - self.norm_alise[1][:, None, None, None]
+                    )
+                ).float()
+
             else:
                 s2 = torch.from_numpy(s2_array).float()
 
@@ -231,6 +262,7 @@ def get_loaders(
     num_worker,
     label_type,
     norm=True,
+    norm_alise=False,
     sequence_packing=False,
     mask_needed=True,
     use_spatial_coords=False,
@@ -244,6 +276,7 @@ def get_loaders(
             path_label=path_label,
             path_oso_class=path_oso_class,
             norm=norm,
+            norm_pretrained_alise=norm_alise,
             remove_invalid_temp=remove_invalid_temp,
             folds=folds,
             use_spatial_coords=use_spatial_coords,

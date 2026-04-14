@@ -92,6 +92,5 @@ class Temp_Proj_and_MLPDecoder(nn.Module):
 
     def forward(self, x, pad_mask=None):
         x = self.temporal_proj(x, pad_mask=pad_mask)
-        print(x.shape)
-        x = self.mlp_decoder(x)
+        x = self.mlp_decoder(x.squeeze())
         return x

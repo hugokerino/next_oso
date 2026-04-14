@@ -20,11 +20,11 @@ from Alise import utils
 class classifier(L.LightningModule):
     def __init__(
         self,
-        encoder,
-        decoder,
-        batch_size,
-        loss_fn,
-        mask_need,
+        encoder: torch.nn.Module,
+        decoder: torch.nn.Module,
+        batch_size: int,
+        loss_fn: torch.nn.Module,
+        mask_need: bool,
         use_spatial_coords=False,
         lr=1e-3,
         max_epochs=100,
