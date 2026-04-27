@@ -45,7 +45,8 @@ def build_model(config: dict):
     dec_cfg = config["decoder"]
 
     if config["use_spatial_coords"]:
-        dec_cfg["mlp"][0] += 4  # Ajouter 4 dimensions pour les coordonnées spatiales
+        # dec_cfg["mlp"][0] += 4  # Ajouter 4 dimensions pour les coordonnées spatiales si utilisé seulement au decoding
+        enc_cfg["input_dim"] += 4
 
     if model_name == "LTAE":
         encoder = LTAE.LTAE2d(**enc_cfg)

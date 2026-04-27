@@ -7,10 +7,10 @@
 #SBATCH --export=none
 
 #SBATCH -N 1
-#SBATCH --tasks=16
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=16
 #SBATCH --mem-per-cpu=7G
 
-#SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:1
 #SBATCH --partition=gpu_a100
 #SBATCH --qos=gpu_all

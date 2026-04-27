@@ -9,7 +9,7 @@ from src.utils_model import PositionalEncoder, duplicate_to_img
 class LTAE2d(nn.Module):
     def __init__(
         self,
-        in_channels=128,
+        input_dim=128,
         n_head=16,
         d_k=4,
         d_model=256,
@@ -34,15 +34,15 @@ class LTAE2d(nn.Module):
             positional_encoding (bool): If False, no positional encoding is used (default True).
         """
         super().__init__()
-        self.in_channels = in_channels
+        self.input_dim = input_dim
         self.return_att = return_att
         self.n_head = n_head
 
         if d_model is not None:
             self.d_model = d_model
-            self.inconv = nn.Conv1d(in_channels, d_model, 1)
+            self.inconv = nn.Conv1d(input_dim, d_model, 1)
         else:
-            self.d_model = in_channels
+            self.d_model = input_dim
             self.inconv = None
 
         # assert self.mlp[0] == self.d_model

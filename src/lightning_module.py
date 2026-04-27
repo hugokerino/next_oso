@@ -11,7 +11,7 @@ from torchmetrics.classification import (
     MulticlassCohenKappa,
 )
 from torchmetrics.segmentation import MeanIoU
-from einops import rearrange
+from einops import rearrange, repeat
 
 from src import metrics
 from Alise import utils
@@ -80,11 +80,15 @@ class classifier(L.LightningModule):
         if len(inputs) >= 4:
             geo = inputs[3]
 
+        if self.use_spatial_coords and geo is not None:
+            geo = repeat(geo, "B C H W -> B C D H W", D=x.shape[2])
+            x = torch.concat([x, geo], dim=1)
+
         z = self.encoder(x, batch_positions=dates, **kwargs)  # bhw x d
 
-        if self.use_spatial_coords and geo is not None:
-            geo = rearrange(geo, "b c h w -> (b h w) c")  # bhw x 4
-            z = torch.cat([z, geo], dim=1)  # bhw x (d+4)
+        # if self.use_spatial_coords and geo is not None:
+        #     geo = rearrange(geo, "b c h w -> (b h w) c")  # bhw x 4
+        #     z = torch.cat([z, geo], dim=1)  # bhw x (d+4)
 
         y_logits = self.decoder(z)
         y_logits = (
@@ -174,6 +178,19 @@ class classifier(L.LightningModule):
         y_logits, _ = self._forward(batch)
         probas = torch.softmax(y_logits, dim=1)
         return probas
+
+    def forward(self, inputs):
+        x, dates = inputs[0], inputs[1]
+        z = self.encoder(x.unsqueeze(dim=0), batch_positions=dates.unsqueeze(dim=0))
+        logit = self.decoder(z)
+        y_logit = (
+            logit.view(1, self.H, self.W, self.num_class)
+            .permute(0, 3, 1, 2)
+            .contiguous()
+        )
+        pred = y_logit.argmax(dim=1)
+
+        return pred
 
     def on_before_optimizer_step(self, optimizer):
         # Calcul de la norme globale des gradients (pas de clipping ici)

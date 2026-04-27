@@ -27,4 +27,4 @@ running_on_trex_gpu: false
 num_sample_lr_finder : 2
 learning_rate: 0.000001
 logs : False
-use_spatial_coords : false
+use_spatial_coords : true

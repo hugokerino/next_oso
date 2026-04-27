@@ -39,10 +39,13 @@ def pad_to_length(tensor, dim, length, pad_value=0):
     return padded_tensor
 
 
-def pad_nextoso_collate(batch, pad_value=0, mask_needed=True):
+def pad_nextoso_collate(batch, pad_value=0, mask_needed=True, pass_id=False):
 
     # Décompactage unifié
-    inputs, label_list = zip(*batch)
+    if pass_id:
+        inputs, label_list, ids = zip(*batch)
+    else:
+        inputs, label_list = zip(*batch)
 
     s2_list = [inp[0] for inp in inputs]
     date_list = [inp[1] for inp in inputs]
@@ -78,6 +81,13 @@ def pad_nextoso_collate(batch, pad_value=0, mask_needed=True):
         # Stack geo into (batch_size, 4, 128, 128)
         stacked_geo = torch.stack(geo_list)
         output_inputs.append(stacked_geo)
+
+    if pass_id:
+        return (
+            tuple(output_inputs),
+            torch.stack(list(label_list)),
+            ids,
+        )
 
     return tuple(output_inputs), torch.stack(list(label_list))
 

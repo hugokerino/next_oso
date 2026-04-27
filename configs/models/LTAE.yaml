@@ -2,7 +2,7 @@ model: LTAE
 mask_need: true
 
 encoder:
-  in_channels: 10
+  input_dim: 10
   n_head: 16
   d_k: 8
   d_model: 128

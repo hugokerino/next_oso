@@ -268,6 +268,7 @@ def get_loaders(
     use_spatial_coords=False,
     remove_invalid_temp=True,
     shuffle=True,
+    pass_id=False,
 ):
     def make_loader(folds, shuffle):
         dataset = next_oso_Dataset(
@@ -282,6 +283,7 @@ def get_loaders(
             use_spatial_coords=use_spatial_coords,
             mask_needed=mask_needed,
             label_type=label_type,
+            return_id=pass_id,
         )
         if sequence_packing:
             lengths = [x.shape[2] for (x, _, _, _), _ in dataset]
@@ -290,7 +292,9 @@ def get_loaders(
         return torch.utils.data.DataLoader(
             dataset,
             batch_size=batch_size if not sequence_packing else 1,
-            collate_fn=partial(collate.pad_nextoso_collate, mask_needed=mask_needed),
+            collate_fn=partial(
+                collate.pad_nextoso_collate, mask_needed=mask_needed, pass_id=pass_id
+            ),
             batch_sampler=sampler if sequence_packing else None,
             shuffle=shuffle if not sequence_packing else False,
             num_workers=num_worker,
