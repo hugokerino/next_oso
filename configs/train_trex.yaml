@@ -17,7 +17,7 @@ sequence_packing: false
 # Training
 criterion : cross_entropy
 epochs_max: 200
-batch_size: 4
+batch_size: 1
 test_model: false
 accelerator:  "gpu"
 devices: 1
@@ -27,4 +27,4 @@ running_on_trex_gpu: true
 num_sample_lr_finder : 100
 learning_rate: 0.00001
 logs : True
-use_spatial_coords : true
+use_spatial_coords : false

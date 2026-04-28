@@ -19,12 +19,12 @@ import pprint
 from argparse import ArgumentParser
 from datetime import datetime
 import sys
-import onnxruntime
+import onnxruntime as ort
 
 from data_functions import dataset
 from src import LTAE, UTAE, utils_model, lightning_module, metrics
 from Alise import ALISE, sse, transformer, temporal_proj
-from Alise.utils import ONNXEncoderWrapper
+from Alise.utils_ALISE import ONNXEncoderWrapper, MLP_on_time_features
 
 
 torch.serialization.add_safe_globals([metrics.FocalLoss])
@@ -68,7 +68,7 @@ def build_model(config: dict):
                 d_in=emb_dim, **enc_cfg["temporal_projector"]
             ),
         )
-        decoder = utils_model.MLPDecoder(**dec_cfg)
+        decoder = MLP_on_time_features(**dec_cfg)
 
     elif model_name == "ALISE_pretrained":
         onnx_path = enc_cfg.get("onnx_path")
@@ -77,10 +77,12 @@ def build_model(config: dict):
                 "encoder.onnx_path must be set in config for ALISE_pretrained"
             )
 
-        session = onnxruntime.InferenceSession(onnx_path)
+        session = ort.InferenceSession(
+            onnx_path, providers=["CUDAExecutionProvider", "CPUExecutionProvider"]
+        )
 
         encoder = ONNXEncoderWrapper(session=session)
-        decoder = utils_model.Temp_Proj_and_MLPDecoder(**dec_cfg)
+        decoder = MLP_on_time_features()
     else:
         raise ValueError(f"Modèle inconnu : {model_name}")
 

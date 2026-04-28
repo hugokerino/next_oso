@@ -292,6 +292,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/numpy-2.4.3-py312h33ff503_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/oauthlib-3.3.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/onnx-1.21.0-py312he0a7d46_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/onnx2torch-1.5.15-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/onnxruntime-1.24.2-py312hb39aaa6_0_cpu.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/openjpeg-2.5.4-h55fea9a_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/openldap-2.6.10-hbde042b_1.conda
@@ -744,6 +745,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/numpy-2.4.3-py312h33ff503_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/oauthlib-3.3.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/onnx-1.21.0-py312he0a7d46_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/onnx2torch-1.5.15-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/onnxruntime-1.24.2-py312hb39aaa6_0_cpu.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/openjpeg-2.5.4-h55fea9a_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/openldap-2.6.10-hbde042b_1.conda
@@ -1227,6 +1229,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/numpy-2.4.3-py312h33ff503_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/oauthlib-3.3.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/onnx-1.21.0-py312he0a7d46_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/onnx2torch-1.5.15-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/onnxruntime-1.24.2-py312h5fe9fb3_200_cuda129.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/openjpeg-2.5.4-h55fea9a_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/openldap-2.6.10-hbde042b_1.conda
@@ -5497,6 +5500,19 @@ packages:
   license: Apache-2.0
   size: 11695085
   timestamp: 1775086258171
+- conda: https://conda.anaconda.org/conda-forge/noarch/onnx2torch-1.5.15-pyhd8ed1ab_0.conda
+  sha256: 89678b40082f33435d6092cc9149d2017a17a900494da2fdb854b3b86bce3baa
+  md5: 08d11261975a67af760328b20746d562
+  depends:
+  - numpy >=1.16.4
+  - onnx >=1.9.0
+  - python >=3.6
+  - pytorch >=1.8.0
+  - torchvision >=0.9.0
+  license: Apache-2.0
+  license_family: APACHE
+  size: 47991
+  timestamp: 1723040729772
 - conda: https://conda.anaconda.org/conda-forge/linux-64/onnxruntime-1.24.2-py312h5fe9fb3_200_cuda129.conda
   build_number: 200
   sha256: 5805701146700be9c6951a793daa7228ece03b2925ffbce713b9488dbfd9db1e

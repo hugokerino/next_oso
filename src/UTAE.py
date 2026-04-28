@@ -164,11 +164,15 @@ class UTAE(nn.Module):
                 maps.append(out)
 
         if self.encoder:
-            return (
+            out = (
                 out.permute(0, 2, 3, 1)
                 .contiguous()
                 .view(b * h * w, self.decoder_widths[0])
             )  # modif hugo
+            if return_att:
+                return out, att
+            else:
+                return out
         else:
             out = self.out_conv(out)  # b, out_conv[-1], h, w
             out = (

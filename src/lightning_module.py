@@ -14,7 +14,7 @@ from torchmetrics.segmentation import MeanIoU
 from einops import rearrange, repeat
 
 from src import metrics
-from Alise import utils
+from Alise import utils_ALISE
 
 
 class classifier(L.LightningModule):
@@ -38,9 +38,9 @@ class classifier(L.LightningModule):
         if onnxruntime is not None and isinstance(
             encoder, onnxruntime.InferenceSession
         ):
-            encoder = utils.ONNXEncoderWrapper(session=encoder)
+            encoder = utils_ALISE.ONNXEncoderWrapper(session=encoder)
 
-        self.using_onnx_encoder = isinstance(encoder, utils.ONNXEncoderWrapper)
+        self.using_onnx_encoder = isinstance(encoder, utils_ALISE.ONNXEncoderWrapper)
         self.encoder = encoder
         self.decoder = decoder
         self.batch_size = batch_size
