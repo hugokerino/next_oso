@@ -23,7 +23,7 @@ import onnxruntime as ort
 
 from data_functions import dataset
 from src import LTAE, UTAE, utils_model, lightning_module, metrics
-from Alise import ALISE, sse, transformer, temporal_proj
+from Alise import ALISE, sse, transformer, temporal_proj, master_query_decoding
 from Alise.utils_ALISE import ONNXEncoderWrapper, MLP_on_time_features
 
 
@@ -70,6 +70,17 @@ def build_model(config: dict):
         )
         decoder = MLP_on_time_features(**dec_cfg)
 
+    elif model_name == "ALISE_encoding":
+        emb_dim = enc_cfg["embedding_dim"]
+        encoder = ALISE.ALISE_encoding(
+            patch_embedding=sse.PatchEmbedding(
+                sse=sse.Unet(planes=emb_dim, **enc_cfg["sse"]),
+                tpe=sse.PositionalEncoder(d=emb_dim),
+            ),
+            temporal_encoder=transformer.Transformer(**enc_cfg["transformer"]),
+        )
+        decoder = master_query_decoding.MasterQueryDecoding(**dec_cfg)
+
     elif model_name == "ALISE_pretrained":
         onnx_path = enc_cfg.get("onnx_path")
         if not onnx_path:
@@ -86,7 +97,7 @@ def build_model(config: dict):
     else:
         raise ValueError(f"Modèle inconnu : {model_name}")
 
-    return encoder, decoder, config["mask_need"]
+    return encoder, decoder
 
 
 def select_criterion(loss: str):
@@ -126,7 +137,7 @@ def main(config):
 
     # criterion = torch.nn.CrossEntropyLoss(ignore_index=0)
     criterion = select_criterion(config["criterion"])
-    encoder, decoder, mask_need = build_model(config)
+    encoder, decoder = build_model(config)
 
     ########################################
     # DATA
@@ -145,9 +156,11 @@ def main(config):
         batch_size=config["batch_size"],
         num_worker=config["num_worker"],
         label_type=config["label_type"],
-        mask_needed=mask_need,
+        mask_needed=config["mask_need"],
         use_spatial_coords=config["use_spatial_coords"],
-        norm=True if config["model"] in ["LTAE", "UTAE", "ALISE"] else False,
+        norm=True
+        if config["model"] in ["LTAE", "UTAE", "ALISE", "ALISE_encoding"]
+        else False,
         norm_alise=True if config["model"] == "ALISE_pretrained" else False,
         sequence_packing=config["sequence_packing"],
         remove_invalid_temp=True,
@@ -224,7 +237,7 @@ def main(config):
         decoder,
         batch_size=config["batch_size"],
         loss_fn=criterion,
-        mask_need=mask_need,
+        mask_need=config["mask_need"],
         use_spatial_coords=config["use_spatial_coords"],
         lr=config["learning_rate"],
         max_epochs=config["epochs_max"],

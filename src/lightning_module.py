@@ -90,7 +90,11 @@ class classifier(L.LightningModule):
         #     geo = rearrange(geo, "b c h w -> (b h w) c")  # bhw x 4
         #     z = torch.cat([z, geo], dim=1)  # bhw x (d+4)
 
-        y_logits = self.decoder(z)
+        kwargs = {}
+        if self.mask_need:
+            kwargs["key_padding_mask"] = dates == 0
+
+        y_logits = self.decoder(z, **kwargs)
         y_logits = (
             y_logits.view(x.shape[0], self.H, self.W, self.num_class)
             .permute(0, 3, 1, 2)
