@@ -214,7 +214,7 @@ def main(config):
 
     trainer = L.Trainer(
         logger=tb_logger,
-        accumulate_grad_batches=2,
+        accumulate_grad_batches=4,
         log_every_n_steps=10,
         callbacks=list_callback,
         max_epochs=config["epochs_max"],

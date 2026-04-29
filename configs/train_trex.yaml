@@ -17,14 +17,14 @@ sequence_packing: false
 # Training
 criterion : cross_entropy
 epochs_max: 200
-batch_size: 1
+batch_size: 2
 test_model: false
 accelerator:  "gpu"
 devices: 1
 nodes: 1
 strategy: "auto"
 running_on_trex_gpu: true
-num_sample_lr_finder : 100
+num_sample_lr_finder : 1000
 learning_rate: 0.00001
 logs : True
 use_spatial_coords : false
