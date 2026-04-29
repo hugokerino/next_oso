@@ -36,6 +36,6 @@ export PATH=$(dirname $(which pixi)):$PATH
 
 srun --export=ALL pixi run -e gpu python main_lightning.py \
     --config_train configs/train_trex.yaml \
-    --config_model configs/models/UTAE.yaml
+    --config_model configs/models/ALISE.yaml
  
 echo "End"
