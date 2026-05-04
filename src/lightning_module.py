@@ -24,7 +24,7 @@ class classifier(L.LightningModule):
         decoder: torch.nn.Module,
         batch_size: int,
         loss_fn: torch.nn.Module,
-        mask_need: bool,
+        pad_mask_decoder: bool,
         use_spatial_coords=False,
         lr=1e-3,
         max_epochs=100,
@@ -47,7 +47,7 @@ class classifier(L.LightningModule):
         self.num_class = num_classe
         self.H = H
         self.W = W
-        self.mask_need = mask_need
+        self.pad_mask_decoder = pad_mask_decoder
         self.use_spatial_coords = use_spatial_coords
         self.loss_fn = loss_fn
         self.lr = lr
@@ -91,7 +91,7 @@ class classifier(L.LightningModule):
         #     z = torch.cat([z, geo], dim=1)  # bhw x (d+4)
 
         kwargs = {}
-        if self.mask_need:
+        if self.pad_mask_decoder:
             kwargs["key_padding_mask"] = dates == 0
 
         y_logits = self.decoder(z, **kwargs)

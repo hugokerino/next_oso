@@ -225,7 +225,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libopentelemetry-cpp-headers-1.26.0-ha770c72_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libparquet-23.0.1-h7376487_9_cpu.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libpciaccess-0.18-hb9d3cd8_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/libpng-1.6.55-h421ea60_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/libpng-1.6.58-h421ea60_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libpq-18.3-h9abb657_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libprotobuf-6.33.5-h2b00c02_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libre2-11-2025.11.05-h0dc7533_1.conda
@@ -401,7 +401,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/tomli-2.4.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/toolz-1.1.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/torchmetrics-1.9.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/torchvision-0.25.0-cpu_py312_h1fea287_4.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/torchvision-0.26.0-cpu_py312_h1fea287_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/tornado-6.5.3-py312h4c3975b_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tqdm-4.67.3-pyh8f84b5b_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/traitlets-5.14.3-pyhd8ed1ab_1.conda
@@ -678,7 +678,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libopentelemetry-cpp-headers-1.26.0-ha770c72_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libparquet-23.0.1-h7376487_9_cpu.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libpciaccess-0.18-hb9d3cd8_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/libpng-1.6.55-h421ea60_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/libpng-1.6.58-h421ea60_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libpq-18.3-h9abb657_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libprotobuf-6.33.5-h2b00c02_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libre2-11-2025.11.05-h0dc7533_1.conda
@@ -854,7 +854,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/tomli-2.4.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/toolz-1.1.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/torchmetrics-1.9.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/torchvision-0.25.0-cpu_py312_h1fea287_4.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/torchvision-0.26.0-cpu_py312_h1fea287_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/tornado-6.5.3-py312h4c3975b_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tqdm-4.67.3-pyh8f84b5b_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/traitlets-5.14.3-pyhd8ed1ab_1.conda
@@ -1159,7 +1159,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libopentelemetry-cpp-headers-1.26.0-ha770c72_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libparquet-23.0.1-h7376487_9_cpu.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libpciaccess-0.18-hb9d3cd8_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/libpng-1.6.55-h421ea60_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/libpng-1.6.58-h421ea60_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libpq-18.3-h9abb657_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libprotobuf-6.33.5-h2b00c02_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/libre2-11-2025.11.05-h0dc7533_1.conda
@@ -1339,7 +1339,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/tomli-2.4.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/toolz-1.1.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/torchmetrics-1.9.0-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/torchvision-0.25.0-cuda129_py312_h69a17e1_4.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/torchvision-0.26.0-cuda129_py312_h69a17e1_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/tornado-6.5.3-py312h4c3975b_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tqdm-4.67.3-pyh8f84b5b_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/traitlets-5.14.3-pyhd8ed1ab_1.conda
@@ -4504,16 +4504,16 @@ packages:
   license_family: MIT
   size: 28424
   timestamp: 1749901812541
-- conda: https://conda.anaconda.org/conda-forge/linux-64/libpng-1.6.55-h421ea60_0.conda
-  sha256: 36ade759122cdf0f16e2a2562a19746d96cf9c863ffaa812f2f5071ebbe9c03c
-  md5: 5f13ffc7d30ffec87864e678df9957b4
+- conda: https://conda.anaconda.org/conda-forge/linux-64/libpng-1.6.58-h421ea60_0.conda
+  sha256: 377cfe037f3eeb3b1bf3ad333f724a64d32f315ee1958581fc671891d63d3f89
+  md5: eba48a68a1a2b9d3c0d9511548db85db
   depends:
-  - libgcc >=14
   - __glibc >=2.17,<3.0.a0
-  - libzlib >=1.3.1,<2.0a0
+  - libgcc >=14
+  - libzlib >=1.3.2,<2.0a0
   license: zlib-acknowledgement
-  size: 317669
-  timestamp: 1770691470744
+  size: 317729
+  timestamp: 1776315175087
 - conda: https://conda.anaconda.org/conda-forge/linux-64/libpq-18.3-h9abb657_0.conda
   sha256: c7e61b86c273ec1ce92c0e087d1a0f3ed3b9485507c6cd35e03bc63de1b6b03f
   md5: 405ec206d230d9d37ad7c2636114cbf4
@@ -7062,9 +7062,9 @@ packages:
   license_family: APACHE
   size: 398600
   timestamp: 1773827733172
-- conda: https://conda.anaconda.org/conda-forge/linux-64/torchvision-0.25.0-cpu_py312_h1fea287_4.conda
-  sha256: 167169abff1b71e03a16ae6666447b029a2ef022a4bdd73c09278e7a1f413a1a
-  md5: 42d73ae0c98df87303c92a47fd671dd6
+- conda: https://conda.anaconda.org/conda-forge/linux-64/torchvision-0.26.0-cpu_py312_h1fea287_0.conda
+  sha256: 46958a67c3ac324c9266290bd9432a8c8707fec54e4ba2e0fa0b002a8c555b72
+  md5: 28fb287dad0d0cf3b7801befa1ed44ee
   depends:
   - python
   - pytorch * cpu*
@@ -7072,44 +7072,46 @@ packages:
   - libgcc >=14
   - __glibc >=2.17,<3.0.a0
   - libstdcxx >=14
-  - libwebp-base >=1.6.0,<2.0a0
-  - giflib >=5.2.2,<5.3.0a0
+  - pytorch >=2.10.0,<2.11.0a0
   - libtorch >=2.10.0,<2.11.0a0
   - python_abi 3.12.* *_cp312
-  - numpy >=1.23,<3
-  - pytorch >=2.10.0,<2.11.0a0
-  - libpng >=1.6.55,<1.7.0a0
+  - libpng >=1.6.57,<1.7.0a0
   - libjpeg-turbo >=3.1.2,<4.0a0
+  - giflib >=5.2.2,<5.3.0a0
+  - libwebp-base >=1.6.0,<2.0a0
+  - numpy >=1.23,<3
   license: BSD-3-Clause
-  size: 1487411
-  timestamp: 1774203203056
-- conda: https://conda.anaconda.org/conda-forge/linux-64/torchvision-0.25.0-cuda129_py312_h69a17e1_4.conda
-  sha256: bef52b2fb86d76b22a0ee4882b28b6b56f96f31e5963ad135ffc10657af4d744
-  md5: 9ff6e4c96199dc9aa8246edaba8b62bd
+  license_family: BSD
+  size: 1458133
+  timestamp: 1775790347226
+- conda: https://conda.anaconda.org/conda-forge/linux-64/torchvision-0.26.0-cuda129_py312_h69a17e1_0.conda
+  sha256: ee29f802630fb60f2f5142740142d50156d21a60ad492d496deb0377f7f1a227
+  md5: 4b36c1c1d3d2f3872697938a1f924183
   depends:
   - python
   - pytorch * cuda*
   - pillow >=5.3.0,!=8.3.0,!=8.3.1
   - libgcc >=14
-  - __glibc >=2.17,<3.0.a0
   - libstdcxx >=14
   - cuda-version >=12.9,<13
-  - libjpeg-turbo >=3.1.2,<4.0a0
+  - __glibc >=2.17,<3.0.a0
   - giflib >=5.2.2,<5.3.0a0
   - libtorch >=2.10.0,<2.11.0a0
-  - libcublas >=12.9.1.4,<13.0a0
-  - libcudnn >=9.10.2.21,<10.0a0
-  - libcusolver >=11.7.5.82,<12.0a0
-  - numpy >=1.23,<3
-  - python_abi 3.12.* *_cp312
-  - libwebp-base >=1.6.0,<2.0a0
+  - libpng >=1.6.57,<1.7.0a0
   - pytorch >=2.10.0,<2.11.0a0
+  - libwebp-base >=1.6.0,<2.0a0
+  - libcublas >=12.9.1.4,<13.0a0
+  - libcusolver >=11.7.5.82,<12.0a0
+  - python_abi 3.12.* *_cp312
+  - libjpeg-turbo >=3.1.2,<4.0a0
   - libcusparse >=12.5.10.65,<13.0a0
-  - libpng >=1.6.55,<1.7.0a0
+  - libcudnn >=9.10.2.21,<10.0a0
+  - numpy >=1.23,<3
   - libnvjpeg >=12.4.0.76,<13.0a0
   license: BSD-3-Clause
-  size: 3197774
-  timestamp: 1774203238102
+  license_family: BSD
+  size: 3165737
+  timestamp: 1775790344157
 - conda: https://conda.anaconda.org/conda-forge/linux-64/tornado-6.5.3-py312h4c3975b_0.conda
   sha256: bed440cad040f0fe76266f9a527feecbaf00385b68a96532aa69614fe5153f8e
   md5: e03a4bf52d2170d64c816b2a52972097

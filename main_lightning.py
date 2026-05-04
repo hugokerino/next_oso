@@ -237,7 +237,7 @@ def main(config):
         decoder,
         batch_size=config["batch_size"],
         loss_fn=criterion,
-        mask_need=config["mask_need"],
+        pad_mask_decoder=config["pad_mask_decoder"],
         use_spatial_coords=config["use_spatial_coords"],
         lr=config["learning_rate"],
         max_epochs=config["epochs_max"],

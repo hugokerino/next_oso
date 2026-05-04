@@ -7,7 +7,7 @@ import torch
 import torch.utils.data as tdata
 import xarray as xr
 import pandas
-from data_functions import collate, utils_data
+from data_functions import collate, utils_data, transfrom
 
 
 class next_oso_Dataset(tdata.Dataset):
@@ -50,6 +50,9 @@ class next_oso_Dataset(tdata.Dataset):
         self.norms = {}
         self.name_labels = []
         self.norm_alise = None
+        self.transform_norm = transfrom.load_transform_one_mod(
+            os.path.join(self.path_s2, "stats.csv"), mod="s2"
+        )
 
         self._collect_files()
         self._get_ids_per_fold()
@@ -61,9 +64,9 @@ class next_oso_Dataset(tdata.Dataset):
         if self.norm_pretrained_alise:
             self._get_norm_pretrained_alise()
 
-        assert self.norm != self.norm_pretrained_alise, (
-            "Cannot use both norm and norm_pretrained_alise at the same time."
-        )
+        assert (self.norm != self.norm_pretrained_alise) or (
+            not self.norm and not self.norm_pretrained_alise
+        ), "Cannot use both norm and norm_pretrained_alise at the same time."
 
     def _collect_files(self):
         for zone in range(1, 10):
@@ -161,32 +164,7 @@ class next_oso_Dataset(tdata.Dataset):
             )  # c x t x h x w
 
             if self.norm:
-                fold = self._find_keys_for_file(file_basename, self.ids_per_fold)[
-                    0
-                ]  # which fold
-                norm_fold = self.norms[fold]  # get norms for fold
-                s2_normalized = np.zeros_like(s2_array, dtype=np.float32)
-
-                # Normalize per band
-                for band_idx in range(s2_array.shape[0]):
-                    band_data = s2_array[band_idx, :, :, :]  # Shape: (t, h, w)
-
-                    # Clipping btw p5 & p95
-                    p_min = norm_fold["p_min"][band_idx]
-                    p_max = norm_fold["p_max"][band_idx]
-                    band_clipped = np.clip(band_data, p_min, p_max)
-
-                    # normalise
-                    median = norm_fold["median"][band_idx]
-                    scale = p_max - p_min
-
-                    band_normalized = ((band_clipped - median) / scale).astype(
-                        np.float32
-                    )
-
-                    s2_normalized[band_idx, :, :, :] = band_normalized
-
-                s2 = torch.from_numpy(s2_normalized).float()
+                s2 = self.transform_norm.transform(torch.from_numpy(s2_array).float())
 
             elif self.norm_pretrained_alise:
                 s2 = torch.from_numpy(

@@ -52,6 +52,10 @@ def remove_invalid(s2_xarray):
     mask_all_ones = (s2_xarray["S2_mask"] == 1).all(dim=["y", "x"])
     return s2_xarray.where(~mask_all_ones, drop=True)
 
+def normalisation(sits, stats):
+    
+    return
+
 
 def find_clear_img(batch):
     (sits, dates, mask), _ = batch  # sits : b, c, t, h, w ; mask : b, t, h, w
