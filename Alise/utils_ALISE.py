@@ -35,9 +35,9 @@ class ONNXEncoderWrapper(torch.nn.Module):
             res = res[0]
 
         out_tensor = torch.from_numpy(res).to(device)
-        out = rearrange(out_tensor, "b t c h w -> (b h w) t c")
+        # out = rearrange(out_tensor, "b t c h w -> (b h w) t c")
 
-        return out
+        return out_tensor
 
 
 class MLP_on_time_features(nn.Module):
