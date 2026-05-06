@@ -34,7 +34,7 @@ echo "Launch python file"
 export PYTORCH_ALLOC_CONF=expandable_segments:True
 export PATH=$(dirname $(which pixi)):$PATH
 
-srun --export=ALL pixi run -e gpu python main_lightning.py \
+srun --export=ALL pixi run -e gpu python mains/main_lightning.py \
     --config_train configs/train_trex.yaml \
     --config_model configs/models/UTAE.yaml
  

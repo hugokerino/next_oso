@@ -32,7 +32,7 @@ echo "Launch python file for fold $SLURM_ARRAY_TASK_ID"
 export PYTORCH_ALLOC_CONF=expandable_segments:True
 export PATH=$(dirname $(which pixi)):$PATH
 
-srun --export=ALL pixi run -e gpu python main_kfold.py \
+srun --export=ALL pixi run -e gpu python mains/main_kfold.py \
     --config_train configs/train_trex_kfold.yaml \
     --config_model configs/models/UTAE.yaml \
     --fold_index $SLURM_ARRAY_TASK_ID  # Pass the fold index from the array

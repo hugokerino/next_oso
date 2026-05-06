@@ -1,6 +1,5 @@
 model: ALISE_pretrained
 mask_need: false
-pad_mask_decoder : false
 
 encoder:
   onnx_path: /home/hkerino/Documents/model_data/alise_weights.onnx

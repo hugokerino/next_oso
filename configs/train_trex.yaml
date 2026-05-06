@@ -16,7 +16,7 @@ sequence_packing: false
 
 # Training
 criterion : cross_entropy
-optimizer_scheduler : cosine_annealing
+optimizer_scheduler : reduce_on_plateau
 epochs_max: 200
 batch_size: 2
 test_model: false
@@ -26,6 +26,6 @@ nodes: 1
 strategy: "auto"
 running_on_trex_gpu: true
 num_sample_lr_finder : 1000
-learning_rate: 0.01
+learning_rate: 0.001
 logs : True
 use_spatial_coords : false

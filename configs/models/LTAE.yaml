@@ -1,6 +1,5 @@
 model: LTAE
 mask_need: true
-pad_mask_decoder : false
 
 encoder:
   input_dim: 10

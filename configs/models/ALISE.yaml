@@ -1,6 +1,5 @@
 model: ALISE
 mask_need: false
-pad_mask_decoder : false
 
 encoder:
   embedding_dim: 64

@@ -4,6 +4,7 @@ from torch.optim.lr_scheduler import (
     CosineAnnealingLR,
     SequentialLR,
     CosineAnnealingWarmRestarts,
+    ReduceLROnPlateau,
 )
 
 import torch
@@ -246,6 +247,11 @@ class classifier(L.LightningModule):
         elif self.optimizer_scheduler == "cosine_annealing":
             scheduler = CosineAnnealingWarmRestarts(
                 optimizer, T_0=20, T_mult=1, eta_min=1e-5
+            )
+
+        elif self.optimizer_scheduler == "reduce_on_plateau":
+            scheduler = ReduceLROnPlateau(
+                optimizer, mode="min", factor=0.1, patience=10
             )
 
         return [optimizer], [{"scheduler": scheduler, "interval": "epoch"}]
