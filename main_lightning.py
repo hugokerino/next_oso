@@ -192,7 +192,7 @@ def main(config):
         save_top_k=1,
     )
     tb_logger = TensorBoardLogger(log_dir, name="tensorboards", default_hp_metric=False)
-    early_stop = EarlyStopping(monitor="val_fscore", mode="max", patience=20)
+    early_stop = EarlyStopping(monitor="val_fscore", mode="max", patience=30)
     profiler = SimpleProfiler(dirpath=log_dir, filename="profiler")
 
     list_callback = [

@@ -245,7 +245,7 @@ class classifier(L.LightningModule):
 
         elif self.optimizer_scheduler == "cosine_annealing":
             scheduler = CosineAnnealingWarmRestarts(
-                optimizer, T_0=20, T_mult=20, eta_min=1e-4
+                optimizer, T_0=20, T_mult=1, eta_min=1e-5
             )
 
         return [optimizer], [{"scheduler": scheduler, "interval": "epoch"}]

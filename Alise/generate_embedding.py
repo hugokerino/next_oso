@@ -1,9 +1,16 @@
 import torch
 import onnxruntime as ort
 import sys
+import os
 from argparse import ArgumentParser
 
-sys.path.append("/home/hkerino/Documents/next_oso/")
+is_cluster = "SLURM_JOB_ID" in os.environ
+path_root = (
+    "/work/THEIA/CES/oso/hugok/next_oso"
+    if is_cluster
+    else "/home/hkerino/Documents/next_oso/"
+)
+sys.path.append(path_root)
 
 from data_functions import dataset
 from Alise import utils_ALISE
@@ -27,22 +34,25 @@ def generate_embedding(args):
 
     nbr_sample = d.__len__()
 
+    # Load onnx model
+    session = ort.InferenceSession(args.path_model_onnx)
+    alise = utils_ALISE.ONNXEncoderWrapper(session)
+
+    os.makedirs(args.path_saved_embeddings, exist_ok=True)
+
     for i in range(nbr_sample):
         (s2, dates, _, _), _, id = d.__getitem__(i)
 
-        # Load ONNX model
-        PATH_TO_ONNX = "/home/hkerino/Documents/model_data/alise_weights.onnx"
-        session = ort.InferenceSession(
-            PATH_TO_ONNX, providers=["CUDAExecutionProvider", "CPUExecutionProvider"]
-        )
+        save_path=f"{args.path_saved_embeddings}/emb_{id}.pt"
+        if os.path.exists(save_path):
+            continue
 
-        alise = utils_ALISE.ONNXEncoderWrapper(session)
         embedding = alise(s2.unsqueeze(0), dates.unsqueeze(0)).squeeze(0)  # (t,c,h,w)
 
         # Save the embedding
-        save_path = f"{args.path_saved_embeddings}/emb_{id}.pt"
         torch.save(embedding.cpu(), save_path)
-        print(f"Saved embedding for sample {id} at {save_path}")
+        print(f"Sample {id} processed")
+        sys.stdout.flush()
 
 
 if __name__ == "__main__":
@@ -73,6 +83,11 @@ if __name__ == "__main__":
         default="/home/hkerino/Documents/model_data/embeddings",
     )
 
+    parser.add_argument(
+        "--path_model_onnx",
+        type=str,
+        default="/home/hkerino/Documents/model_data/alise_weights.onnx",
+    )
     parser.add_argument("--fold", type=int, required=True)
 
     args = parser.parse_args()
