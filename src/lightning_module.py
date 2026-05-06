@@ -1,5 +1,10 @@
 import lightning as L
-from torch.optim.lr_scheduler import LinearLR, CosineAnnealingLR, SequentialLR
+from torch.optim.lr_scheduler import (
+    LinearLR,
+    CosineAnnealingLR,
+    SequentialLR,
+    CosineAnnealingWarmRestarts,
+)
 
 import torch
 import onnxruntime
@@ -24,6 +29,7 @@ class classifier(L.LightningModule):
         decoder: torch.nn.Module,
         batch_size: int,
         loss_fn: torch.nn.Module,
+        optimizer_scheduler: str = "sequential",
         use_spatial_coords=False,
         lr=1e-3,
         max_epochs=100,
@@ -50,6 +56,7 @@ class classifier(L.LightningModule):
         self.loss_fn = loss_fn
         self.lr = lr
         self.max_epochs = max_epochs
+        self.optimizer_scheduler = optimizer_scheduler
         self.y_pred_test = []
         self.y_true_test = []
         self.acc_metric = MulticlassAccuracy(num_classes=self.num_class, ignore_index=0)
@@ -222,17 +229,23 @@ class classifier(L.LightningModule):
 
         warmup_step = 5
 
-        scheduler = SequentialLR(
-            optimizer=optimizer,
-            schedulers=[
-                LinearLR(optimizer, start_factor=0.1, total_iters=warmup_step),
-                CosineAnnealingLR(
-                    optimizer,
-                    T_max=self.max_epochs - warmup_step,
-                    eta_min=self.lr * 1e-4,
-                ),
-            ],
-            milestones=[warmup_step],
-        )
+        if self.optimizer_scheduler == "sequential":
+            scheduler = SequentialLR(
+                optimizer=optimizer,
+                schedulers=[
+                    LinearLR(optimizer, start_factor=0.1, total_iters=warmup_step),
+                    CosineAnnealingLR(
+                        optimizer,
+                        T_max=self.max_epochs - warmup_step,
+                        eta_min=self.lr * 1e-4,
+                    ),
+                ],
+                milestones=[warmup_step],
+            )
+
+        elif self.optimizer_scheduler == "cosine_annealing":
+            scheduler = CosineAnnealingWarmRestarts(
+                optimizer, T_0=20, T_mult=20, eta_min=1e-4
+            )
 
         return [optimizer], [{"scheduler": scheduler, "interval": "epoch"}]

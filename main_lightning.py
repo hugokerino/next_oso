@@ -102,7 +102,7 @@ def build_model(config: dict):
 
 def select_criterion(loss: str):
     if loss == "cross_entropy":
-        criterion = torch.nn.CrossEntropyLoss()
+        criterion = torch.nn.CrossEntropyLoss(ignore_index=0)
     elif loss == "weightedCE":
         criterion = metrics.WeightedCE()
     elif loss == "hard_and_softCE":
@@ -192,7 +192,7 @@ def main(config):
         save_top_k=1,
     )
     tb_logger = TensorBoardLogger(log_dir, name="tensorboards", default_hp_metric=False)
-    early_stop = EarlyStopping(monitor="val_fscore", mode="max", patience=10)
+    early_stop = EarlyStopping(monitor="val_fscore", mode="max", patience=20)
     profiler = SimpleProfiler(dirpath=log_dir, filename="profiler")
 
     list_callback = [

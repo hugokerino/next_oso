@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH -J main_lightning_alise
+#SBATCH -J main_lightning
 #SBATCH -A theia_oso
 #SBATCH -o script_logs/out_main%j.out
 #SBATCH -e script_logs/err_main%j.err
