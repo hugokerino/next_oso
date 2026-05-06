@@ -237,6 +237,7 @@ def main(config):
         decoder,
         batch_size=config["batch_size"],
         loss_fn=criterion,
+        optimizer_scheduler=config["optimizer_scheduler"],
         use_spatial_coords=config["use_spatial_coords"],
         lr=config["learning_rate"],
         max_epochs=config["epochs_max"],
