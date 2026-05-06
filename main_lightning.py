@@ -214,7 +214,7 @@ def main(config):
 
     trainer = L.Trainer(
         logger=tb_logger,
-        accumulate_grad_batches=4,
+        accumulate_grad_batches=1,
         log_every_n_steps=10,
         callbacks=list_callback,
         max_epochs=config["epochs_max"],
@@ -237,26 +237,25 @@ def main(config):
         decoder,
         batch_size=config["batch_size"],
         loss_fn=criterion,
-        pad_mask_decoder=config["pad_mask_decoder"],
         use_spatial_coords=config["use_spatial_coords"],
         lr=config["learning_rate"],
         max_epochs=config["epochs_max"],
     )
 
-    # Initial learning rate finder
-    lr_init = (
-        Tuner(trainer)
-        .lr_find(
-            model=classifier,
-            train_dataloaders=dl_train,
-            num_training=config["num_sample_lr_finder"],
-        )
-        .suggestion()
-    )
-    if lr_init is not None:
-        lr_init = lr_init * 100
-        tb_logger.log_hyperparams({"initial_lr": lr_init})
-        classifier.lr = lr_init
+    # # Initial learning rate finder
+    # lr_init = (
+    #     Tuner(trainer)
+    #     .lr_find(
+    #         model=classifier,
+    #         train_dataloaders=dl_train,
+    #         num_training=config["num_sample_lr_finder"],
+    #     )
+    #     .suggestion()
+    # )
+    # if lr_init is not None:
+    #     lr_init = lr_init * 100
+    #     tb_logger.log_hyperparams({"initial_lr": lr_init})
+    #     classifier.lr = lr_init
 
     # Training
     trainer.fit(model=classifier, train_dataloaders=dl_train, val_dataloaders=dl_val)

@@ -48,18 +48,13 @@ class next_oso_Dataset(tdata.Dataset):
         self.ids = []
         self.ids_per_fold = {}
         self.norms = {}
-        self.name_labels = []
+        self.name_labels = pandas.read_csv(self.path_oso_class).get("name_class").values
         self.norm_alise = None
         self.transform_norm = transfrom.load_transform_one_mod(
             os.path.join(self.path_s2, "stats.csv"), mod="s2"
         )
 
         self._collect_files()
-        self._get_ids_per_fold()
-        self._get_label_names()
-
-        if self.norm:
-            self._get_norm()
 
         if self.norm_pretrained_alise:
             self._get_norm_pretrained_alise()
@@ -116,9 +111,6 @@ class next_oso_Dataset(tdata.Dataset):
             pandas.read_csv(path_norm_alise).iloc[:, 1:].to_numpy(dtype=np.float32)
         )
 
-    def _get_label_names(self):
-        self.name_labels = pandas.read_csv(self.path_oso_class).get("name_class").values
-
     def _get_ids_per_fold(self):
         with open(os.path.join(self.path_s2, "s2_ids_per_folder.json"), "r") as f:
             self.ids_per_fold.update(json.load(f))
@@ -165,6 +157,13 @@ class next_oso_Dataset(tdata.Dataset):
 
             if self.norm:
                 s2 = self.transform_norm.transform(torch.from_numpy(s2_array).float())
+
+            # if self.norm:
+            #     fold = self._find_keys_for_file(file_basename, self.ids_per_fold)[
+            #         0
+            #     ]  # which fold
+            #     norm_fold = self.norms[fold]  # get norms for fold
+            #     s2 = utils_data.normalisation(s2_array, norm_fold)
 
             elif self.norm_pretrained_alise:
                 s2 = torch.from_numpy(

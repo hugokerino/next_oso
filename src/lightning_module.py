@@ -24,7 +24,6 @@ class classifier(L.LightningModule):
         decoder: torch.nn.Module,
         batch_size: int,
         loss_fn: torch.nn.Module,
-        pad_mask_decoder: bool,
         use_spatial_coords=False,
         lr=1e-3,
         max_epochs=100,
@@ -47,7 +46,6 @@ class classifier(L.LightningModule):
         self.num_class = num_classe
         self.H = H
         self.W = W
-        self.pad_mask_decoder = pad_mask_decoder
         self.use_spatial_coords = use_spatial_coords
         self.loss_fn = loss_fn
         self.lr = lr
@@ -80,21 +78,17 @@ class classifier(L.LightningModule):
         if len(inputs) >= 4:
             geo = inputs[3]
 
-        if self.use_spatial_coords and geo is not None:
-            geo = repeat(geo, "B C H W -> B C D H W", D=x.shape[2])
-            x = torch.concat([x, geo], dim=1)
+        # if self.use_spatial_coords and geo is not None:
+        #     geo = repeat(geo, "B C H W -> B C D H W", D=x.shape[2])
+        #     x = torch.concat([x, geo], dim=1)
 
         z = self.encoder(x, batch_positions=dates, **kwargs)  # bhw x d
 
-        # if self.use_spatial_coords and geo is not None:
-        #     geo = rearrange(geo, "b c h w -> (b h w) c")  # bhw x 4
-        #     z = torch.cat([z, geo], dim=1)  # bhw x (d+4)
+        if self.use_spatial_coords and geo is not None:
+            geo = rearrange(geo, "b c h w -> (b h w) c")  # bhw x 4
+            z = torch.cat([z, geo], dim=1)  # bhw x (d+4)
 
-        kwargs = {}
-        if self.pad_mask_decoder:
-            kwargs["key_padding_mask"] = dates == 0
-
-        y_logits = self.decoder(z, **kwargs)
+        y_logits = self.decoder(z)
         y_logits = (
             y_logits.view(x.shape[0], self.H, self.W, self.num_class)
             .permute(0, 3, 1, 2)
@@ -231,11 +225,11 @@ class classifier(L.LightningModule):
         scheduler = SequentialLR(
             optimizer=optimizer,
             schedulers=[
-                LinearLR(optimizer, start_factor=0.1, total_iters=10),
+                LinearLR(optimizer, start_factor=0.1, total_iters=warmup_step),
                 CosineAnnealingLR(
                     optimizer,
                     T_max=self.max_epochs - warmup_step,
-                    eta_min=self.lr * 1e-3,
+                    eta_min=self.lr * 1e-4,
                 ),
             ],
             milestones=[warmup_step],

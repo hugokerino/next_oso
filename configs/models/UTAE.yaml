@@ -1,6 +1,5 @@
 model: UTAE
 mask_need: false
-pad_mask_decoder : false
 
 encoder:
   input_dim: 10

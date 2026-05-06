@@ -52,9 +52,29 @@ def remove_invalid(s2_xarray):
     mask_all_ones = (s2_xarray["S2_mask"] == 1).all(dim=["y", "x"])
     return s2_xarray.where(~mask_all_ones, drop=True)
 
-def normalisation(sits, stats):
-    
-    return
+
+def normalisation(s2_array, norm_fold):
+
+    s2_normalized = np.zeros_like(s2_array, dtype=np.float32)
+
+    # Normalize per band
+    for band_idx in range(s2_array.shape[0]):
+        band_data = s2_array[band_idx, :, :, :]  # Shape: (t, h, w)
+
+        # Clipping btw p5 & p95
+        p_min = norm_fold["p_min"][band_idx]
+        p_max = norm_fold["p_max"][band_idx]
+        band_clipped = np.clip(band_data, p_min, p_max)
+
+        # normalise
+        median = norm_fold["median"][band_idx]
+        scale = p_max - p_min
+
+        band_normalized = ((band_clipped - median) / scale).astype(np.float32)
+
+        s2_normalized[band_idx, :, :, :] = band_normalized
+
+    return torch.from_numpy(s2_normalized).float()
 
 
 def find_clear_img(batch):
