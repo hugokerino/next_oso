@@ -254,4 +254,4 @@ class classifier(L.LightningModule):
                 optimizer, mode="min", factor=0.1, patience=10
             )
 
-        return [optimizer], [{"scheduler": scheduler, "interval": "epoch"}]
+        return [optimizer], [{"scheduler": scheduler, "interval": "epoch", "monitor": "val_fscore"}]

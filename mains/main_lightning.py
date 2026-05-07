@@ -21,6 +21,9 @@ from datetime import datetime
 import sys
 import onnxruntime as ort
 
+
+sys.path.append("/work/THEIA/CES/oso/hugok/next_oso/")
+
 from data_functions import dataset
 from src import LTAE, UTAE, utils_model, lightning_module, metrics
 from Alise import ALISE, sse, transformer, temporal_proj, master_query_decoding
