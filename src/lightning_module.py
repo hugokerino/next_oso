@@ -251,7 +251,9 @@ class classifier(L.LightningModule):
 
         elif self.optimizer_scheduler == "reduce_on_plateau":
             scheduler = ReduceLROnPlateau(
-                optimizer, mode="min", factor=0.1, patience=10
+                optimizer, mode="max", factor=0.1, patience=10
             )
 
-        return [optimizer], [{"scheduler": scheduler, "interval": "epoch", "monitor": "val_fscore"}]
+        return [optimizer], [
+            {"scheduler": scheduler, "interval": "epoch", "monitor": "val_fscore"}
+        ]
