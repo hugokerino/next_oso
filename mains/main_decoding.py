@@ -14,6 +14,9 @@ from argparse import ArgumentParser
 from datetime import datetime
 import signal
 
+import sys
+sys.path.append("/work/THEIA/CES/oso/hugok/next_oso/")
+
 from Alise import decode_embedding, utils_ALISE, master_query_decoding
 
 
@@ -143,7 +146,7 @@ if __name__ == "__main__":
     )
 
     parser.add_argument("--layers_decoder", type=list, default=[640, 320, 160, 64, 25])
-    parser.add_argument("--dropout_decoder", type=float, default=0)
+    parser.add_argument("--dropout_decoder", type=float, default=0.1)
 
     args = parser.parse_args()
     pprint.pprint(args)

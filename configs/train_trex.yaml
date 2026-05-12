@@ -26,6 +26,6 @@ nodes: 1
 strategy: "auto"
 running_on_trex_gpu: true
 num_sample_lr_finder : 1000
-learning_rate: 0.001
+learning_rate: 0.0001
 logs : True
 use_spatial_coords : false

@@ -7,12 +7,12 @@
 #SBATCH --export=none
 
 #SBATCH -N 1
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=16
-#SBATCH --mem-per-cpu=7G
+#SBATCH --tasks=9
+#SBATCH --mem-per-cpu=10G
 
+#SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:1
-#SBATCH --partition=gpu_a100
+#SBATCH --partition=gpu_std
 #SBATCH --qos=gpu_all
 
 #SBATCH --time=05:00:00             # Walltime
@@ -34,7 +34,7 @@ pixi run -e gpu python mains/main_decoding.py \
     --path_embedding "/work/THEIA/CES/oso/hugok/alise_weights/embeddings" \
     --path_label "/work/THEIA/CES/oso/hugok/labels" \
     --path_mapping_folder "/work/THEIA/CES/oso/hugok/s2_data/" \
-    --path logs "/work/THEIA/CES/oso/hugok/next_oso/logs/alise_decoding" \
-    --batch_size 32
+    --path_logs "/work/THEIA/CES/oso/hugok/next_oso/logs/alise_decoding" \
+    --batch_size 8
  
 echo "End"
