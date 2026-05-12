@@ -15,6 +15,7 @@ from datetime import datetime
 import signal
 
 import sys
+
 sys.path.append("/work/THEIA/CES/oso/hugok/next_oso/")
 
 from Alise import decode_embedding, utils_ALISE, master_query_decoding
@@ -93,9 +94,7 @@ def main(config):
         precision=get_precision(),
     )
     trainer.fit(classifier, datamodule=datamodule)
-    trainer.test(classifier, datamodule=datamodule)
-
-    return
+    trainer.test(classifier, datamodule=datamodule, ckpt_path="best")
 
 
 if __name__ == "__main__":

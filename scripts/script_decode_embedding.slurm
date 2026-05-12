@@ -15,7 +15,7 @@
 #SBATCH --partition=gpu_std
 #SBATCH --qos=gpu_all
 
-#SBATCH --time=05:00:00             # Walltime
+#SBATCH --time=15:00:00             # Walltime
 
 #SBATCH --signal=SIGUSR1@90         # For auto-resubmit
 
@@ -33,7 +33,7 @@ echo "Launch python file"
 pixi run -e gpu python mains/main_decoding.py \
     --path_embedding "/work/THEIA/CES/oso/hugok/alise_weights/embeddings" \
     --path_label "/work/THEIA/CES/oso/hugok/labels" \
-    --path_mapping_folder "/work/THEIA/CES/oso/hugok/s2_data/" \
+    --path_mapping_folder "/work/THEIA/CES/oso/hugok/s2_data" \
     --path_logs "/work/THEIA/CES/oso/hugok/next_oso/logs/alise_decoding" \
     --batch_size 8
  

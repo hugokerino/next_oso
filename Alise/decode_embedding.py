@@ -263,9 +263,36 @@ class DecodeEmbedding(L.LightningModule):
         probas = torch.softmax(y_logits, dim=1)
         return probas
 
+    def on_before_optimizer_step(self, optimizer):
+        # Calcul de la norme globale des gradients (pas de clipping ici)
+        grad_norm = torch.nn.utils.clip_grad_norm_(
+            self.parameters(),
+            max_norm=float("inf"),  # inf = pas de clipping
+        )
+        # Log avec Lightning (Tensorboard ou autre logger)
+        self.log(
+            "grad_norm",
+            grad_norm,
+            on_step=True,
+            on_epoch=True,
+            prog_bar=False,
+            sync_dist=True,
+        )
+
+        # Log learning rate from scheduler
+        current_lr = optimizer.param_groups[0]["lr"]
+        self.log(
+            "learning_rate",
+            current_lr,
+            on_step=True,
+            on_epoch=True,
+            prog_bar=True,
+            sync_dist=True,
+        )
+
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
-        scheduler = ReduceLROnPlateau(optimizer, mode="max", factor=0.1, patience=10)
+        scheduler = ReduceLROnPlateau(optimizer, mode="max", factor=0.1, patience=5)
 
         return [optimizer], [
             {"scheduler": scheduler, "interval": "epoch", "monitor": "val_fscore"}
