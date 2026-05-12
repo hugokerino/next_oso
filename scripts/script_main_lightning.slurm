@@ -15,7 +15,7 @@
 #SBATCH --partition=gpu_a100
 #SBATCH --qos=gpu_all
 
-#SBATCH --time=15:00:00             # Walltime
+#SBATCH --time=20:00:00             # Walltime
 
 #SBATCH --signal=SIGUSR1@90         # For auto-resubmit
 
@@ -36,6 +36,6 @@ export PATH=$(dirname $(which pixi)):$PATH
 
 srun --export=ALL pixi run -e gpu python mains/main_lightning.py \
     --config_train configs/train_trex.yaml \
-    --config_model configs/models/UTAE.yaml
+    --config_model configs/models/ALIS.yaml
  
 echo "End"

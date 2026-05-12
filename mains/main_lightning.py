@@ -19,15 +19,13 @@ import pprint
 from argparse import ArgumentParser
 from datetime import datetime
 import sys
-import onnxruntime as ort
-
 
 sys.path.append("/work/THEIA/CES/oso/hugok/next_oso/")
 
 from data_functions import dataset
 from src import LTAE, UTAE, utils_model, lightning_module, metrics
 from Alise import ALISE, sse, transformer, temporal_proj, master_query_decoding
-from Alise.utils_ALISE import ONNXEncoderWrapper, MLP_on_time_features
+from Alise.utils_ALISE import MLP_on_time_features
 
 
 torch.serialization.add_safe_globals([metrics.FocalLoss])
@@ -84,19 +82,6 @@ def build_model(config: dict):
         )
         decoder = master_query_decoding.MasterQueryDecoding(**dec_cfg)
 
-    elif model_name == "ALISE_pretrained":
-        onnx_path = enc_cfg.get("onnx_path")
-        if not onnx_path:
-            raise ValueError(
-                "encoder.onnx_path must be set in config for ALISE_pretrained"
-            )
-
-        session = ort.InferenceSession(
-            onnx_path, providers=["CUDAExecutionProvider", "CPUExecutionProvider"]
-        )
-
-        encoder = ONNXEncoderWrapper(session=session)
-        decoder = MLP_on_time_features()
     else:
         raise ValueError(f"Modèle inconnu : {model_name}")
 

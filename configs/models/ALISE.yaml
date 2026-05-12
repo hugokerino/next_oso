@@ -29,4 +29,4 @@ encoder:
 
 decoder:
   mlp: [320, 180, 100, 25]
-  dropout: 0.2
+  dropout: 0.1
