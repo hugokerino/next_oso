@@ -25,8 +25,8 @@ encoder:
   temporal_projector:
     n_head: 4
     d_k: 32
-    n_q: 5
+    n_q: 10
 
 decoder:
-  mlp: [320, 180, 100, 25]
+  mlp: [640, 64, 25]
   dropout: 0.1

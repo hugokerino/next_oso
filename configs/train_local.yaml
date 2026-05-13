@@ -16,6 +16,7 @@ sequence_packing: false
 
 # Training
 criterion : cross_entropy
+optimizer_scheduler : reduce_on_plateau
 epochs_max: 1
 batch_size: 1
 test_model: true
