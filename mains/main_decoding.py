@@ -144,8 +144,8 @@ if __name__ == "__main__":
         "--decoder", type=str, default="MLP", choices=["MLP", "Transformer"]
     )
 
-    parser.add_argument("--layers_decoder", type=list, default=[640, 320, 160, 64, 25])
-    parser.add_argument("--dropout_decoder", type=float, default=0.1)
+    parser.add_argument("--layers_decoder", type=list, default=[640, 64, 25])
+    parser.add_argument("--dropout_decoder", type=float, default=0.2)
 
     args = parser.parse_args()
     pprint.pprint(args)
