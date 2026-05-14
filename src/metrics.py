@@ -14,8 +14,7 @@ def calculate_accuracy(y_pred, y, ignore_label=True):
         y_pred = y_pred[mask]
 
     correct = np.sum(y.view(-1).cpu().numpy() == y_pred.view(-1).cpu().numpy())
-    total = y.shape[0]
-
+    total = y.view(-1).shape[0]
     return correct / total
 
 

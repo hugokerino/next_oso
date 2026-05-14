@@ -95,8 +95,6 @@ class AliseEmbeddingDataModule(LightningDataModule):
         fold_val=None | list[int],
         fold_test=None | list[int],
         batch_size=32,
-        lr=1e-3,
-        max_epochs=100,
         num_workers=4,
     ):
         super().__init__()
@@ -107,8 +105,6 @@ class AliseEmbeddingDataModule(LightningDataModule):
         self.fold_val = fold_val
         self.fold_test = fold_test
         self.batch_size = batch_size
-        self.lr = lr
-        self.max_epochs = max_epochs
         self.num_workers = num_workers
 
         self.data_train = alise_embedding_dataset(

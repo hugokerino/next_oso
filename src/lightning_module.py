@@ -111,8 +111,8 @@ class classifier(L.LightningModule):
         self.log_dict(
             {
                 f"{step_name}_loss": loss,
-                f"{step_name}_accuracy": acc,
                 f"{step_name}_fscore": f1,
+                f"{step_name}_accuracy": acc,
             },
             prog_bar=True,
             on_epoch=log_on_epoch,

@@ -32,7 +32,7 @@ utae_config = yaml.safe_load(
     open("/home/hkerino/Documents/next_oso/configs/models/UTAE.yaml", "r")
 )
 alise_config = yaml.safe_load(
-    open("/home/hkerino/Documents/next_oso/configs/models/ALISE.yaml", "r")
+    open("/home/hkerino/Documents/next_oso/configs/models/ALISE_big.yaml", "r")
 )
 
 
@@ -73,7 +73,7 @@ alise_config = yaml.safe_load(
     ids=["dummy", "ltae", "utae", "alise"],
 )
 def test_lightning_module(encoder, decoder):
-    batch_size = 2
+    batch_size = 1
     model = lightning_module.classifier(
         encoder=encoder,
         decoder=decoder,
