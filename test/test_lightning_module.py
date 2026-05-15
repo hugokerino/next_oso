@@ -32,7 +32,7 @@ utae_config = yaml.safe_load(
     open("/home/hkerino/Documents/next_oso/configs/models/UTAE.yaml", "r")
 )
 alise_config = yaml.safe_load(
-    open("/home/hkerino/Documents/next_oso/configs/models/ALISE_big.yaml", "r")
+    open("/home/hkerino/Documents/next_oso/configs/models/ALISE.yaml", "r")
 )
 
 

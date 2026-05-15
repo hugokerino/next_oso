@@ -1,0 +1,13 @@
+# Paths
+path_pastis: /work/THEIA/CES/oso/hugok/s2_data
+path_logs : /work/THEIA/CES/oso/hugok/next_oso/pastis/logs
+epochs_max: 300
+batch_size: 2
+test_model: false
+accelerator:  "gpu"
+devices: 1
+nodes: 1
+strategy: "auto"
+running_on_trex_gpu: true
+learning_rate: 0.00001
+logs : True
