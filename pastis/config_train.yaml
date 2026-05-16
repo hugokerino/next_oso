@@ -3,7 +3,7 @@ path_pastis: /work/THEIA/CES/oso/hugok/pastis
 path_logs : /work/THEIA/CES/oso/hugok/next_oso/pastis/logs
 epochs_max: 300
 batch_size: 2
-num_class: 20
+num_class: 19
 test_model: false
 accelerator:  "gpu"
 devices: 1

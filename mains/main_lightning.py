@@ -11,6 +11,7 @@ from lightning.pytorch.plugins.environments import SLURMEnvironment
 from lightning.pytorch.tuner import Tuner
 
 import numpy as np
+import pandas
 import signal
 import json
 import os
@@ -20,7 +21,13 @@ from argparse import ArgumentParser
 from datetime import datetime
 import sys
 
-sys.path.append("/work/THEIA/CES/oso/hugok/next_oso/")
+is_cluster = "SLURM_JOB_ID" in os.environ
+path_to_oso_proj = (
+    "/work/THEIA/CES/oso/hugok/next_oso"
+    if is_cluster
+    else "/home/hkerino/Documents/next_oso/"
+)
+sys.path.append(path_to_oso_proj)
 
 from data_functions import dataset
 from src import LTAE, UTAE, utils_model, lightning_module, metrics
@@ -229,6 +236,7 @@ def main(config):
         use_spatial_coords=config["use_spatial_coords"],
         lr=config["learning_rate"],
         max_epochs=config["epochs_max"],
+        name_class=pandas.read_csv(config["path_oso_classes"]).get("name_class").values,
     )
 
     # # Initial learning rate finder

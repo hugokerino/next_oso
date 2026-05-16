@@ -1,6 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torchmetrics.segmentation import MeanIoU
+from torchmetrics.classification import MulticlassF1Score
+
 import numpy as np
 from matplotlib import pyplot as plt
 import seaborn as sns
@@ -203,6 +206,43 @@ def create_markdown_table(dict):
     return table_str
 
 
+def metrics_per_class(preds, labels, num_class, names_class=None):
+    f_score_per_class = MulticlassF1Score(
+        num_classes=num_class, ignore_index=0, average="none"
+    )
+    miou_per_class = MeanIoU(
+        num_classes=num_class,
+        include_background=False,
+        per_class=True,
+        input_format="index",
+    )
+
+    f = f_score_per_class(preds, labels)  # (num_class)
+    m = miou_per_class(preds, labels)  # (num_class -1)
+
+    def create_table(f_scores, miou_scores):
+        # En-tête
+        table_str = "| Classe                | F-score | MIoU    |\n"
+        table_str += "|-----------------------|---------|----------|\n"
+
+        # Lignes — on skip l'index 0 de f, m commence à 0 = classe 1
+        for i in range(1, num_class):
+            class_name = names_class[i] if names_class is not None else f"Classe {i}"
+            f_val = f_scores[i].item()
+            m_val = miou_scores[i - 1].item()  # décalage de 1
+            table_str += f"| {class_name:<21} | {f_val:.3f}   | {m_val:.3f}    |\n"
+
+        # Ligne séparatrice + moyenne
+        f_mean = f_scores[1:].mean().item()  # moyenne sans la classe 0
+        m_mean = miou_scores.mean().item()
+
+        table_str += "|-----------------------|---------|----------|\n"
+        table_str += f"| {'Moyenne':<21} | {f_mean:.3f}   | {m_mean:.3f}    |\n"
+        return table_str
+
+    return create_table(f, m)
+
+
 def alpha_weights(dataset):
     classes = np.zeros(25)
 
@@ -221,6 +261,14 @@ def alpha_weights(dataset):
     alpha_weights = freqs / freqs.sum()
 
     return alpha_weights
+
+
+#
+#
+#
+###########
+########### Loss functions ###########
+###########
 
 
 class FocalLoss(nn.Module):

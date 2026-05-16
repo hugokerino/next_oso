@@ -16,7 +16,7 @@ from torchmetrics.classification import (
     MulticlassCohenKappa,
 )
 from torchmetrics.segmentation import MeanIoU
-from einops import rearrange, repeat
+from einops import rearrange
 
 from src import metrics
 
@@ -35,6 +35,7 @@ class classifier(L.LightningModule):
         num_classe=25,
         H=128,
         W=128,
+        name_class=None,
     ):
         super().__init__()
 
@@ -51,15 +52,21 @@ class classifier(L.LightningModule):
         self.optimizer_scheduler = optimizer_scheduler
         self.y_pred_test = []
         self.y_true_test = []
-        self.acc_metric = MulticlassAccuracy(num_classes=self.num_class, ignore_index=0)
+        self.acc_metric = MulticlassAccuracy(
+            num_classes=self.num_class, ignore_index=0, average="micro"
+        )  # Micro for Overall Accuracy
         self.cm_metric = MulticlassConfusionMatrix(
             num_classes=self.num_class, ignore_index=0, normalize="none"
         )
         self.f_score_metric = MulticlassF1Score(
-            num_classes=self.num_class, ignore_index=0
+            num_classes=self.num_class, ignore_index=0, average="none"
+        )  # F-score per class (including 0 but =0)
+
+        self.miou_metric = MeanIoU(
+            num_classes=self.num_class, include_background=False, input_format="index"
         )
-        self.miou_metric = MeanIoU(num_classes=self.num_class, include_background=False)
         self.kappa = MulticlassCohenKappa(num_classes=self.num_class, ignore_index=0)
+        self.name_class = name_class
         self.save_hyperparameters(ignore=["encoder", "decoder", "loss_fn"])
 
     def _forward(self, batch):
@@ -106,7 +113,7 @@ class classifier(L.LightningModule):
             y = y.argmax(dim=1)
 
         acc = self.acc_metric(y_pred, y)
-        f1 = self.f_score_metric(y_pred, y)
+        f1 = self.f_score_metric(y_pred, y)[1:].mean().item()
 
         self.log_dict(
             {
@@ -146,7 +153,7 @@ class classifier(L.LightningModule):
         # Global metrics
         acc = self.acc_metric(y_preds, y_trues)
         cm = self.cm_metric(y_preds, y_trues)
-        f1 = self.f_score_metric(y_preds, y_trues)
+        f1 = self.f_score_metric(y_preds, y_trues)[1:].mean().item()
         miou = self.miou_metric(y_preds, y_trues)
         kappa = self.kappa(y_preds, y_trues)
 
@@ -159,17 +166,19 @@ class classifier(L.LightningModule):
         }
 
         table_metrics = metrics.create_markdown_table(test_metrics)
+        table_metrics_per_class = metrics.metrics_per_class(
+            y_preds, y_trues, self.num_class, self.name_class
+        )
 
         # Figures
         cm_fig = metrics.convert_cm_to_figure(cm.cpu())
-        f1_fig = metrics.return_plot_f_score(cm.cpu())
-        miou_fig = metrics.return_plot_miou(cm.cpu())
 
         if self.logger:
             self.logger.experiment.add_text("Test_Metrics", table_metrics)
+            self.logger.experiment.add_text(
+                "Test_Metrics per class", table_metrics_per_class
+            )
             self.logger.experiment.add_figure("Confusion Matrix", cm_fig, close=True)
-            self.logger.experiment.add_figure("F-Score", f1_fig, close=True)
-            self.logger.experiment.add_figure("mIoU", miou_fig, close=True)
 
     def predict_step(self, batch):
         y_logits, _ = self._forward(batch)
