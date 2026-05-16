@@ -127,11 +127,6 @@ def main(config):
 
     limit_batches = 1.0
 
-    if config["test_model"]:
-        tb_logger = None
-        list_callback = None
-        limit_batches = 2
-
     plugin = None
     if config["running_on_trex_gpu"]:
         plugin = [SLURMEnvironment(requeue_signal=signal.SIGHUP, auto_requeue=True)]
@@ -154,7 +149,6 @@ def main(config):
         plugins=plugin,
     )
 
-    limit_batches = 2
     # Model
     classifier = lightning_module.classifier(
         encoder,
@@ -164,11 +158,7 @@ def main(config):
         optimizer_scheduler="reduce_on_plateau",
         lr=config["learning_rate"],
         max_epochs=config["epochs_max"],
-        num_classe=config["num_class"],
-        limit_train_batches=limit_batches,
-        limit_val_batches=limit_batches,
-        limit_test_batches=limit_batches,
-    )
+        num_classe=config["num_class"])
     # Training
     trainer.fit(model=classifier, train_dataloaders=dl_train, val_dataloaders=dl_val)
 

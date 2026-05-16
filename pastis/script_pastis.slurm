@@ -33,6 +33,6 @@ echo "Launch python file"
 
 pixi run -e gpu python pastis/main_pastis.py \
     --config_train pastis/config_train.yaml \
-    --config_model configs/models/UTAE.yaml
+    --config_model configs/models/ALISE.yaml
  
 echo "End"

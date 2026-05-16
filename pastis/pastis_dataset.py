@@ -280,10 +280,10 @@ def get_loaders_pastis(
     path_pastis,
     batch_size,
 ):
-    def make_loader(folds):
+    def make_loader(folds, shuffle):
         dt = PASTIS_Dataset(folder=path_pastis, folds=folds)
         return torch.utils.data.DataLoader(
-            dt, batch_size=batch_size, collate_fn=pad_pastis_collate, shuffle=True, num_workers=15
+            dt, batch_size=batch_size, collate_fn=pad_pastis_collate, shuffle=shuffle, num_workers=15
         )
 
-    return map(make_loader, [[1, 2, 3], [4], [5]])
+    return map(make_loader, [[1, 2, 3], [4], [5]], [True, False, False])
