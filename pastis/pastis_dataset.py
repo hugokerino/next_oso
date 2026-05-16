@@ -283,7 +283,7 @@ def get_loaders_pastis(
     def make_loader(folds):
         dt = PASTIS_Dataset(folder=path_pastis, folds=folds)
         return torch.utils.data.DataLoader(
-            dt, batch_size=batch_size, collate_fn=pad_pastis_collate, shuffle=True
+            dt, batch_size=batch_size, collate_fn=pad_pastis_collate, shuffle=True, num_workers=15
         )
 
     return map(make_loader, [[1, 2, 3], [4], [5]])

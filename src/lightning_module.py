@@ -67,7 +67,7 @@ class classifier(L.LightningModule):
         )
         self.kappa = MulticlassCohenKappa(num_classes=self.num_class, ignore_index=0)
         self.name_class = name_class
-        self.save_hyperparameters(ignore=["encoder", "decoder", "loss_fn"])
+        #self.save_hyperparameters(ignore=["encoder", "decoder", "loss_fn"])
 
     def _forward(self, batch):
         inputs, y = batch

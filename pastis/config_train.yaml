@@ -1,7 +1,7 @@
 # Paths
 path_pastis: /work/THEIA/CES/oso/hugok/pastis
 path_logs : /work/THEIA/CES/oso/hugok/next_oso/pastis/logs
-epochs_max: 300
+epochs_max: 1
 batch_size: 2
 num_class: 19
 test_model: false

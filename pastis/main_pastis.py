@@ -6,6 +6,7 @@ from lightning.pytorch.callbacks import (
     EarlyStopping,
 )
 from lightning.pytorch.plugins.environments import SLURMEnvironment
+import pandas
 import signal
 import json
 import os
@@ -37,7 +38,7 @@ def build_model(config: dict):
     model_name = config["model"]
     enc_cfg = config["encoder"]
     dec_cfg = config["decoder"]
-    dec_cfg["mlp"][-1] = 20
+    dec_cfg["mlp"][-1] = config["num_class"]
 
     if model_name == "UTAE":
         encoder = UTAE.UTAE(**enc_cfg)
@@ -163,10 +164,7 @@ def main(config):
         lr=config["learning_rate"],
         max_epochs=config["epochs_max"],
         num_classe=config["num_class"],
-        name_class=json.load(
-            open(os.path.join(config["path_pastis"], "label_names_reduced.json"))
-        ).values(),
-    )
+        )
     # Training
     trainer.fit(model=classifier, train_dataloaders=dl_train, val_dataloaders=dl_val)
 
@@ -185,7 +183,8 @@ def main(config):
             decoder=decoder,
             loss_fn=criterion,
             batch_size=config["batch_size"],
-        )
+            num_classe=config["num_class"],
+            name_class=json.load(open(os.path.join(config["path_pastis"], "label_names_reduced.json"))))
 
     trainer.test(model=best_classifier, dataloaders=dl_test)
 
