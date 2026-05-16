@@ -31,8 +31,8 @@ module load pixi
 
 echo "Launch python file"
 
-run pixi run -e gpu python pastis/main_pastis.py \
-    --config_train config/config_train.yaml \
-    --config_model configs/models/ALISE.yaml
+pixi run -e gpu python pastis/main_pastis.py \
+    --config_train pastis/config_train.yaml \
+    --config_model configs/models/UTAE.yaml
  
 echo "End"

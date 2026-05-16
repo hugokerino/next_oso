@@ -37,6 +37,7 @@ def build_model(config: dict):
     model_name = config["model"]
     enc_cfg = config["encoder"]
     dec_cfg = config["decoder"]
+    dec_cfg['mlp'][-1] = 20
 
     if model_name == "UTAE":
         encoder = UTAE.UTAE(**enc_cfg)
@@ -161,6 +162,7 @@ def main(config):
         optimizer_scheduler="reduce_on_plateau",
         lr=config["learning_rate"],
         max_epochs=config["epochs_max"],
+	num_classe=config["num_class"]
     )
     # Training
     trainer.fit(model=classifier, train_dataloaders=dl_train, val_dataloaders=dl_val)
