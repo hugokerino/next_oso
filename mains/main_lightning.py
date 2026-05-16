@@ -236,7 +236,9 @@ def main(config):
         use_spatial_coords=config["use_spatial_coords"],
         lr=config["learning_rate"],
         max_epochs=config["epochs_max"],
-        name_class=pandas.read_csv(config["path_oso_classes"]).get("name_class").values,
+        name_class=pandas.read_csv(config["path_oso_classes"])
+        .get("name_class")
+        .values(),
     )
 
     # # Initial learning rate finder

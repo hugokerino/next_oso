@@ -154,6 +154,7 @@ def main(config):
         plugins=plugin,
     )
 
+    limit_batches = 2
     # Model
     classifier = lightning_module.classifier(
         encoder,
@@ -164,7 +165,10 @@ def main(config):
         lr=config["learning_rate"],
         max_epochs=config["epochs_max"],
         num_classe=config["num_class"],
-        )
+        limit_train_batches=limit_batches,
+        limit_val_batches=limit_batches,
+        limit_test_batches=limit_batches,
+    )
     # Training
     trainer.fit(model=classifier, train_dataloaders=dl_train, val_dataloaders=dl_val)
 
@@ -184,7 +188,10 @@ def main(config):
             loss_fn=criterion,
             batch_size=config["batch_size"],
             num_classe=config["num_class"],
-            name_class=json.load(open(os.path.join(config["path_pastis"], "label_names_reduced.json"))))
+            name_class=json.load(
+                open(os.path.join(config["path_pastis"], "label_names_reduced.json"))
+            ),
+        )
 
     trainer.test(model=best_classifier, dataloaders=dl_test)
 
@@ -202,7 +209,7 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("--config_train", type=str, default="pastis/config_train.yaml")
     parser.add_argument(
-        "--config_model", type=str, required=True, help="Ex: configs/models/LTAE.yaml"
+        "--config_model", type=str, required=True, help="Ex: configs/models/UTAE.yaml"
     )
     args = parser.parse_args()
 
