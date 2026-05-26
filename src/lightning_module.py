@@ -67,7 +67,7 @@ class classifier(L.LightningModule):
         )
         self.kappa = MulticlassCohenKappa(num_classes=self.num_class, ignore_index=0)
         self.name_class = name_class
-        #self.save_hyperparameters(ignore=["encoder", "decoder", "loss_fn"])
+        # self.save_hyperparameters(ignore=["encoder", "decoder", "loss_fn"])
 
     def _forward(self, batch):
         inputs, y = batch
@@ -226,7 +226,7 @@ class classifier(L.LightningModule):
         )
 
     def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr, weight_decay=0.01)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
 
         warmup_step = 5
 
@@ -251,7 +251,7 @@ class classifier(L.LightningModule):
 
         elif self.optimizer_scheduler == "reduce_on_plateau":
             scheduler = ReduceLROnPlateau(
-                optimizer, mode="max", factor=0.1, patience=10
+                optimizer, mode="max", factor=0.05, patience=10
             )
 
         return [optimizer], [

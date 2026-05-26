@@ -6,7 +6,6 @@ from lightning.pytorch.callbacks import (
     EarlyStopping,
 )
 from lightning.pytorch.plugins.environments import SLURMEnvironment
-import pandas
 import signal
 import json
 import os
@@ -20,7 +19,7 @@ sys.path.append("/work/THEIA/CES/oso/hugok/next_oso/")
 
 from src import UTAE, utils_model, lightning_module
 from Alise import ALISE, sse, transformer, temporal_proj
-from Alise.utils_ALISE import MLP_on_time_features
+from Alise.utils_ALISE import MLP_on_time_features, MLP_Simple_Decoder
 from pastis import pastis_dataset
 
 torch.set_float32_matmul_precision("high")
@@ -56,7 +55,10 @@ def build_model(config: dict):
                 d_in=emb_dim, **enc_cfg["temporal_projector"]
             ),
         )
-        decoder = MLP_on_time_features(**dec_cfg)
+        # decoder = MLP_on_time_features(**dec_cfg)
+        decoder = MLP_Simple_Decoder(dropout=None)
+        # decoder = MLP_Simple_Decoder(dropout=0.4)
+
     else:
         raise ValueError(f"Modèle inconnu : {model_name}")
 
@@ -133,7 +135,6 @@ def main(config):
 
     trainer = L.Trainer(
         logger=tb_logger,
-        accumulate_grad_batches=1,
         log_every_n_steps=10,
         callbacks=list_callback,
         max_epochs=config["epochs_max"],
@@ -158,7 +159,8 @@ def main(config):
         optimizer_scheduler="reduce_on_plateau",
         lr=config["learning_rate"],
         max_epochs=config["epochs_max"],
-        num_classe=config["num_class"])
+        num_classe=config["num_class"],
+    )
     # Training
     trainer.fit(model=classifier, train_dataloaders=dl_train, val_dataloaders=dl_val)
 
