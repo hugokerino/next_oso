@@ -56,8 +56,8 @@ def build_model(config: dict):
             ),
         )
         # decoder = MLP_on_time_features(**dec_cfg)
-        decoder = MLP_Simple_Decoder(dropout=None)
-        # decoder = MLP_Simple_Decoder(dropout=0.4)
+        # decoder = MLP_Simple_Decoder(dropout=None)
+        decoder = MLP_Simple_Decoder(dropout=0.4)
 
     else:
         raise ValueError(f"Modèle inconnu : {model_name}")
