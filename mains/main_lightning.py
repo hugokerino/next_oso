@@ -8,7 +8,6 @@ from lightning.pytorch.callbacks import (
 )
 from lightning.pytorch.profilers import SimpleProfiler
 from lightning.pytorch.plugins.environments import SLURMEnvironment
-from lightning.pytorch.tuner import Tuner
 
 import numpy as np
 import pandas
@@ -32,7 +31,7 @@ sys.path.append(path_to_oso_proj)
 from data_functions import dataset
 from src import LTAE, UTAE, utils_model, lightning_module, metrics
 from Alise import ALISE, sse, transformer, temporal_proj, master_query_decoding
-from Alise.utils_ALISE import MLP_on_time_features
+from Alise.utils_ALISE import MLP_Simple_Decoder
 
 
 torch.serialization.add_safe_globals([metrics.FocalLoss])
@@ -76,7 +75,7 @@ def build_model(config: dict):
                 d_in=emb_dim, **enc_cfg["temporal_projector"]
             ),
         )
-        decoder = MLP_on_time_features(**dec_cfg)
+        decoder = MLP_Simple_Decoder(**dec_cfg)
 
     elif model_name == "ALISE_encoding":
         emb_dim = enc_cfg["embedding_dim"]
@@ -240,22 +239,6 @@ def main(config):
         .get("name_class")
         .values(),
     )
-
-    # # Initial learning rate finder
-    # lr_init = (
-    #     Tuner(trainer)
-    #     .lr_find(
-    #         model=classifier,
-    #         train_dataloaders=dl_train,
-    #         num_training=config["num_sample_lr_finder"],
-    #     )
-    #     .suggestion()
-    # )
-    # if lr_init is not None:
-    #     lr_init = lr_init * 100
-    #     tb_logger.log_hyperparams({"initial_lr": lr_init})
-    #     classifier.lr = lr_init
-
     # Training
     trainer.fit(model=classifier, train_dataloaders=dl_train, val_dataloaders=dl_val)
 
