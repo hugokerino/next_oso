@@ -237,7 +237,7 @@ def main(config):
         max_epochs=config["epochs_max"],
         name_class=pandas.read_csv(config["path_oso_classes"])
         .get("name_class")
-        .values(),
+        .values,
     )
     # Training
     trainer.fit(model=classifier, train_dataloaders=dl_train, val_dataloaders=dl_val)
