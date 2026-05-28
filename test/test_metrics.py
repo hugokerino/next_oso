@@ -5,7 +5,9 @@ from torchmetrics.classification import (
     MulticlassConfusionMatrix,
     MulticlassF1Score,
     MulticlassCohenKappa,
+    MulticlassJaccardIndex,
 )
+
 from torchmetrics.segmentation import MeanIoU
 import numpy as np
 import sys
@@ -115,3 +117,19 @@ def test_accuracy():
     print(acc_per_class[1:].mean().item())
     print(acc_homemade)
     print(acc_glob)
+
+
+def test_JaccardIndex():
+    miou_jaccard = MulticlassJaccardIndex(
+        num_classes=num_class, ignore_index=0, average="none"
+    )(tensor1, tensor2)
+
+    miou_classic = MeanIoU(
+        num_classes=num_class,
+        per_class=True,
+        include_background=False,
+        input_format="index",
+    )(tensor1, tensor2)
+
+    print(miou_jaccard)
+    print(miou_classic)

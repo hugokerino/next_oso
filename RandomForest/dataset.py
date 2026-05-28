@@ -14,6 +14,7 @@ def create_dataset(
     label_only=False,
     return_label_entropy=False,
     return_img=False,
+    return_id=False,
 ):
     path_s2_eco = os.path.join(path_s2, str(zone))
 
@@ -23,40 +24,46 @@ def create_dataset(
         label_entropy_list = []
     if return_img:
         img_list = []
+    if return_id:
+        id_list = []
 
     for i in folders:
         path_s2 = os.path.join(path_s2_eco, f"fold_{str(i)}")
 
         s2_nc_files = sorted([f for f in os.listdir(path_s2) if f.endswith(".nc")])
         for s2_nc_file in s2_nc_files:
-            # s2
-            with xr.open_dataset(os.path.join(path_s2, s2_nc_file)) as s2_data:
-                s2_data = utils_data_RF.remove_invalid(s2_data)
-                s2 = utils_data_RF.s2_spectrale_indice(s2_data)
-                s2_list.append(
-                    s2[
-                        [
-                            "B2",
-                            "B3",
-                            "B4",
-                            "B5",
-                            "B6",
-                            "B7",
-                            "B8",
-                            "B8A",
-                            "B11",
-                            "B12",
-                            "ndvi",
-                            "ndwi",
-                            "brightness",
+            if not label_only:
+                # s2
+                with xr.open_dataset(os.path.join(path_s2, s2_nc_file)) as s2_data:
+                    s2_data = utils_data_RF.remove_invalid(s2_data)
+                    s2 = utils_data_RF.s2_spectrale_indice(s2_data)
+                    s2_list.append(
+                        s2[
+                            [
+                                "B2",
+                                "B3",
+                                "B4",
+                                "B5",
+                                "B6",
+                                "B7",
+                                "B8",
+                                "B8A",
+                                "B11",
+                                "B12",
+                                "ndvi",
+                                "ndwi",
+                                "brightness",
+                            ]
                         ]
-                    ]
-                )
-                if return_img:
-                    img_list.append(utils_data_RF.find_clear_img_in_xarray(s2_data))
+                    )
+                    if return_img:
+                        img_list.append(utils_data_RF.find_clear_img_in_xarray(s2_data))
 
             # Label
             file_id = s2_nc_file.split("_")[1].split(".")[0]
+            if return_id:
+                id_list.append(file_id)
+
             path_label_file = os.path.join(path_label, f"label_{file_id}.nc")
             with xr.open_dataset(path_label_file) as label_data:
                 if label_type == "max_class":
@@ -85,6 +92,8 @@ def create_dataset(
             return Label, np.stack(label_entropy_list), np.stack(img_list)
         elif return_label_entropy:
             return Label, np.stack(label_entropy_list)
+        elif return_id:
+            return Label, np.stack(id_list)
         return Label
 
     # Rearrange time

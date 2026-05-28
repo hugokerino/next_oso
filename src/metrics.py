@@ -1,8 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchmetrics.segmentation import MeanIoU
-from torchmetrics.classification import MulticlassF1Score
+from torchmetrics.classification import MulticlassF1Score, MulticlassJaccardIndex
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -211,11 +210,8 @@ def metrics_per_class(preds, labels, num_class, names_class=None):
     f_score_per_class = MulticlassF1Score(
         num_classes=num_class, ignore_index=0, average="none"
     ).to(device)
-    miou_per_class = MeanIoU(
-        num_classes=num_class,
-        include_background=False,
-        per_class=True,
-        input_format="index",
+    miou_per_class = MulticlassJaccardIndex(
+        num_classes=num_class, ignore_index=0, average="none"
     ).to(device)
 
     f = f_score_per_class(preds, labels)  # (num_class)
@@ -236,12 +232,12 @@ def metrics_per_class(preds, labels, num_class, names_class=None):
                 )
 
             f_val = f_scores[i].item()
-            m_val = miou_scores[i - 1].item()  # décalage de 1
+            m_val = miou_scores[i].item()
             table_str += f"| {class_name:<21} | {f_val:.3f}   | {m_val:.3f}    |\n"
 
         # Ligne séparatrice + moyenne
         f_mean = f_scores[1:].mean().item()  # moyenne sans la classe 0
-        m_mean = miou_scores.mean().item()
+        m_mean = miou_scores[1:].mean().item()  # moyenne sans la classe 0
 
         table_str += "|-----------------------|---------|----------|\n"
         table_str += f"| {'Moyenne':<21} | {f_mean:.3f}   | {m_mean:.3f}    |\n"

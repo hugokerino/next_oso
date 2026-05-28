@@ -13,9 +13,9 @@ from torchmetrics.classification import (
     MulticlassAccuracy,
     MulticlassConfusionMatrix,
     MulticlassF1Score,
+    MulticlassJaccardIndex,
     MulticlassCohenKappa,
 )
-from torchmetrics.segmentation import MeanIoU
 from einops import rearrange
 
 from src import metrics
@@ -62,9 +62,10 @@ class classifier(L.LightningModule):
             num_classes=self.num_class, ignore_index=0, average="none"
         )  # F-score per class (including 0 but =0)
 
-        self.miou_metric = MeanIoU(
-            num_classes=self.num_class, include_background=False, input_format="index"
-        )
+        self.miou_metric = MulticlassJaccardIndex(
+            num_classes=self.num_class, ignore_index=0, average="none"
+        )  # F-score per class (including 0 but =0)
+
         self.kappa = MulticlassCohenKappa(num_classes=self.num_class, ignore_index=0)
         self.name_class = name_class
         # self.save_hyperparameters(ignore=["encoder", "decoder", "loss_fn"])
@@ -154,7 +155,7 @@ class classifier(L.LightningModule):
         acc = self.acc_metric(y_preds, y_trues)
         cm = self.cm_metric(y_preds, y_trues)
         f1 = self.f_score_metric(y_preds, y_trues)[1:].mean().item()
-        miou = self.miou_metric(y_preds, y_trues)
+        miou = self.miou_metric(y_preds, y_trues)[1:].mean().item()
         kappa = self.kappa(y_preds, y_trues)
 
         # Log des métriques globales
