@@ -18,7 +18,7 @@ sequence_packing: false
 criterion : cross_entropy
 optimizer_scheduler : reduce_on_plateau
 epochs_max: 300
-batch_size: 1
+batch_size: 2
 test_model: false
 accelerator:  "gpu"
 devices: 1

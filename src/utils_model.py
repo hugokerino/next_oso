@@ -47,7 +47,7 @@ class MLPDecoder(nn.Module):
             if i < len(self.n_neurons) - 2:
                 layers.extend(
                     [
-                        nn.BatchNorm1d(self.n_neurons[i + 1]),
+                        #nn.BatchNorm1d(self.n_neurons[i + 1]),
                         nn.ReLU(),
                     ]
                 )
