@@ -58,10 +58,12 @@ def build_model(config: dict):
     if model_name == "LTAE":
         encoder = LTAE.LTAE2d(**enc_cfg)
         decoder = utils_model.MLPDecoder(**dec_cfg)
+        batch_size = 4
 
     elif model_name == "UTAE":
         encoder = UTAE.UTAE(**enc_cfg)
         decoder = utils_model.MLPDecoder(**dec_cfg)
+        batch_size = 2
 
     elif model_name == "ALISE":
         emb_dim = enc_cfg["embedding_dim"]
@@ -76,6 +78,7 @@ def build_model(config: dict):
             ),
         )
         decoder = MLP_Simple_Decoder(**dec_cfg)
+        batch_size = 1
 
     elif model_name == "ALISE_encoding":
         emb_dim = enc_cfg["embedding_dim"]
@@ -91,7 +94,7 @@ def build_model(config: dict):
     else:
         raise ValueError(f"Modèle inconnu : {model_name}")
 
-    return encoder, decoder
+    return encoder, decoder, batch_size
 
 
 def select_criterion(loss: str):
@@ -131,7 +134,7 @@ def main(config):
 
     # criterion = torch.nn.CrossEntropyLoss(ignore_index=0)
     criterion = select_criterion(config["criterion"])
-    encoder, decoder = build_model(config)
+    encoder, decoder, batch_size = build_model(config)
 
     ########################################
     # DATA
@@ -147,7 +150,7 @@ def main(config):
         folds_train=config["folds_train"],
         folds_val=config["folds_val"],
         folds_test=config["folds_test"],
-        batch_size=config["batch_size"],
+        batch_size=batch_size,
         num_worker=config["num_worker"],
         label_type=config["label_type"],
         mask_needed=config["mask_need"],
@@ -229,7 +232,7 @@ def main(config):
     classifier = lightning_module.classifier(
         encoder,
         decoder,
-        batch_size=config["batch_size"],
+        batch_size=batch_size,
         loss_fn=criterion,
         optimizer_scheduler=config["optimizer_scheduler"],
         use_spatial_coords=config["use_spatial_coords"],
@@ -256,7 +259,7 @@ def main(config):
             encoder=encoder,
             decoder=decoder,
             loss_fn=criterion,
-            batch_size=config["batch_size"],
+            batch_size=batch_size,
         )
 
     trainer.test(model=best_classifier, dataloaders=dl_test)
