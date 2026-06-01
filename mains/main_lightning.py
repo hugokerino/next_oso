@@ -94,6 +94,7 @@ def build_model(config: dict):
     else:
         raise ValueError(f"Modèle inconnu : {model_name}")
 
+
     return encoder, decoder, batch_size
 
 
@@ -135,7 +136,8 @@ def main(config):
     # criterion = torch.nn.CrossEntropyLoss(ignore_index=0)
     criterion = select_criterion(config["criterion"])
     encoder, decoder, batch_size = build_model(config)
-
+    config["batch_size"] = batch_size  # Update batch size in config for data loading and lightning module
+    
     ########################################
     # DATA
     ########################################
