@@ -242,7 +242,7 @@ def normalize_s2(s2):
     return s2_normalized
 
 
-def geographical_information(s2: xr.Dataset, id: str, path_mnt: str, h=128, w=128):
+def geographical_information(s2: xr.Dataset, id: str, path_mnt: str, h=128, w=128) -> torch.Tensor:
     X_MIN, X_MAX = 1e5, 1.3e6
     Y_MIN, Y_MAX = 6e6, 7.2e6
     ELEV_MAX = 3000

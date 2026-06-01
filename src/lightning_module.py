@@ -16,7 +16,7 @@ from torchmetrics.classification import (
     MulticlassJaccardIndex,
     MulticlassCohenKappa,
 )
-from einops import rearrange
+from einops import rearrange, repeat
 
 from src import metrics
 
@@ -89,11 +89,17 @@ class classifier(L.LightningModule):
         #     geo = repeat(geo, "B C H W -> B C D H W", D=x.shape[2])
         #     x = torch.concat([x, geo], dim=1)
 
-        z = self.encoder(x, batch_positions=dates, **kwargs)  # bhw x d
+        z = self.encoder(x, batch_positions=dates, **kwargs)  # (bhw x d) or (bhw x t x d)
+        #print("Encoder output shape:", z.shape)
 
         if self.use_spatial_coords and geo is not None:
             geo = rearrange(geo, "b c h w -> (b h w) c")  # bhw x 4
-            z = torch.cat([z, geo], dim=1)  # bhw x (d+4)
+            if z.ndim ==2:  # (bhw x d)
+                z = torch.cat([z, geo], dim=1)  # bhw x (d+4)
+            elif z.ndim == 3:  # (bhw x t x d)
+                geo = repeat(geo, "bhw c -> bhw t c", t=z.shape[1])  # bhw x t x 4
+                z = torch.cat([z, geo], dim=2)  # bhw x t x (d+4)
+            #print("After adding geo, encoder output shape:", z.shape)
 
         y_logits = self.decoder(z)
         y_logits = (

@@ -246,8 +246,8 @@ def get_loaders(
     remove_invalid_temp=True,
     shuffle=True,
     pass_id=False,
-):
-    def make_loader(folds, shuffle):
+) -> tuple[torch.utils.data.DataLoader, torch.utils.data.DataLoader, torch.utils.data.DataLoader]:
+    def make_loader(folds, shuffle) -> torch.utils.data.DataLoader:
         dataset = next_oso_Dataset(
             path_s2=path_s2,
             path_mnt=path_mnt,
