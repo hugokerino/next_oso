@@ -123,7 +123,7 @@ def get_precision():
     return "16-mixed"
 
 
-def main(config):
+def main(config, log_dir):
 
     date = datetime.now().date().strftime("%Y-%m-%d")
 
@@ -165,9 +165,7 @@ def main(config):
         remove_invalid_temp=True,
         shuffle=True,
     )
-
-    model = config["model"]
-    log_dir = f"/home/hkerino/Documents/next_oso/logs/light_training/{model}_2026-06-01"
+    
     tb_logger = TensorBoardLogger(log_dir, name="tensorboards", version=0,default_hp_metric=False)
   
     trainer = L.Trainer(
@@ -186,8 +184,10 @@ def main(config):
     ########################################
     print("\nTESTING ...")
     sys.stdout.flush()
+    checkpoint = os.listdir(os.path.join(log_dir, "Checkpoints/"))[0]  # Assuming only one checkpoint is saved
+    print(f"Loading checkpoint: {checkpoint}")
     best_classifier = lightning_module.classifier.load_from_checkpoint(
-            os.path.join(log_dir, "Checkpoints/epoch=83-step=90888.ckpt"),
+            os.path.join(log_dir, "Checkpoints", checkpoint),
             weights_only=True,
             encoder=encoder,
             decoder=decoder,
@@ -208,10 +208,11 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("--config_train", type=str, default="configs/train_local.yaml")
     parser.add_argument(
-        "--config_model", type=str, required=True, help="Ex: configs/models/LTAE.yaml"
+        "--config_model", type=str, required=True, help="Ex: configs/models/UTAE.yaml"
     )
+    parser.add_argument( "--path_dir_log", type=str, required=True, help="Chemin du dossier de logs, Ex:/home/hkerino/Documents/next_oso/logs/light_training/LTAE_2026-06-01")
     args = parser.parse_args()
 
     config = load_config(args.config_train, args.config_model)
     pprint.pprint(config)
-    main(config)
+    main(config, args.path_dir_log)

@@ -30,6 +30,6 @@ echo "Launch python file"
 
 pixi run -e gpu python mains/main_testing.py \
     --config_train configs/train_trex.yaml \
-    --config_model configs/models/LTAE.yaml
- 
+    --config_model configs/models/LTAE.yaml \
+    --path_dir_log /work/THEIA/CES/oso/hugok/next_oso/logs/light_training/LTAE_2026-06-01
 echo "End"
