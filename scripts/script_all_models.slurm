@@ -27,7 +27,7 @@ echo "Load pixi envs"
 module purge
 module load pixi
 
-models =(
+models=(
     "LTAE"
     "UTAE"
     "ALISE"
@@ -39,5 +39,6 @@ export PATH=$(dirname $(which pixi)):$PATH
 
 srun --export=ALL pixi run -e gpu python mains/main_lightning.py \
     --config_train configs/train_trex.yaml \
-    --config_model configs/models/${models[$SLURM_ARRAY_TASK_ID]}.yaml \
+    --config_model configs/models/${models[$SLURM_ARRAY_TASK_ID]}.yaml 
+    
 echo "End"

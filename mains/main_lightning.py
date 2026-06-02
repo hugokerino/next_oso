@@ -117,7 +117,7 @@ def select_criterion(loss: str):
 
 def get_precision():
     if not torch.cuda.is_available():
-        return "32"  # CPU en local
+        return "16"  # CPU en local
     if torch.cuda.is_bf16_supported():
         return "bf16-mixed"  # A100, RTX 3090+
     return "16-mixed"
@@ -137,7 +137,7 @@ def main(config):
     criterion = select_criterion(config["criterion"])
     encoder, decoder, batch_size = build_model(config)
     config["batch_size"] = batch_size  # Update batch size in config for data loading and lightning module
-    
+
     ########################################
     # DATA
     ########################################
@@ -262,6 +262,7 @@ def main(config):
             decoder=decoder,
             loss_fn=criterion,
             batch_size=batch_size,
+            use_spatial_coords=config["use_spatial_coords"],
         )
 
     trainer.test(model=best_classifier, dataloaders=dl_test)
