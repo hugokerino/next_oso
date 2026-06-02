@@ -94,6 +94,8 @@ def build_model(config: dict):
     else:
         raise ValueError(f"Modèle inconnu : {model_name}")
 
+    if config["batch_size"] is not None: # Si une taille de batch est spécifiée dans la config, l'utiliser
+        batch_size = config["batch_size"]
 
     return encoder, decoder, batch_size
 
@@ -152,7 +154,7 @@ def main(config):
         folds_train=config["folds_train"],
         folds_val=config["folds_val"],
         folds_test=config["folds_test"],
-        batch_size=batch_size,
+        batch_size=config["batch_size"],
         num_worker=config["num_worker"],
         label_type=config["label_type"],
         mask_needed=config["mask_need"],
@@ -234,7 +236,7 @@ def main(config):
     classifier = lightning_module.classifier(
         encoder,
         decoder,
-        batch_size=batch_size,
+        batch_size=config["batch_size"],
         loss_fn=criterion,
         optimizer_scheduler=config["optimizer_scheduler"],
         use_spatial_coords=config["use_spatial_coords"],
@@ -261,7 +263,7 @@ def main(config):
             encoder=encoder,
             decoder=decoder,
             loss_fn=criterion,
-            batch_size=batch_size,
+            batch_size=config["batch_size"],
             use_spatial_coords=config["use_spatial_coords"],
         )
 
