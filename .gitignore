@@ -4,3 +4,4 @@ __pycache__/
 logs/
 pastis/logs/
 script_logs/
+output_monitoring/

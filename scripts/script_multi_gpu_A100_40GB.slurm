@@ -7,13 +7,13 @@
 #SBATCH --export=none
 
 #SBATCH -N 1
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=32 # fixed for allocation
+#SBATCH --ntasks=2
+#SBATCH --cpus-per-task=16 # fixed for allocation
 #SBATCH --mem-per-cpu=4000M # fixed for allocation
 
-#SBATCH --gpus=a100_40g:4 
-#SBATCH --partition=gpu_all
-#SBATCH --qos=gpu_std
+#SBATCH --gpus=a100_40g:2 
+#SBATCH --partition=gpu_std
+#SBATCH --qos=gpu_all
 
 #SBATCH --time=15:00:00             # Walltime
 
@@ -39,7 +39,7 @@ export PATH=$(dirname $(which pixi)):$PATH
 
 echo "Launch python file"
 
-srun --export=ALL pixi run -e gpu python mains/main_lightning.py \
+srun --export=ALL --ntasks-per-node=2 --cpus-per-task=16 pixi run -e gpu python mains/main_lightning.py \
     --config_train configs/train_trex.yaml \
     --config_model configs/models/ALISE.yaml
  
