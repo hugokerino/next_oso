@@ -36,7 +36,8 @@ from Alise.utils_ALISE import MLP_Simple_Decoder
 
 torch.serialization.add_safe_globals([metrics.FocalLoss])
 torch.set_float32_matmul_precision("high")
-
+torch.backends.cuda.enable_flash_sdp(False) # if using flash attention implementation batch_size cannot exceed 65535 (int16)
+torch.backends.cuda.enable_mem_efficient_sdp(True)  # no constraint on bacth size but more VRAM usage, should be less efficient
 
 def load_config(train_cfg_path: str, model_cfg_path: str) -> dict:
     with open(train_cfg_path, "r") as f:
