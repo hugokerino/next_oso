@@ -29,13 +29,20 @@ module purge
 module load pixi
 #module load cuda/11.7
 
-echo "Launch python file"
+MODELNAME="JOB_monitoring"
+
+module load monitoring/3.0
+start_monitoring.sh --name $MODELNAME --io local
 
 export PYTORCH_ALLOC_CONF=expandable_segments:True
 export PATH=$(dirname $(which pixi)):$PATH
+
+echo "Launch python file"
 
 srun --export=ALL pixi run -e gpu python mains/main_lightning.py \
     --config_train configs/train_trex.yaml \
     --config_model configs/models/ALISE.yaml
  
+stop_monitoring.sh --name $MODELNAME
+
 echo "End"
