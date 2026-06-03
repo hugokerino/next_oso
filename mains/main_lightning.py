@@ -8,6 +8,7 @@ from lightning.pytorch.callbacks import (
 )
 from lightning.pytorch.profilers import SimpleProfiler
 from lightning.pytorch.plugins.environments import SLURMEnvironment
+from pytorch_lightning.strategies import DDPStrategy
 
 import numpy as np
 import pandas
@@ -223,7 +224,7 @@ def main(config):
         accelerator=config["accelerator"],
         devices=config["devices"],
         num_nodes=config["nodes"],
-        strategy=config["strategy"],
+        strategy=config["strategy"] if config["devices"] < 1 else DDPStrategy(find_unused_parameters=False),  # Utiliser DDPStrategy pour les entraînements multi-GPU
         profiler=profiler,
         num_sanity_val_steps=limit_batches,
         limit_train_batches=limit_batches,
