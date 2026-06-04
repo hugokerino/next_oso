@@ -18,7 +18,7 @@ sequence_packing: false
 criterion : cross_entropy
 optimizer_scheduler : reduce_on_plateau
 epochs_max: 300
-batch_size: 1 # or None (then choose automatically with respect to the model used)
+batch_size: 4 # or None (then choose automatically with respect to the model used)
 test_model: false
 accelerator:  "gpu"
 devices: 2
@@ -27,4 +27,4 @@ strategy: "auto" # if devices < 1 then "auto" else DDPStrategy(find_unused_param
 running_on_trex_gpu: true
 learning_rate: 0.0001
 logs : True
-use_spatial_coords : true
+use_spatial_coords : True

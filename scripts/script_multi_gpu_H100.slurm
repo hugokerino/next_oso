@@ -7,8 +7,8 @@
 #SBATCH --export=none
 
 #SBATCH -N 1
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=16 # fixed for allocation
+#SBATCH --ntasks=2
+#SBATCH --cpus-per-task=8 # fixed for allocation
 #SBATCH --mem-per-cpu=11G # fixed for allocation
 
 #SBATCH --gres=gpu:2
@@ -39,7 +39,7 @@ export PATH=$(dirname $(which pixi)):$PATH
 
 echo "Launch python file"
 
-srun --export=ALL pixi run -e gpu python mains/main_lightning.py \
+srun --export=ALL --ntasks-per-node=2 --cpus-per-task=8 pixi run -e gpu python mains/main_lightning.py \
     --config_train configs/train_trex.yaml \
     --config_model configs/models/ALISE.yaml
  

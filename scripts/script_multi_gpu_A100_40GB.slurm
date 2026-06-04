@@ -1,15 +1,15 @@
 #!/bin/bash
 
-#SBATCH -J main_H100
+#SBATCH -J main_A100
 #SBATCH -A cesbio
-#SBATCH -o script_logs/out_main_h100_%j.out
-#SBATCH -e script_logs/err_main_h100_%j.err
+#SBATCH -o script_logs/out_main_a100_%j.out
+#SBATCH -e script_logs/err_main_a100_%j.err
 #SBATCH --export=none
 
 #SBATCH -N 1
 #SBATCH --ntasks=2
-#SBATCH --cpus-per-task=16 # fixed for allocation
-#SBATCH --mem-per-cpu=4000M # fixed for allocation
+#SBATCH --cpus-per-task=16
+#SBATCH --mem-per-cpu=4000M 
 
 #SBATCH --gpus=a100_40g:2 
 #SBATCH --partition=gpu_std
@@ -41,7 +41,7 @@ echo "Launch python file"
 
 srun --export=ALL --ntasks-per-node=2 --cpus-per-task=16 pixi run -e gpu python mains/main_lightning.py \
     --config_train configs/train_trex.yaml \
-    --config_model configs/models/ALISE.yaml
+    --config_model configs/models/UTAE.yaml
  
 stop_monitoring.sh --name $MODELNAME
 
