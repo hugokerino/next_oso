@@ -267,6 +267,9 @@ def main(config):
             loss_fn=criterion,
             batch_size=config["batch_size"],
             use_spatial_coords=config["use_spatial_coords"],
+            name_class=pandas.read_csv(config["path_oso_classes"])
+            .get("name_class")
+            .values,
         )
 
     trainer.test(model=best_classifier, dataloaders=dl_test)
