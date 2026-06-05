@@ -73,6 +73,7 @@ def main(config):
         fold_val=config.folds_val,
         fold_test=config.folds_test,
         batch_size=config.batch_size,
+        num_workers=args.num_worker,
     )
 
     # Model
@@ -153,6 +154,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--label_type", type=str, default="max_class", choices=["max_class", "probas"]
     )
+    parser.add_argument("--num_worker", type=int, default=1)
 
     # Training arguments
     parser.add_argument("--batch_size", type=int, default=8)
