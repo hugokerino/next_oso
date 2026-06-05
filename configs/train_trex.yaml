@@ -23,7 +23,7 @@ test_model: false
 accelerator:  "gpu"
 devices: 2
 nodes: 1
-strategy: "auto" # if devices < 1 then "auto" else DDPStrategy(find_unused_parameters=False) (see main_lightning.py)
+strategy: "auto" # 'ddp', 'ddp_unused_parameters', 'ddp_find_unused_parameters_true' #UTAE n'est pas compatible avec DDP
 running_on_trex_gpu: true
 learning_rate: 0.0001
 logs : True

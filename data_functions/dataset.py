@@ -275,6 +275,7 @@ def get_loaders(
             batch_sampler=sampler if sequence_packing else None,
             shuffle=shuffle if not sequence_packing else False,
             num_workers=num_worker,
+            pin_memory=True,
         )
 
     return map(
