@@ -35,7 +35,7 @@ pixi run -e gpu python mains/main_alpha_earth.py \
     --path_label "/work/THEIA/CES/oso/hugok/labels" \
     --path_mapping_folder "/work/THEIA/CES/oso/hugok/s2_data" \
     --path_logs "/work/THEIA/CES/oso/hugok/next_oso/logs/alpha-earth" \
-    --path_name_class "work/THEIA/CES/oso/hugok/files_s2/oso_classes.csv" \
+    --path_name_class "/work/THEIA/CES/oso/hugok/files_s2/oso_classes.csv" \
     --batch_size 32
  
 echo "End"
