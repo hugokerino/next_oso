@@ -81,7 +81,7 @@ def main(config):
 
     classifier = decode_lightning_module.DecodeEmbedding(decoder=decoder, args=config)
 
-    limit_batch = None if torch.cuda.is_available() else 2
+    limit_batch = None  #if torch.cuda.is_available() else 2
 
     # training
     trainer = Trainer(
@@ -97,7 +97,7 @@ def main(config):
             ),
             EarlyStopping(monitor="val_fscore", mode="max", patience=20),
         ],
-        max_epochs=config.max_epochs if torch.cuda.is_available() else 2,
+        max_epochs=config.max_epochs, #if torch.cuda.is_available() else 2,
         plugins=[SLURMEnvironment(requeue_signal=signal.SIGHUP, auto_requeue=True)]
         if torch.cuda.is_available()
         else None,
