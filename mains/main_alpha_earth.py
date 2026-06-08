@@ -81,7 +81,7 @@ def main(config):
 
     classifier = decode_lightning_module.DecodeEmbedding(decoder=decoder, args=config)
 
-    limit_batch = None  #if torch.cuda.is_available() else 2
+    limit_batch = None #if torch.cuda.is_available() else 4
 
     # training
     trainer = Trainer(
@@ -97,7 +97,7 @@ def main(config):
             ),
             EarlyStopping(monitor="val_fscore", mode="max", patience=20),
         ],
-        max_epochs=config.max_epochs, #if torch.cuda.is_available() else 2,
+        max_epochs=config.max_epochs, #if torch.cuda.is_available() else 5,
         plugins=[SLURMEnvironment(requeue_signal=signal.SIGHUP, auto_requeue=True)]
         if torch.cuda.is_available()
         else None,
@@ -105,7 +105,6 @@ def main(config):
         limit_train_batches = limit_batch,
         limit_val_batches = limit_batch,
         limit_test_batches = limit_batch,
-        
     )
 
     trainer.fit(classifier, datamodule=datamodule)
@@ -159,7 +158,7 @@ if __name__ == "__main__":
     # Training arguments
     parser.add_argument("--batch_size", type=int, default=8)
     parser.add_argument("--lr", type=float, default=1e-3)
-    parser.add_argument("--max_epochs", type=int, default=100)
+    parser.add_argument("--max_epochs", type=int, default=300)
 
     args = parser.parse_args()
     pprint.pprint(args)

@@ -7,15 +7,15 @@
 #SBATCH --export=none
 
 #SBATCH -N 1
-#SBATCH --tasks=9
-#SBATCH --mem-per-cpu=10G
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=16
+#SBATCH --mem-per-cpu=7G
 
-#SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:1
-#SBATCH --partition=gpu_std
+#SBATCH --partition=gpu_a100
 #SBATCH --qos=gpu_all
 
-#SBATCH --time=05:00:00             # Walltime
+#SBATCH --time=01:00:00            # Walltime
 
 #SBATCH --signal=SIGUSR1@90         # For auto-resubmit
 
@@ -36,6 +36,6 @@ pixi run -e gpu python mains/main_alpha_earth.py \
     --path_mapping_folder "/work/THEIA/CES/oso/hugok/s2_data" \
     --path_logs "/work/THEIA/CES/oso/hugok/next_oso/logs/alpha-earth" \
     --path_name_class "/work/THEIA/CES/oso/hugok/files_s2/oso_classes.csv" \
-    --batch_size 32
+    --batch_size 64
  
 echo "End"

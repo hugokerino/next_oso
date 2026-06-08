@@ -33,7 +33,8 @@ class alpha_earth_dataset(tdata.Dataset):
             self.embedding_files = [
                 f
                 for f in all_embedding_files
-                if self.maps_id_to_fold[f"s2_{f.split('_')[2].split('.')[0]}.nc"][
+                if f.endswith(".npy")
+                and self.maps_id_to_fold[f"s2_{f.split('_')[2].split('.')[0]}.nc"][
                     "fold"
                 ]
                 in fold
@@ -48,7 +49,8 @@ class alpha_earth_dataset(tdata.Dataset):
     def __getitem__(self, idx):
         # Embedding
         embedding_path = os.path.join(self.path_embeddings, self.embedding_files[idx])
-        embedding = torch.from_numpy(np.load(embedding_path))  # c x h x w (64,128,128)   
+        embedding = torch.from_numpy(np.load(embedding_path))  # c x h x w (64,128,128)
+
         # Label
         id = self.embedding_files[idx].split("_")[2].split(".")[0]
         to_open_label = os.path.join(self.path_labels, f"label_{id}.nc")

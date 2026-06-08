@@ -61,7 +61,13 @@ class DecodeEmbedding(L.LightningModule):
     def _shared_step(self, batch, step_name, log_on_step, log_on_epoch):
         emb, label = batch
         y_logits = self(emb)
+
         loss = self.loss_fn(y_logits, label)
+
+        #print(f"Loss = {loss}")
+        if torch.isnan(loss) or torch.isinf(loss):
+            print("Loss is NaN detected")
+            breakpoint()
 
         y_pred = torch.softmax(y_logits, dim=1).argmax(dim=1)
 
