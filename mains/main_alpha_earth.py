@@ -26,6 +26,7 @@ path_to_oso_proj = (
 sys.path.append(path_to_oso_proj)
 
 from alpha_earth import dataset_alpha, decode_lightning_module
+torch.set_float32_matmul_precision('high')
 
 class MLP_Decoder(nn.Module):
     """

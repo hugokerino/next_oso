@@ -15,7 +15,7 @@
 #SBATCH --partition=gpu_a100
 #SBATCH --qos=gpu_all
 
-#SBATCH --time=01:00:00            # Walltime
+#SBATCH --time=05:00:00            # Walltime
 
 #SBATCH --signal=SIGUSR1@90         # For auto-resubmit
 
