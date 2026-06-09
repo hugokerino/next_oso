@@ -15,17 +15,18 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from einops import rearrange
 import pandas
 
-from src import metrics 
+from src import metrics
+
 
 class DecodeEmbedding(L.LightningModule):
     def __init__(self, decoder: nn.Module, args):
         super().__init__()
         self.decoder: nn.Module = decoder
 
-        self.num_class = args.num_class
-        self.lr = args.lr
-        self.max_epochs = args.max_epochs
-        self.path_name_class = args.path_name_class
+        self.num_class: int = args.num_class
+        self.lr: float = args.lr
+        self.max_epochs: int = args.max_epochs
+        self.path_name_class: str = args.path_name_class
         self.loss_fn = torch.nn.CrossEntropyLoss(ignore_index=0)
         self.acc_metric = MulticlassAccuracy(
             num_classes=self.num_class, ignore_index=0, average="micro"
@@ -64,7 +65,7 @@ class DecodeEmbedding(L.LightningModule):
 
         loss = self.loss_fn(y_logits, label)
 
-        #print(f"Loss = {loss}")
+        # print(f"Loss = {loss}")
         if torch.isnan(loss) or torch.isinf(loss):
             print("Loss is NaN detected")
             breakpoint()
@@ -128,7 +129,11 @@ class DecodeEmbedding(L.LightningModule):
             "Test Kappa": kappa,
         }
 
-        name_class = pandas.read_csv(self.path_name_class).get("name_class").values if self.path_name_class is not None else None
+        name_class = (
+            pandas.read_csv(self.path_name_class).get("name_class").values
+            if self.path_name_class is not None
+            else None
+        )
         table_metrics = metrics.create_markdown_table(test_metrics)
         table_metrics_per_class = metrics.metrics_per_class(
             y_preds, y_trues, self.num_class, name_class
@@ -183,5 +188,3 @@ class DecodeEmbedding(L.LightningModule):
         return [optimizer], [
             {"scheduler": scheduler, "interval": "epoch", "monitor": "val_fscore"}
         ]
-
-

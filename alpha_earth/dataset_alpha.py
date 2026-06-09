@@ -9,6 +9,7 @@ import numpy as np
 import xarray as xr
 from einops import rearrange
 
+
 class alpha_earth_dataset(tdata.Dataset):
     def __init__(
         self,
@@ -45,7 +46,6 @@ class alpha_earth_dataset(tdata.Dataset):
     def __len__(self):
         return len(self.embedding_files)
 
-
     def __getitem__(self, idx):
         # Embedding
         embedding_path = os.path.join(self.path_embeddings, self.embedding_files[idx])
@@ -73,6 +73,7 @@ class alpha_earth_dataset(tdata.Dataset):
                 label = torch.from_numpy(labels_probas).float()  # c x h x w
 
         return embedding, label
+
 
 class alpha_earth_datamodule(LightningDataModule):
     def __init__(
@@ -117,15 +118,27 @@ class alpha_earth_datamodule(LightningDataModule):
 
     def train_dataloader(self):
         return tdata.DataLoader(
-            self.data_train, batch_size=self.batch_size, num_workers=self.num_workers
+            self.data_train,
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+            pin_memory=True,
+            persistent_workers=True,
         )
 
     def val_dataloader(self):
         return tdata.DataLoader(
-            self.data_val, batch_size=self.batch_size, num_workers=self.num_workers
+            self.data_val,
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+            pin_memory=True,
+            persistent_workers=True,
         )
 
     def test_dataloader(self):
         return tdata.DataLoader(
-            self.data_test, batch_size=self.batch_size, num_workers=self.num_workers
+            self.data_test,
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+            pin_memory=True,
+            persistent_workers=True,
         )
