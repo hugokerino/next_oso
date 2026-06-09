@@ -29,6 +29,7 @@ def test_alpha_earth():
         fold_test=[3],
         batch_size=8,
         num_workers=1,
+        preload=True,
     )
 
     classifier = decode_lightning_module.DecodeEmbedding(

@@ -77,7 +77,8 @@ def main(config):
         fold_val=config.folds_val,
         fold_test=config.folds_test,
         batch_size=config.batch_size,
-        num_workers=args.num_worker,
+        num_workers=config.num_worker,
+        preload=config.preload_data,
     )
 
     # Model
@@ -107,6 +108,7 @@ def main(config):
         else None,
         profiler=SimpleProfiler(dirpath=log_dir, filename="Profiler"),
         precision=get_precision(),
+        log_every_n_steps=10,
         limit_train_batches=limit_batch,
         limit_val_batches=limit_batch,
         limit_test_batches=limit_batch,
@@ -159,6 +161,7 @@ if __name__ == "__main__":
         "--label_type", type=str, default="max_class", choices=["max_class", "probas"]
     )
     parser.add_argument("--num_worker", type=int, default=1)
+    parser.add_argument("--preload_data", type=bool, default=True)
 
     # Training arguments
     parser.add_argument("--batch_size", type=int, default=8)
