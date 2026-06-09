@@ -19,11 +19,13 @@ class alpha_earth_dataset(tdata.Dataset):
         fold=None | list[int],
         label_type: str = "max_class",
         preload: bool = False,
+        return_id: bool = False,  # cannot be True if preload = True
     ):
         self.path_embeddings = path_embeddings
         self.path_labels = path_labels
         self.label_type = label_type
         self.preload = preload
+        self.return_id = return_id
 
         if label_type == "probas":
             path_oso_class = (
@@ -89,7 +91,10 @@ class alpha_earth_dataset(tdata.Dataset):
                         )
                 label = torch.from_numpy(labels_probas).float()
 
-        return embedding, label
+        if self.return_id:
+            return embedding, label, id
+        else:
+            return embedding, label
 
     def __len__(self):
         return len(self.embedding_files)
@@ -103,9 +108,9 @@ class alpha_earth_dataset(tdata.Dataset):
 class alpha_earth_datamodule(LightningDataModule):
     def __init__(
         self,
-        path_embeddings: str,
-        path_labels: str,
-        path_mapping_folder: str,
+        path_embeddings: str = "/home/hkerino/Documents/nextoso-dataset/alpha-earth_data",
+        path_labels: str = "/home/hkerino/Documents/nextoso-dataset/data/10m/labels",
+        path_mapping_folder: str = "/home/hkerino/Documents/nextoso-dataset/data/10m/s2",
         preload: bool = False,
         fold_train=None | list[int],
         fold_val=None | list[int],
@@ -113,10 +118,12 @@ class alpha_earth_datamodule(LightningDataModule):
         batch_size: int = 32,
         num_workers: int = 4,
         label_type: str = "max_class",
+        return_id: bool = False,
     ):
         super().__init__()
         self.batch_size = batch_size
         self.num_workers = num_workers
+        self.return_id = return_id
 
         self.data_train = alpha_earth_dataset(
             path_embeddings=path_embeddings,
@@ -125,6 +132,7 @@ class alpha_earth_datamodule(LightningDataModule):
             fold=fold_train,
             preload=preload,
             label_type=label_type,
+            return_id=return_id,
         )
         self.data_val = alpha_earth_dataset(
             path_embeddings=path_embeddings,
@@ -133,6 +141,7 @@ class alpha_earth_datamodule(LightningDataModule):
             fold=fold_val,
             preload=preload,
             label_type=label_type,
+            return_id=return_id,
         )
         self.data_test = alpha_earth_dataset(
             path_embeddings=path_embeddings,
@@ -141,6 +150,7 @@ class alpha_earth_datamodule(LightningDataModule):
             fold=fold_test,
             preload=preload,
             label_type=label_type,
+            return_id=return_id,
         )
 
     def train_dataloader(self):
