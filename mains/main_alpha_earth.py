@@ -14,7 +14,6 @@ import pprint
 from argparse import ArgumentParser
 from datetime import datetime
 import signal
-
 import sys
 
 is_cluster = "SLURM_JOB_ID" in os.environ
