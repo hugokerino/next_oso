@@ -40,5 +40,6 @@ pixi run -e gpu python mains/main_alpha_earth.py \
     --num_worker 15 \
     --max_epochs 1000 \
     --preload_data True \
+    --label_type "probas" 
 
 echo "End"

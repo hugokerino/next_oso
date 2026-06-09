@@ -1,5 +1,7 @@
 import pytest
 import sys
+import torch
+import random
 
 sys.path.append("/home/hkerino/Documents/next_oso/")
 
@@ -15,6 +17,7 @@ class Args:
         self.path_name_class = (
             "/home/hkerino/Documents/nextoso-dataset/data/auxiliary/OSO/oso_classes.csv"
         )
+        self.label_type = "probas"
 
 
 def test_alpha_earth():
@@ -29,9 +32,21 @@ def test_alpha_earth():
         fold_test=[3],
         batch_size=8,
         num_workers=1,
-        preload=True,
+        preload=False,
+        label_type="probas",
     )
 
     classifier = decode_lightning_module.DecodeEmbedding(
         decoder=MLP_Decoder(mlp=[64, 32, 25], dropout=0.1), args=args
     )
+
+    train_loader = datamodule.train_dataloader()
+    batch = next(iter(train_loader))
+    loss = classifier.training_step(batch, batch_idx=0)
+    assert isinstance(loss, torch.Tensor)
+
+    val_batch = next(iter(datamodule.val_dataloader()))
+    classifier.validation_step(val_batch, batch_idx=0)
+
+    test_batch = next(iter(datamodule.test_dataloader()))
+    classifier.test_step(test_batch)

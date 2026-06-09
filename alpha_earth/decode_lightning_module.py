@@ -27,7 +27,11 @@ class DecodeEmbedding(L.LightningModule):
         self.lr: float = args.lr
         self.max_epochs: int = args.max_epochs
         self.path_name_class: str = args.path_name_class
-        self.loss_fn = torch.nn.CrossEntropyLoss(ignore_index=0)
+        self.loss_fn = (
+            torch.nn.CrossEntropyLoss(ignore_index=0)
+            if args.label_type == "max_class"
+            else torch.nn.CrossEntropyLoss()
+        )
         self.acc_metric = MulticlassAccuracy(
             num_classes=self.num_class, ignore_index=0, average="micro"
         )  # Micro for Overall Accuracy

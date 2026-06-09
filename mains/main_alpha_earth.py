@@ -79,6 +79,7 @@ def main(config):
         batch_size=config.batch_size,
         num_workers=config.num_worker,
         preload=config.preload_data,
+        label_type=config.label_type,
     )
 
     # Model
