@@ -1,6 +1,6 @@
 # Paths
 path_s2: /work/THEIA/CES/oso/hugok/s2_data
-path_mnt: /work/THEIA/CES/oso/hugok/mnt_data
+path_mnt: /work/THEIA/CES/oso/hugok/mnt_data #if passed = used. Pass None to don't use spatial coords
 path_label: /work/THEIA/CES/oso/hugok/labels
 path_oso_classes: /work/THEIA/CES/oso/hugok/files_s2/oso_classes.csv
 path_logs: /work/THEIA/CES/oso/hugok/next_oso/logs/light_training

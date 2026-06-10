@@ -13,20 +13,19 @@ from data_functions import collate, utils_data, transfrom
 class next_oso_Dataset(tdata.Dataset):
     def __init__(
         self,
-        path_s2,
-        path_mnt,
-        path_label,
-        path_oso_class,
-        norm=True,
-        norm_pretrained_alise=False,
-        remove_invalid_temp=True,
+        path_s2: str = "/home/hkerino/Documents/nextoso-dataset/data/10m/s2",
+        path_mnt: str | None = None,
+        path_label: str = "/home/hkerino/Documents/nextoso-dataset/data/10m/labels",
+        path_oso_class: str = "/home/hkerino/Documents/nextoso-dataset/data/auxiliary/OSO/oso_classes.csv",
+        norm: bool = True,
+        norm_pretrained_alise: bool = False,
+        remove_invalid_temp: bool = True,
         folds=None,
-        mask_needed=True,
-        return_id=False,
-        use_spatial_coords=False,
-        label_type="max_class",
-        date_type="relative",
-        reference_date="2019-12-31",
+        mask_needed: bool = False,
+        return_id: bool = False,
+        label_type: str = "max_class",
+        date_type: str = "relative",
+        reference_date: str = "2019-12-31",
     ):
         super(next_oso_Dataset, self).__init__()
         self.path_s2 = path_s2
@@ -39,7 +38,7 @@ class next_oso_Dataset(tdata.Dataset):
         self.folds = folds
         self.mask_needed = mask_needed
         self.return_id = return_id
-        self.use_spatial_coords = use_spatial_coords
+        self.use_spatial_coords = True if path_mnt is not None else False
         self.label_type = label_type
         self.reference_date = np.datetime64(reference_date)
         self.date_type = date_type
@@ -63,7 +62,7 @@ class next_oso_Dataset(tdata.Dataset):
             not self.norm and not self.norm_pretrained_alise
         ), "Cannot use both norm and norm_pretrained_alise at the same time."
 
-    def _collect_files(self):
+    def _collect_files(self) -> None:
         for zone in range(1, 10):
             zone_dir = os.path.join(self.path_s2, str(zone))
             if self.folds is None:
@@ -85,22 +84,22 @@ class next_oso_Dataset(tdata.Dataset):
                         if os.path.exists(path_label_file):
                             self.label_files.append(path_label_file)
                         else:
-                            print(
+                            raise FileNotFoundError(
                                 f"Avertissement : Le fichier label {path_s2_file} est introuvable."
                             )
                     else:
-                        print(
+                        raise FileNotFoundError(
                             f"Avertissement : Le fichier source {path_s2_file} est introuvable."
                         )
 
-    def _get_norm(self):
+    def _get_norm(self) -> None:
         with open(os.path.join(self.path_s2, "s2_stats_trex.json"), "r") as f:
             data_norms = json.load(f)
             for i in self.folds:
                 norm_value = data_norms.get(f"fold_{i}")
                 self.norms.update({str(i): norm_value})
 
-    def _get_norm_pretrained_alise(self):
+    def _get_norm_pretrained_alise(self) -> None:
         path_norm_alise = os.path.join(self.path_s2, "norm_alise.csv")
         if not os.path.exists(path_norm_alise):
             raise FileNotFoundError(
@@ -111,11 +110,11 @@ class next_oso_Dataset(tdata.Dataset):
             pandas.read_csv(path_norm_alise).iloc[:, 1:].to_numpy(dtype=np.float32)
         )
 
-    def _get_ids_per_fold(self):
+    def _get_ids_per_fold(self) -> None:
         with open(os.path.join(self.path_s2, "s2_ids_per_folder.json"), "r") as f:
             self.ids_per_fold.update(json.load(f))
 
-    def _get_file_mapping(self, name):
+    def _get_file_mapping(self, name) -> str:
         with open(os.path.join(self.path_s2, "file_mapping.json"), "r") as f:
             file_mapping = json.load(f)
             key = f"s2_{name}.nc"
@@ -125,24 +124,26 @@ class next_oso_Dataset(tdata.Dataset):
 
         return f"{folder}/fold_{fold}"
 
-    def _find_keys_for_file(self, file_name, dictionary):
-        return [key for key, file_list in dictionary.items() if file_name in file_list]
+    def _find_keys_for_file(self, file_name, dictionary) -> int:
+        return [key for key, file_list in dictionary.items() if file_name in file_list][
+            0
+        ]
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.s2_files)
 
-    def __getitem__(self, idx: int | str):
+    def __getitem__(self, idx: int | str) -> tuple:
         if isinstance(idx, int):
             to_open_s2 = self.s2_files[idx]
             to_open_label = self.label_files[idx]
-            file_basename = os.path.basename(self.s2_files[idx])
+            # file_basename = os.path.basename(self.s2_files[idx])
             id = self.ids[idx]
 
         if isinstance(idx, str):
             complete_path = os.path.join(self.path_s2, self._get_file_mapping(idx))
             to_open_s2 = os.path.join(complete_path, f"s2_{idx}.nc")
             to_open_label = os.path.join(self.path_label, f"label_{idx}.nc")
-            file_basename = f"s2_{idx}.nc"
+            # file_basename = f"s2_{idx}.nc"
             id = idx
 
         with xr.open_dataset(to_open_s2) as s2_data:
@@ -159,9 +160,7 @@ class next_oso_Dataset(tdata.Dataset):
                 s2 = self.transform_norm.transform(torch.from_numpy(s2_array).float())
 
             # if self.norm:
-            #     fold = self._find_keys_for_file(file_basename, self.ids_per_fold)[
-            #         0
-            #     ]  # which fold
+            #     fold = self._find_keys_for_file(file_basename, self.ids_per_fold)  # which fold
             #     norm_fold = self.norms[fold]  # get norms for fold
             #     s2 = utils_data.normalisation(s2_array, norm_fold)
 
@@ -205,9 +204,9 @@ class next_oso_Dataset(tdata.Dataset):
                 label = torch.from_numpy(label_numpy).long()  # h x w
             if self.label_type == "probas":
                 labels_probas = np.zeros((25, 128, 128))
-                for k, l in enumerate(self.name_labels):
-                    if l in list(label_data.data_vars):
-                        labels_probas[k, :, :] = label_data[l].data
+                for k, var in enumerate(self.name_labels):
+                    if var in list(label_data.data_vars):
+                        labels_probas[k, :, :] = label_data[var].data
                         labels_probas[k, :, :] = np.where(
                             labels_probas[k, :, :] == -1, 0, labels_probas[k, :, :]
                         )  # Replace -1 by 0
@@ -228,25 +227,28 @@ class next_oso_Dataset(tdata.Dataset):
 
 
 def get_loaders(
-    path_s2,
-    path_mnt,
-    path_label,
-    path_oso_class,
-    folds_train,
-    folds_val,
-    folds_test,
-    batch_size,
-    num_worker,
-    label_type,
-    norm=True,
-    norm_alise=False,
-    sequence_packing=False,
-    mask_needed=True,
-    use_spatial_coords=False,
-    remove_invalid_temp=True,
-    shuffle=True,
-    pass_id=False,
-) -> tuple[torch.utils.data.DataLoader, torch.utils.data.DataLoader, torch.utils.data.DataLoader]:
+    path_s2: str = "/home/hkerino/Documents/nextoso-dataset/data/10m/s2",
+    path_mnt: str | None = None,
+    path_label: str = "/home/hkerino/Documents/nextoso-dataset/data/10m/labels",
+    path_oso_class: str = "/home/hkerino/Documents/nextoso-dataset/data/auxiliary/OSO/oso_classes.csv",
+    folds_train: list[int] = [1, 2, 3],
+    folds_val: list[int] = [4],
+    folds_test: list[int] = [5],
+    batch_size: int = 4,
+    num_worker: int = 1,
+    label_type: str = "max_class",
+    norm: bool = True,
+    norm_alise: bool = False,
+    sequence_packing: bool = False,
+    mask_needed: bool = True,
+    remove_invalid_temp: bool = True,
+    shuffle: bool = True,
+    pass_id: bool = False,
+) -> tuple[
+    torch.utils.data.DataLoader,
+    torch.utils.data.DataLoader,
+    torch.utils.data.DataLoader,
+]:
     def make_loader(folds, shuffle) -> torch.utils.data.DataLoader:
         dataset = next_oso_Dataset(
             path_s2=path_s2,
@@ -257,7 +259,6 @@ def get_loaders(
             norm_pretrained_alise=norm_alise,
             remove_invalid_temp=remove_invalid_temp,
             folds=folds,
-            use_spatial_coords=use_spatial_coords,
             mask_needed=mask_needed,
             label_type=label_type,
             return_id=pass_id,
@@ -277,6 +278,17 @@ def get_loaders(
             num_workers=num_worker,
             pin_memory=True,
         )
+
+    all_folds = folds_train + folds_val + folds_test
+
+    if not all(1 <= fold <= 5 for fold in all_folds):
+        raise ValueError(f"Fold values must be between 1 and 5. Got {all_folds}")
+
+    if len(set(all_folds)) != len(all_folds):
+        raise ValueError("Folds_train, folds_val and folds_test must be disjoint.")
+
+    if not all((folds_train, folds_val, folds_test)):
+        raise ValueError("Folds cannot be empty.")
 
     return map(
         make_loader, [folds_train, folds_val, folds_test], [shuffle, False, False]

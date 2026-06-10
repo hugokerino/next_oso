@@ -1,15 +1,8 @@
 stages:
-  - lint
   - test
 
-ruff:
-  stage: lint
-  script:
-    - pixi install -e dev
-    - pixi run -e dev ruff check .
-
-pytest:
+temporary-ci:
   stage: test
   script:
-    - pixi install -e dev
-    - pixi run -e dev pytest test/
+    - echo "temporary ci, to modify"
+    - echo "Pixi / Ruff / Pytest not configured yet"

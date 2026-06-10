@@ -1,6 +1,6 @@
 # Paths
 path_s2: /home/hkerino/Documents/nextoso-dataset/data/10m/s2
-path_mnt : /home/hkerino/Documents/nextoso-dataset/data/10m/mnt
+path_mnt : /home/hkerino/Documents/nextoso-dataset/data/10m/mnt #if passed = used. Pass None to don't use spatial coords
 path_label: /home/hkerino/Documents/nextoso-dataset/data/10m/labels
 path_oso_classes: /home/hkerino/Documents/nextoso-dataset/data/auxiliary/OSO/oso_classes.csv
 path_logs: /home/hkerino/Documents/next_oso/logs/light_training

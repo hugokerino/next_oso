@@ -1,7 +1,6 @@
 import pytest
 import sys
 import torch
-import random
 
 sys.path.append("/home/hkerino/Documents/next_oso/")
 

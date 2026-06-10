@@ -8,7 +8,6 @@ from lightning.pytorch.callbacks import (
 )
 from lightning.pytorch.profilers import SimpleProfiler
 from lightning.pytorch.plugins.environments import SLURMEnvironment
-from pytorch_lightning.strategies import DDPStrategy
 
 import numpy as np
 import pandas
@@ -37,8 +36,13 @@ from Alise.utils_ALISE import MLP_Simple_Decoder
 
 torch.serialization.add_safe_globals([metrics.FocalLoss])
 torch.set_float32_matmul_precision("high")
-torch.backends.cuda.enable_flash_sdp(False) # if using flash attention implementation batch_size cannot exceed 65535 (int16)
-torch.backends.cuda.enable_mem_efficient_sdp(True)  # no constraint on bacth size but more VRAM usage, should be less efficient
+torch.backends.cuda.enable_flash_sdp(
+    False
+)  # if using flash attention implementation batch_size cannot exceed 65535 (int16)
+torch.backends.cuda.enable_mem_efficient_sdp(
+    True
+)  # no constraint on bacth size but more VRAM usage, should be less efficient
+
 
 def load_config(train_cfg_path: str, model_cfg_path: str) -> dict:
     with open(train_cfg_path, "r") as f:
@@ -54,7 +58,9 @@ def build_model(config: dict):
     dec_cfg = config["decoder"]
 
     if config["use_spatial_coords"]:
-        dec_cfg["mlp"][0] += 4*enc_cfg["temporal_projector"]["n_q"] if model_name == "ALISE" else 4  # Ajouter 4 dimensions pour les coordonnées spatiales si utilisé seulement au decoding
+        dec_cfg["mlp"][0] += (
+            4 * enc_cfg["temporal_projector"]["n_q"] if model_name == "ALISE" else 4
+        )  # Ajouter 4 dimensions pour les coordonnées spatiales si utilisé seulement au decoding
         # enc_cfg["input_dim"] += 4
 
     if model_name == "LTAE":
@@ -96,7 +102,9 @@ def build_model(config: dict):
     else:
         raise ValueError(f"Modèle inconnu : {model_name}")
 
-    if config["batch_size"] is not None: # Si une taille de batch est spécifiée dans la config, l'utiliser
+    if (
+        config["batch_size"] is not None
+    ):  # Si une taille de batch est spécifiée dans la config, l'utiliser
         batch_size = config["batch_size"]
 
     return encoder, decoder, batch_size
@@ -140,7 +148,9 @@ def main(config):
     # criterion = torch.nn.CrossEntropyLoss(ignore_index=0)
     criterion = select_criterion(config["criterion"])
     encoder, decoder, batch_size = build_model(config)
-    config["batch_size"] = batch_size  # Update batch size in config for data loading and lightning module
+    config["batch_size"] = (
+        batch_size  # Update batch size in config for data loading and lightning module
+    )
 
     ########################################
     # DATA
@@ -150,7 +160,9 @@ def main(config):
 
     dl_train, dl_val, dl_test = dataset.get_loaders(
         path_s2=config["path_s2"],
-        path_mnt=config["path_mnt"],
+        path_mnt=config[
+            "path_mnt"
+        ],  # if not None, add spatial vars to the decoding part
         path_label=config["path_label"],
         path_oso_class=config["path_oso_classes"],
         folds_train=config["folds_train"],
@@ -160,7 +172,6 @@ def main(config):
         num_worker=config["num_worker"],
         label_type=config["label_type"],
         mask_needed=config["mask_need"],
-        use_spatial_coords=config["use_spatial_coords"],
         norm=True
         if config["model"] in ["LTAE", "UTAE", "ALISE", "ALISE_encoding"]
         else False,
@@ -224,7 +235,7 @@ def main(config):
         accelerator=config["accelerator"],
         devices=config["devices"],
         num_nodes=config["nodes"],
-        strategy=config["strategy"],  
+        strategy=config["strategy"],
         profiler=profiler,
         num_sanity_val_steps=limit_batches,
         limit_train_batches=limit_batches,
@@ -244,9 +255,7 @@ def main(config):
         use_spatial_coords=config["use_spatial_coords"],
         lr=config["learning_rate"],
         max_epochs=config["epochs_max"],
-        name_class=pandas.read_csv(config["path_oso_classes"])
-        .get("name_class")
-        .values,
+        name_class=pandas.read_csv(config["path_oso_classes"]).get("name_class").values,
     )
     # Training
     trainer.fit(model=classifier, train_dataloaders=dl_train, val_dataloaders=dl_val)

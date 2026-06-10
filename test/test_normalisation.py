@@ -42,7 +42,6 @@ def norm_2(sits):
 )
 def test_norms(path):
     sits = xr.open_dataset(path)
-
     s2_data = utils_data.remove_invalid(sits)
 
     s2_array = (
@@ -67,11 +66,3 @@ def test_norms(path):
     # Two norms should be close
     assert torch.allclose(sits_norm_1.mean(), sits_norm_2.mean(), atol=1e-2)
     assert torch.allclose(sits_norm_1.std(), sits_norm_2.std(), atol=1e-2)
-
-    # Print means and stds for debugging
-    print(
-        f"\nNorm 1 - Mean: {sits_norm_1.mean().item():.4f}, Std: {sits_norm_1.std().item():.4f}"
-    )
-    print(
-        f"Norm 2 - Mean: {sits_norm_2.mean().item():.4f}, Std: {sits_norm_2.std().item():.4f}"
-    )

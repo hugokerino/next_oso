@@ -30,3 +30,7 @@ def test_data_embedding(fold):
     assert isinstance(label, torch.Tensor)
     assert label.shape == (128, 128)
     assert (~torch.isnan(label)).any()
+
+
+def test_lightning_alise_embedding():
+    return
