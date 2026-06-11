@@ -108,14 +108,25 @@ def erode_class_max(
 
     if isinstance(labels, str):
         ds = rioxarray.open_rasterio(labels)
-
-    if isinstance(labels, xr.Dataset):
+        assert isinstance(ds, xr.Dataset)
+    else:
         ds = labels
 
-    x, y, max_class = ds[variable].x.values, ds[variable].y.values, ds[variable]
+    x, y, max_class_da = ds[variable].x.values, ds[variable].y.values, ds[variable]
+
     x, y = np.meshgrid(x, y)
-    x, y, max_class = x.flatten(), y.flatten(), max_class.values.flatten()
-    max_pd = pandas.DataFrame.from_dict({"classe": max_class, "x": x, "y": y})
+
+    x_flat = x.flatten()
+    y_flat = y.flatten()
+    max_class_flat = max_class_da.values.flatten()
+
+    max_pd = pandas.DataFrame.from_dict(
+        {
+            "classe": max_class_flat,
+            "x": x_flat,
+            "y": y_flat,
+        }
+    )
     max_vector = gpd.GeoDataFrame(
         max_pd["classe"],
         geometry=gpd.GeoSeries.from_xy(max_pd["x"], max_pd["y"], crs=ds.rio.crs),
@@ -142,12 +153,17 @@ def erode_class_max(
         if not geom.is_empty and geom.is_valid
     )
 
+    dtype = ds.dtypes.get(variable)
+
+    if dtype is None:
+        raise ValueError(f"{variable} not found in dataset")
+
     raster = rasterize(
         shapes,
         out_shape=(ds.max_class_1.shape[0], ds.max_class_1.shape[1]),
         transform=ds.rio.transform(),
         fill=0,
-        dtype=ds.dtypes.get("max_class_1").name,
+        dtype=dtype.name,
     )
 
     rasterized_da: xr.DataArray = xr.DataArray(

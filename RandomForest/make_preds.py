@@ -3,7 +3,7 @@ import pandas
 import numpy as np
 import torch
 
-from RandomForest import dataset
+from RandomForest import dataset_RF
 
 # Paths
 PATH_TO_RF_PREDICTIONS = (
@@ -31,7 +31,7 @@ for z, preds_zone in enumerate(sorted(os.listdir(PATH_TO_RF_PREDICTIONS))):
                 -1, 128, 128
             )
         )
-        Y_true, ids = dataset.create_dataset(
+        Y_true, ids = dataset_RF.create_dataset(
             path_s2=PATH_TO_DATA_s2,
             path_label=PATH_TO_DATA_label,
             zone=z + 1,

@@ -98,7 +98,7 @@ class PASTIS_Dataset(tdata.Dataset):
                 index=self.meta_patch.index, columns=self.date_range, dtype=int
             )
             for pid, date_seq in dates.items():
-                if type(date_seq) == str:
+                if type(date_seq) is str:
                     date_seq = json.loads(date_seq)
                 d = pd.DataFrame().from_dict(date_seq, orient="index")
                 d = d[0].apply(
@@ -283,7 +283,11 @@ def get_loaders_pastis(
     def make_loader(folds, shuffle):
         dt = PASTIS_Dataset(folder=path_pastis, folds=folds)
         return torch.utils.data.DataLoader(
-            dt, batch_size=batch_size, collate_fn=pad_pastis_collate, shuffle=shuffle, num_workers=15
+            dt,
+            batch_size=batch_size,
+            collate_fn=pad_pastis_collate,
+            shuffle=shuffle,
+            num_workers=15,
         )
 
     return map(make_loader, [[1, 2, 3], [4], [5]], [True, False, False])

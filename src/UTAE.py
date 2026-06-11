@@ -249,10 +249,9 @@ class ConvLayer(nn.Module):
         elif norm == "instance":
             nl = nn.InstanceNorm2d
         elif norm == "group":
-            nl = lambda num_feats: nn.GroupNorm(
-                num_channels=num_feats,
-                num_groups=n_groups,
-            )
+
+            def nl(num_feats):
+                return nn.GroupNorm(num_groups=n_groups, num_channels=num_feats)
         else:
             nl = None
         for i in range(len(nkernels) - 1):

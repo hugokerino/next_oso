@@ -3,7 +3,6 @@ import pprint
 import os
 import ast
 import sys
-import joblib
 import json
 from datetime import datetime
 from sklearn.ensemble import RandomForestClassifier
@@ -13,7 +12,7 @@ import numpy as np
 import pandas
 from matplotlib import pyplot as plt
 
-import dataset, utils_data_RF
+import dataset_RF
 
 
 def parse_args_to_lists(config):
@@ -44,7 +43,7 @@ def main(config):
     # Datasets
     print("\nLOADING DATA ...")
     sys.stdout.flush()
-    (X_train, Y_train) = dataset.create_dataset(
+    (X_train, Y_train) = dataset_RF.create_dataset(
         path_s2=config["path_s2"],
         path_label=config["path_label"],
         zone=config["zone_eco"],
@@ -52,7 +51,7 @@ def main(config):
         grid_time=grid,
     )
 
-    (X_test, Y_test) = dataset.create_dataset(
+    (X_test, Y_test) = dataset_RF.create_dataset(
         path_s2=config["path_s2"],
         path_label=config["path_label"],
         zone=config["zone_eco"],
@@ -94,7 +93,7 @@ def main(config):
     #     compress=3,
     # ) too heavy!!!
 
-    cm_fig = utils_data_RF.convert_cm_to_figure(cm)
+    # cm_fig = utils_data_RF.convert_cm_to_figure(cm)
     plt.savefig(os.path.join(path_to_save, "confusion_matrix"))
 
     with open(os.path.join(path_to_save, "test_metrics.json"), "w") as f:

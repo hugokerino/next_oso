@@ -1,4 +1,3 @@
-import pytest
 import torch
 
 from alpha_earth import dataset_alpha, decode_lightning_module

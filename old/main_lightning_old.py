@@ -5,7 +5,6 @@ from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
 from lightning.pytorch.profilers import SimpleProfiler
 from lightning.pytorch.plugins.environments import SLURMEnvironment
 
-import numpy as np
 import signal
 import ast
 import os
@@ -74,9 +73,9 @@ def main(config):
     sys.stdout.flush()
 
     # Loss function
-    alpha_weights = torch.from_numpy(
-        np.load("./data_functions/alpha_weights.npy")
-    ).float()
+    # alpha_weights = torch.from_numpy(
+    #     np.load("./data_functions/alpha_weights.npy")
+    # ).float()
     criterion = torch.nn.CrossEntropyLoss(ignore_index=0)
     # criterion = torch.nn.CrossEntropyLoss(ignore_index=0, weight=alpha_weights)
     # criterion = metrics.FocalLoss(alpha=alpha_weights, gamma=2, ignore_index=0)  #
@@ -166,9 +165,7 @@ def main(config):
         mask_need = False
 
         # Decoder
-        MLP_Decoder = utils_model.MLPDecoder(
-            mlp=[64, 32, 25], dropout=0.2
-        )
+        MLP_Decoder = utils_model.MLPDecoder(mlp=[64, 32, 25], dropout=0.2)
 
         encoder = ALISE_encoder
         decoder = MLP_Decoder

@@ -74,9 +74,9 @@ class alise_embedding_dataset(tdata.Dataset):
                 label = torch.from_numpy(label_numpy).long()  # h x w
             if self.label_type == "probas":
                 labels_probas = np.zeros((25, 128, 128))
-                for k, l in enumerate(self.name_labels):
-                    if l in list(label_data.data_vars):
-                        labels_probas[k, :, :] = label_data[l].data
+                for k, var in enumerate(self.name_labels):
+                    if var in list(label_data.data_vars):
+                        labels_probas[k, :, :] = label_data[var].data
                         labels_probas[k, :, :] = np.where(
                             labels_probas[k, :, :] == -1, 0, labels_probas[k, :, :]
                         )  # Replace -1 by 0
@@ -162,8 +162,8 @@ class DecodeEmbedding(L.LightningModule):
         self.miou_metric = MeanIoU(num_classes=self.num_class, include_background=False)
         self.kappa = MulticlassCohenKappa(num_classes=self.num_class, ignore_index=0)
 
-        self.y_pred_test = []
-        self.y_true_test = []
+        self.y_pred_test: list[torch.Tensor] = []
+        self.y_true_test: list[torch.Tensor] = []
 
     def forward(self, x):
         x_ = rearrange(x, "b t c h w -> (b h w) c t")

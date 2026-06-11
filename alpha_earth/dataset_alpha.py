@@ -83,9 +83,9 @@ class alpha_earth_dataset(tdata.Dataset):
 
             elif self.label_type == "probas":
                 labels_probas = np.zeros((25, 128, 128))
-                for k, l in enumerate(self.name_labels):
-                    if l in list(label_data.data_vars):
-                        labels_probas[k, :, :] = label_data[l].data
+                for k, var in enumerate(self.name_labels):
+                    if var in list(label_data.data_vars):
+                        labels_probas[k, :, :] = label_data[var].data
                         labels_probas[k, :, :] = np.where(
                             labels_probas[k, :, :] == -1, 0, labels_probas[k, :, :]
                         )

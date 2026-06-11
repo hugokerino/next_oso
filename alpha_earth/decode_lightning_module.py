@@ -48,8 +48,8 @@ class DecodeEmbedding(L.LightningModule):
 
         self.kappa = MulticlassCohenKappa(num_classes=self.num_class, ignore_index=0)
 
-        self.y_pred_test = []
-        self.y_true_test = []
+        self.y_pred_test: list[torch.Tensor] = []
+        self.y_true_test: list[torch.Tensor] = []
 
     def forward(self, x):
         x_ = rearrange(x, "b c h w -> (b h w) c ")

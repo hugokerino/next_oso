@@ -39,6 +39,9 @@ def build_model(config: dict):
     dec_cfg = config["decoder"]
     dec_cfg["mlp"][-1] = config["num_class"]
 
+    encoder: torch.nn.Module
+    decoder: torch.nn.Module
+
     if model_name == "UTAE":
         encoder = UTAE.UTAE(**enc_cfg)
         decoder = utils_model.MLPDecoder(**dec_cfg)

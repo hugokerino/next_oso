@@ -19,6 +19,9 @@ def build_model(config: dict):
     enc_cfg = config["encoder"]
     dec_cfg = config["decoder"]
 
+    encoder: torch.nn.Module
+    decoder: torch.nn.Module
+
     if config["path_mnt"]:
         dec_cfg["mlp"][0] += (
             4 * enc_cfg["temporal_projector"]["n_q"] if model_name == "ALISE" else 4
@@ -73,6 +76,8 @@ def build_model(config: dict):
 
 
 def select_criterion(loss: str):
+    criterion: torch.nn.Module
+
     if loss == "cross_entropy":
         criterion = torch.nn.CrossEntropyLoss(ignore_index=0)
     elif loss == "weightedCE":

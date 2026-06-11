@@ -144,13 +144,13 @@ def return_plot_f_score(confusion_matrix):
         F = 2 * (P * R) / (P + R + 1e-6)
         f_scores[i - 1, :] = np.array((P, R, F))
 
-    mean_values = np.mean(f_scores, axis=0)
+    # mean_values = np.mean(f_scores, axis=0)
 
-    dict_mean = {
-        "Precision": mean_values[0],
-        "Recall": mean_values[1],
-        "F-Score": mean_values[2],
-    }
+    # dict_mean = {
+    #     "Precision": mean_values[0],
+    #     "Recall": mean_values[1],
+    #     "F-Score": mean_values[2],
+    # }
 
     # Créer la figure
     fig, ax = plt.subplots(figsize=(15, 8))

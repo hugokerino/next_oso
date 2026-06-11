@@ -169,14 +169,25 @@ def erode_class_max(
 
     if isinstance(labels, str):
         ds = rioxarray.open_rasterio(labels)
+        assert isinstance(ds, xr.Dataset)
 
-    if isinstance(labels, xr.Dataset):
+    else:
         ds = labels
+    x, y, max_class_da = ds[variable].x.values, ds[variable].y.values, ds[variable]
 
-    x, y, max_class = ds[variable].x.values, ds[variable].y.values, ds[variable]
     x, y = np.meshgrid(x, y)
-    x, y, max_class = x.flatten(), y.flatten(), max_class.values.flatten()
-    max_pd = pandas.DataFrame.from_dict({"classe": max_class, "x": x, "y": y})
+
+    x_flat = x.flatten()
+    y_flat = y.flatten()
+    max_class_flat = max_class_da.values.flatten()
+
+    max_pd = pandas.DataFrame.from_dict(
+        {
+            "classe": max_class_flat,
+            "x": x_flat,
+            "y": y_flat,
+        }
+    )
     max_vector = gpd.GeoDataFrame(
         max_pd["classe"],
         geometry=gpd.GeoSeries.from_xy(max_pd["x"], max_pd["y"], crs=ds.rio.crs),
@@ -199,12 +210,16 @@ def erode_class_max(
         if not geom.is_empty and geom.is_valid
     )
 
+    dtype = ds.dtypes.get(variable)
+    if dtype is None:
+        raise ValueError(f"{variable} not found in dataset")
+
     raster = rasterize(
         shapes,
         out_shape=(ds.max_class_1.shape[0], ds.max_class_1.shape[1]),
         transform=ds.rio.transform(),
         fill=0,
-        dtype=ds.dtypes.get("max_class_1").name,
+        dtype=dtype.name,
     )
 
     rasterized_da: xr.DataArray = xr.DataArray(
@@ -242,7 +257,9 @@ def normalize_s2(s2):
     return s2_normalized
 
 
-def geographical_information(s2: xr.Dataset, id: str, path_mnt: str, h=128, w=128) -> torch.Tensor:
+def geographical_information(
+    s2: xr.Dataset, id: str, path_mnt: str | None, h=128, w=128
+) -> torch.Tensor:
     X_MIN, X_MAX = 1e5, 1.3e6
     Y_MIN, Y_MAX = 6e6, 7.2e6
     ELEV_MAX = 3000
@@ -433,9 +450,10 @@ def histogram_valid_per_pixel(dataset, plot=True, density=False, num_workers=8):
 
 
 def plot_label(patch: xr.Dataset | np.ndarray):
+
     if isinstance(patch, xr.Dataset):
-        label = patch["max_class_1"]
-    if isinstance(patch, np.ndarray):
+        label = patch["max_class_1"].data
+    else:
         label = patch
 
     fig, ax = plt.subplots(1, figsize=(12, 8))
@@ -587,16 +605,16 @@ def mean_entropy_per_class(path_labels, path_oso_class):
 
 def density_repartition(path_labels: str, name: str, plot=True):
 
-    probas = []
+    probas_list = []
 
     for label in os.listdir(path_labels):
         if label.endswith(".nc"):
             patch = xr.open_dataset(os.path.join(path_labels, label))
             if name in list(patch.data_vars):
                 proba_class = patch[name].values.flatten()
-                probas.append(proba_class[proba_class != 0])
+                probas_list.append(proba_class[proba_class != 0])
 
-    probas = np.concatenate(probas)
+    probas = np.concatenate(probas_list)
 
     if plot:
         fig, ax = plt.subplots(figsize=(14, 5))

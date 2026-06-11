@@ -42,11 +42,11 @@ class next_oso_Dataset(tdata.Dataset):
         self.label_type = label_type
         self.reference_date = np.datetime64(reference_date)
         self.date_type = date_type
-        self.s2_files = []
-        self.label_files = []
-        self.ids = []
-        self.ids_per_fold = {}
-        self.norms = {}
+        self.s2_files: list[str] = []
+        self.label_files: list[str] = []
+        self.ids: list[str] = []
+        self.ids_per_fold: dict[str, str] = {}
+        self.norms: dict[str, float] = {}
         self.name_labels = pandas.read_csv(self.path_oso_class).get("name_class").values
         self.norm_alise = None
         self.transform_norm = transfrom.load_transform_one_mod(
@@ -132,6 +132,10 @@ class next_oso_Dataset(tdata.Dataset):
     def __len__(self) -> int:
         return len(self.s2_files)
 
+    def __iter__(self):
+        for i in range(len(self)):
+            yield self[i]
+
     def __getitem__(self, idx: int | str) -> tuple:
         if isinstance(idx, int):
             to_open_s2 = self.s2_files[idx]
@@ -157,6 +161,7 @@ class next_oso_Dataset(tdata.Dataset):
             )  # c x t x h x w
 
             if self.norm:
+                assert self.transform_norm.transform is not None
                 s2 = self.transform_norm.transform(torch.from_numpy(s2_array).float())
 
             # if self.norm:
@@ -165,6 +170,7 @@ class next_oso_Dataset(tdata.Dataset):
             #     s2 = utils_data.normalisation(s2_array, norm_fold)
 
             elif self.norm_pretrained_alise:
+                assert self.norm_alise is not None
                 s2 = torch.from_numpy(
                     (s2_array - self.norm_alise[0][:, None, None, None])
                     / (
@@ -244,11 +250,7 @@ def get_loaders(
     remove_invalid_temp: bool = True,
     shuffle: bool = True,
     pass_id: bool = False,
-) -> tuple[
-    torch.utils.data.DataLoader,
-    torch.utils.data.DataLoader,
-    torch.utils.data.DataLoader,
-]:
+) -> list[torch.utils.data.DataLoader]:
     def make_loader(folds, shuffle) -> torch.utils.data.DataLoader:
         dataset = next_oso_Dataset(
             path_s2=path_s2,
@@ -290,6 +292,6 @@ def get_loaders(
     if not all((folds_train, folds_val, folds_test)):
         raise ValueError("Folds cannot be empty.")
 
-    return map(
-        make_loader, [folds_train, folds_val, folds_test], [shuffle, False, False]
+    return list(
+        map(make_loader, [folds_train, folds_val, folds_test], [shuffle, False, False])
     )

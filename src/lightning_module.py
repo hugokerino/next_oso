@@ -29,11 +29,11 @@ class classifier(L.LightningModule):
         batch_size: int,
         loss_fn: torch.nn.Module,
         optimizer_scheduler: str = "sequential",
-        lr=1e-3,
-        max_epochs=100,
-        num_classe=25,
-        H=128,
-        W=128,
+        lr: float = 1e-3,
+        max_epochs: int = 100,
+        num_classe: int = 25,
+        H: int = 128,
+        W: int = 128,
         name_class=None,
     ):
         super().__init__()
@@ -48,8 +48,8 @@ class classifier(L.LightningModule):
         self.lr = lr
         self.max_epochs = max_epochs
         self.optimizer_scheduler = optimizer_scheduler
-        self.y_pred_test = []
-        self.y_true_test = []
+        self.y_pred_test: list[torch.Tensor] = []
+        self.y_true_test: list[torch.Tensor] = []
         self.acc_metric = MulticlassAccuracy(
             num_classes=self.num_class, ignore_index=0, average="micro"
         )  # Micro for Overall Accuracy
