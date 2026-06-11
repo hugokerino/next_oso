@@ -1,8 +1,13 @@
 stages:
-  - test
+  - lint
 
-test:
+ruff:
+  stage: lint
   image: bin.koda.cnrs.fr/docker-ci/python:3.12
+
+  before_script:
+    - python --version
+    - pip install ruff
+
   script:
-    - which pixi || true
-    - pixi --version || true
+    - ruff check .
