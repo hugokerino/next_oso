@@ -12,7 +12,7 @@ next-oso = { path = ".", editable = true }
 numpy = ">=2.4.2,<3"
 netcdf4 = ">=1.7.4,<2"
 xarray = ">=2024.5.0,<2025"
-pandas = "==2.2.2" 
+pandas = "==2.2.2"
 geopandas = ">=1.1.2,<2"
 matplotlib = ">=3.10.8,<4"
 jupyter = ">=1.1.1,<2"
@@ -57,6 +57,7 @@ ruff = "*"
 pytest = ">=8.3.4,<9"
 mypy = "*"
 pytest-cov = '*'
+pre-commit = "*"
 
 # Définition des environnements
 [environments]

@@ -9,4 +9,4 @@ mypy:
 test:
 	pixi run -e dev pytest test/
 
-ci: mypy test ruff
+ci: ruff mypy test
