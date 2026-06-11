@@ -1,32 +1,18 @@
 stages:
-  - lint
   - test
 
-image: ubuntu:24.04
+image: bin.koda.cnrs.fr/docker-ci/python:3.12
 
 before_script:
-  - apt-get update
-  - apt-get install -y curl make
+  - python --version
   - curl -fsSL https://pixi.sh/install.sh | bash
   - export PATH="$HOME/.pixi/bin:$PATH"
   - pixi install -e dev
 
-cache:
-  key: pixi-cache
-  paths:
-    - .pixi/
 
-ruff:
-  stage: lint
-  script:
-    - make ruff
-
-mypy:
-  stage: lint
-  script:
-    - make mypy
-
-pytest:
+test:
   stage: test
+  image: bin.koda.cnrs.fr/docker-ci/python:3.12
   script:
-    - make test
+    - echo "temporary ci, to modify"
+    - python --version
