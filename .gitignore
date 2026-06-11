@@ -1,7 +1,20 @@
+#Pixi
 __pycache__/
+.pixi
 *.pyc
 *.pyo
+
+#Pytest
+.pytest_cache
+
+# Ruff
+.ruff_cache/
+
+#Logs folder 
 logs/
 pastis/logs/
 script_logs/
 output_monitoring/
+
+#Notebook use for quick test
+test.ipynb
