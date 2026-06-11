@@ -1,10 +1,7 @@
 import pytest
-import sys
 import torch
 import xarray as xr
 import numpy
-
-sys.path.append("/home/hkerino/Documents/next_oso/")
 from data_functions import utils_data, transfrom, dataset
 
 

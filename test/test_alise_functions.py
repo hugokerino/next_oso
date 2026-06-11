@@ -1,7 +1,4 @@
 import pytest
-import sys
-
-sys.path.append("/home/hkerino/Documents/next_oso/")
 from Alise import sse, transformer, temporal_proj
 import torch
 from einops import repeat

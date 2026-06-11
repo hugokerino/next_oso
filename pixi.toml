@@ -5,6 +5,9 @@ name = "models_on_nextoso"
 platforms = ["linux-64"]
 version = "0.1.0"
 
+[pypi-dependencies]
+next-oso = { path = ".", editable = true }
+
 [dependencies]
 numpy = ">=2.4.2,<3"
 netcdf4 = ">=1.7.4,<2"

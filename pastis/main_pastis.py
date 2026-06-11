@@ -19,7 +19,7 @@ sys.path.append("/work/THEIA/CES/oso/hugok/next_oso/")
 
 from src import UTAE, utils_model, lightning_module
 from Alise import ALISE, sse, transformer, temporal_proj
-from Alise.utils_ALISE import MLP_on_time_features, MLP_Simple_Decoder
+from Alise.utils_ALISE import MLP_Simple_Decoder
 from pastis import pastis_dataset
 
 torch.set_float32_matmul_precision("high")

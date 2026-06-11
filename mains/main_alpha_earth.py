@@ -14,17 +14,9 @@ import pprint
 from argparse import ArgumentParser
 from datetime import datetime
 import signal
-import sys
-
-is_cluster = "SLURM_JOB_ID" in os.environ
-path_to_oso_proj = (
-    "/work/THEIA/CES/oso/hugok/next_oso"
-    if is_cluster
-    else "/home/hkerino/Documents/next_oso/"
-)
-sys.path.append(path_to_oso_proj)
 
 from alpha_earth import dataset_alpha, decode_lightning_module
+from mains.main_utils import get_precision
 
 torch.set_float32_matmul_precision("high")
 
@@ -47,14 +39,6 @@ class MLP_Decoder(nn.Module):
         return (
             self.dropout(self.layer(x)) if self.dropout is not None else self.layer(x)
         )
-
-
-def get_precision():
-    if not torch.cuda.is_available():
-        return "32"  # CPU en local
-    if torch.cuda.is_bf16_supported():
-        return "bf16-mixed"  # A100, RTX 3090+
-    return "16-mixed"
 
 
 def main(config):

@@ -4,14 +4,6 @@ import sys
 import os
 from argparse import ArgumentParser
 
-is_cluster = "SLURM_JOB_ID" in os.environ
-path_root = (
-    "/work/THEIA/CES/oso/hugok/next_oso"
-    if is_cluster
-    else "/home/hkerino/Documents/next_oso/"
-)
-sys.path.append(path_root)
-
 from data_functions import dataset
 from Alise import utils_ALISE
 
@@ -43,7 +35,7 @@ def generate_embedding(args):
     for i in range(nbr_sample):
         (s2, dates, _, _), _, id = d.__getitem__(i)
 
-        save_path=f"{args.path_saved_embeddings}/emb_{id}.pt"
+        save_path = f"{args.path_saved_embeddings}/emb_{id}.pt"
         if os.path.exists(save_path):
             continue
 

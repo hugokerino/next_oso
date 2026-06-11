@@ -8,84 +8,19 @@ from lightning.pytorch.callbacks import (
 from lightning.pytorch.plugins.environments import SLURMEnvironment
 from lightning.pytorch.tuner import Tuner
 
-import numpy as np
 import signal
 import json
 import os
-import yaml
 import pprint
 from argparse import ArgumentParser
 from datetime import datetime
 import sys
 
 from data_functions import dataset
-from src import LTAE, UTAE, utils_model, lightning_module, metrics
-from Alise import ALISE, sse, transformer, temporal_proj
+from src import lightning_module, metrics
+from mains.main_utils import load_config, build_model, select_criterion, get_precision
 
 torch.serialization.add_safe_globals([metrics.FocalLoss])
-
-
-def load_config(train_cfg_path: str, model_cfg_path: str) -> dict:
-    with open(train_cfg_path, "r") as f:
-        train_cfg = yaml.safe_load(f)
-    with open(model_cfg_path, "r") as f:
-        model_cfg = yaml.safe_load(f)
-    return {**train_cfg, **model_cfg}  # fusion des deux configs
-
-
-def build_model(config: dict):
-    model_name = config["model"]
-    enc_cfg = config["encoder"]
-    dec_cfg = config["decoder"]
-
-    if model_name == "LTAE":
-        encoder = LTAE.LTAE2d(**enc_cfg)
-
-    elif model_name == "UTAE":
-        encoder = UTAE.UTAE(**enc_cfg)
-
-    elif model_name == "ALISE":
-        emb_dim = enc_cfg["embedding_dim"]
-        encoder = ALISE.ALISE(
-            patch_embedding=sse.PatchEmbedding(
-                sse=sse.Unet(planes=emb_dim, **enc_cfg["sse"]),
-                tpe=sse.PositionalEncoder(d=emb_dim),
-            ),
-            temporal_encoder=transformer.Transformer(**enc_cfg["transformer"]),
-            temporal_projector=temporal_proj.LearnedQMultiHeadAttention(
-                d_in=emb_dim, **enc_cfg["temporal_projector"]
-            ),
-        )
-    else:
-        raise ValueError(f"Modèle inconnu : {model_name}")
-
-    decoder = utils_model.MLPDecoder(**dec_cfg)
-    return encoder, decoder, config["mask_need"]
-
-
-def select_criterion(loss: str):
-    if loss == "cross_entropy":
-        criterion = torch.nn.CrossEntropyLoss()
-    elif loss == "weightedCE":
-        criterion = metrics.WeightedCE()
-    elif loss == "hard_and_softCE":
-        criterion = metrics.Hard_and_softCE()
-    elif loss == "maskCE":
-        criterion = metrics.MaskCE(thresholds=np.load("data_functions/thresholds.npy"))
-    elif loss == "distillationLoss":
-        criterion = metrics.DistillationLoss()
-    else:
-        raise ValueError(f"Loss inconnu : {loss}")
-
-    return criterion
-
-
-def get_precision():
-    if not torch.cuda.is_available():
-        return "32"  # CPU en local
-    if torch.cuda.is_bf16_supported():
-        return "bf16-mixed"  # A100, RTX 3090+
-    return "16-mixed"
 
 
 def main(config):

@@ -10,9 +10,6 @@ from torchmetrics.classification import (
 
 from torchmetrics.segmentation import MeanIoU
 import numpy as np
-import sys
-
-sys.path.append("/home/hkerino/Documents/next_oso/")
 from src import metrics
 
 num_class = 10

@@ -3,9 +3,6 @@ import pytest
 import torch
 import xarray as xr
 import json
-import sys
-
-sys.path.append("/home/hkerino/Documents/next_oso/")
 
 from data_functions import utils_data, transfrom
 

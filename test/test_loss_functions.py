@@ -3,9 +3,6 @@ import numpy as np
 import torch
 from torch.nn import CrossEntropyLoss
 
-import sys
-
-sys.path.append("/home/hkerino/Documents/next_oso/")
 from src.metrics import WeightedCE, FocalLoss, Hard_and_softCE, MaskCE, DistillationLoss
 
 b, c, h, w = 4, 25, 128, 128

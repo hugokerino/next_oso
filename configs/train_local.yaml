@@ -1,9 +1,9 @@
 # Paths
 path_s2: /home/hkerino/Documents/nextoso-dataset/data/10m/s2
-path_mnt : /home/hkerino/Documents/nextoso-dataset/data/10m/mnt #if passed = used. Pass None to don't use spatial coords
 path_label: /home/hkerino/Documents/nextoso-dataset/data/10m/labels
 path_oso_classes: /home/hkerino/Documents/nextoso-dataset/data/auxiliary/OSO/oso_classes.csv
 path_logs: /home/hkerino/Documents/next_oso/logs/light_training
+path_mnt : null  #/home/hkerino/Documents/nextoso-dataset/data/10m/mnt #if passed = used. Pass null to don't use spatial coords
 
 # Data
 num_worker: 21
@@ -27,4 +27,3 @@ strategy: auto
 running_on_trex_gpu: false
 learning_rate: 0.0001
 logs : False
-use_spatial_coords : true

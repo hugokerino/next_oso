@@ -7,26 +7,14 @@ from lightning.pytorch.callbacks import (
 from lightning.pytorch.plugins.environments import SLURMEnvironment
 from lightning.pytorch.loggers import TensorBoardLogger
 import torch
-import numpy as np
 import os
 import pprint
 from argparse import ArgumentParser
 from datetime import datetime
 import signal
 
-import sys
-
-sys.path.append("/work/THEIA/CES/oso/hugok/next_oso/")
-
 from Alise import decode_embedding, utils_ALISE, master_query_decoding
-
-
-def get_precision():
-    if not torch.cuda.is_available():
-        return "32"  # CPU en local
-    if torch.cuda.is_bf16_supported():
-        return "bf16-mixed"  # A100, RTX 3090+
-    return "16-mixed"
+from mains.main_utils import get_precision
 
 
 def select_decoder(config):

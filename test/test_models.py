@@ -1,8 +1,5 @@
 import pytest
 import torch
-import sys
-
-sys.path.append("/home/hkerino/Documents/next_oso/")
 
 from src import LTAE, UTAE
 from Alise import ALISE, sse, transformer, temporal_proj

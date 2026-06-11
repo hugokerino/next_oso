@@ -29,7 +29,6 @@ class classifier(L.LightningModule):
         batch_size: int,
         loss_fn: torch.nn.Module,
         optimizer_scheduler: str = "sequential",
-        use_spatial_coords=False,
         lr=1e-3,
         max_epochs=100,
         num_classe=25,
@@ -45,7 +44,6 @@ class classifier(L.LightningModule):
         self.num_class = num_classe
         self.H = H
         self.W = W
-        self.use_spatial_coords = use_spatial_coords
         self.loss_fn = loss_fn
         self.lr = lr
         self.max_epochs = max_epochs
@@ -85,21 +83,23 @@ class classifier(L.LightningModule):
         if len(inputs) >= 4:
             geo = inputs[3]
 
-        # if self.use_spatial_coords and geo is not None:
+        # if geo is not None:
         #     geo = repeat(geo, "B C H W -> B C D H W", D=x.shape[2])
         #     x = torch.concat([x, geo], dim=1)
 
-        z = self.encoder(x, batch_positions=dates, **kwargs)  # (bhw x d) or (bhw x t x d)
-        #print("Encoder output shape:", z.shape)
+        z = self.encoder(
+            x, batch_positions=dates, **kwargs
+        )  # (bhw x d) or (bhw x t x d)
+        # print("Encoder output shape:", z.shape)
 
-        if self.use_spatial_coords and geo is not None:
+        if geo is not None:
             geo = rearrange(geo, "b c h w -> (b h w) c")  # bhw x 4
-            if z.ndim ==2:  # (bhw x d)
+            if z.ndim == 2:  # (bhw x d)
                 z = torch.cat([z, geo], dim=1)  # bhw x (d+4)
             elif z.ndim == 3:  # (bhw x t x d)
                 geo = repeat(geo, "bhw c -> bhw t c", t=z.shape[1])  # bhw x t x 4
                 z = torch.cat([z, geo], dim=2)  # bhw x t x (d+4)
-            #print("After adding geo, encoder output shape:", z.shape)
+            # print("After adding geo, encoder output shape:", z.shape)
 
         y_logits = self.decoder(z)
         y_logits = (

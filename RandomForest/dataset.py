@@ -1,5 +1,5 @@
 import os
-import utils_data_RF
+from RandomForest import utils_data_RF
 import xarray as xr
 import numpy as np
 

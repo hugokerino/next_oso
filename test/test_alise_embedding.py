@@ -1,8 +1,4 @@
 import pytest
-import sys
-
-sys.path.append("/home/hkerino/Documents/next_oso/")
-
 from Alise import decode_embedding
 import torch
 

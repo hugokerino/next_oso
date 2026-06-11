@@ -1,8 +1,5 @@
 import pytest
-import sys
 import torch
-
-sys.path.append("/home/hkerino/Documents/next_oso/")
 
 from alpha_earth import dataset_alpha, decode_lightning_module
 from mains.main_alpha_earth import MLP_Decoder

@@ -3,9 +3,6 @@ import pytest
 import torch
 from einops import rearrange
 import yaml
-import sys
-
-sys.path.append("/home/hkerino/Documents/next_oso/")
 
 from src import lightning_module, LTAE, UTAE, utils_model
 from Alise import ALISE, sse, transformer, temporal_proj, utils_ALISE
@@ -158,7 +155,6 @@ def test_lightning_module_mnt(name, encoder, decoder, dummy_batch):
         decoder=decoder,
         batch_size=batch_size,
         loss_fn=torch.nn.CrossEntropyLoss(),
-        use_spatial_coords=True,  # modif here
         H=H,
         W=W,
     )
