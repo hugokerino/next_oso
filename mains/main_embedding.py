@@ -15,7 +15,7 @@ from argparse import ArgumentParser
 from datetime import datetime
 import signal
 
-from alpha_earth import dataset_alpha, decode_lightning_module
+from embedding import dataset_embedding, decode_lightning_module
 from mains.main_utils import get_precision
 
 torch.set_float32_matmul_precision("high")
@@ -23,28 +23,44 @@ torch.set_float32_matmul_precision("high")
 
 class MLP_Decoder(nn.Module):
     """
-    MLP with one hidden layer
+    MLP de profondeur variable.
+    Exemple :
+        mlp=[64, 32, 25]       -> 64 -> 32 -> 25
+        mlp=[64, 64, 32, 25]   -> 64 -> 64 -> 32 -> 25
+        mlp=[64, 128, 64, 32, 25] -> 64 -> 128 -> 64 -> 32 -> 25
     """
 
     def __init__(self, mlp=[64, 32, 25], dropout=None):
         super().__init__()
-        self.layer = nn.Sequential(
-            nn.Linear(mlp[0], mlp[1]),
-            nn.ReLU(),
-            nn.Linear(mlp[1], mlp[2]),
-        )
+
+        layers = []
+
+        for i in range(len(mlp) - 1):
+            layers.append(nn.Linear(mlp[i], mlp[i + 1]))
+
+            # Pas de ReLU après la dernière couche
+            if i < len(mlp) - 2:
+                layers.append(nn.ReLU())
+
+        self.layer = nn.Sequential(*layers)
         self.dropout = nn.Dropout(dropout) if dropout is not None else None
 
     def forward(self, x):
-        return (
-            self.dropout(self.layer(x)) if self.dropout is not None else self.layer(x)
-        )
+        x = self.layer(x)
+
+        if self.dropout is not None:
+            x = self.dropout(x)
+
+        return x
 
 
 def main(config):
-    # Logs
+    # Paths
+    model = args.model
+    path_logs = os.path.join(config.path_logs, model)
+    path_embedding = os.path.join(config.path_embedding, model)
     date = datetime.now().date().strftime("%Y-%m-%d")
-    base_log_dir = os.path.join(config.path_logs, f"alpha-earth_{date}")
+    base_log_dir = os.path.join(path_logs, date)
     log_dir = base_log_dir
     counter = 1
     while os.path.exists(log_dir):
@@ -52,8 +68,9 @@ def main(config):
         counter += 1
 
     # Data
-    datamodule = dataset_alpha.alpha_earth_datamodule(
-        path_embeddings=config.path_embedding,
+    datamodule = dataset_embedding.embedding_datamodule(
+        model=model,
+        path_embeddings=path_embedding,
         path_labels=config.path_label,
         path_mapping_folder=config.path_mapping_folder,
         fold_train=config.folds_train,
@@ -65,8 +82,14 @@ def main(config):
         label_type=config.label_type,
     )
 
+    # Correct number of layer depending of the chosen model
+    if model == "alpha-earth":
+        mlp = [64, 32, 25]
+    elif model == "tessera":
+        mlp = [128, 64, 32, 25]
+
     # Model
-    decoder = MLP_Decoder(mlp=[64, 32, 25], dropout=0.1)
+    decoder = MLP_Decoder(mlp=mlp, dropout=0.1)
 
     classifier = decode_lightning_module.DecodeEmbedding(decoder=decoder, args=config)
 
@@ -107,11 +130,14 @@ if __name__ == "__main__":
     L.seed_everything(42, workers=True)
     parser = ArgumentParser()
 
+    # Which embeddings
+    parser.add_argument("--model", type=str, choices=["alpha-earth", "tessera"])
+
     # Path arguments
     parser.add_argument(
         "--path_embedding",
         type=str,
-        default="/home/hkerino/Documents/nextoso-dataset/alpha-earth_data",
+        default="/home/hkerino/Documents/nextoso-dataset",
     )
     parser.add_argument(
         "--path_label",
@@ -127,7 +153,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--path_logs",
         type=str,
-        default="/home/hkerino/Documents/next_oso/logs/alpha-earth",
+        default="/home/hkerino/Documents/next_oso/logs",
     )
 
     parser.add_argument(

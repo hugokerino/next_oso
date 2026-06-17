@@ -36,5 +36,5 @@ pixi run -e gpu python mains/main_decoding.py \
     --path_mapping_folder "/work/THEIA/CES/oso/hugok/s2_data" \
     --path_logs "/work/THEIA/CES/oso/hugok/next_oso/logs/alise_decoding" \
     --batch_size 8
- 
+
 echo "End"

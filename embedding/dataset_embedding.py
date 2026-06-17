@@ -10,7 +10,7 @@ from tqdm import tqdm
 import pandas
 
 
-class alpha_earth_dataset(tdata.Dataset):
+class embedding_dataset(tdata.Dataset):
     def __init__(
         self,
         path_embeddings: str = "/home/hkerino/Documents/nextoso-dataset/alpha-earth_data",
@@ -67,9 +67,8 @@ class alpha_earth_dataset(tdata.Dataset):
     def _load_sample(self, filename):
         """Chargement d'un sample depuis le disque."""
         # Embedding
-        embedding = torch.from_numpy(
-            np.load(os.path.join(self.path_embeddings, filename))
-        )
+        embedding_npy = np.load(os.path.join(self.path_embeddings, filename))
+        embedding = torch.from_numpy(embedding_npy)
 
         # Label
         id = filename.split("_")[2].split(".")[0]
@@ -105,10 +104,11 @@ class alpha_earth_dataset(tdata.Dataset):
         return self._load_sample(self.embedding_files[idx])
 
 
-class alpha_earth_datamodule(LightningDataModule):
+class embedding_datamodule(LightningDataModule):
     def __init__(
         self,
-        path_embeddings: str = "/home/hkerino/Documents/nextoso-dataset/alpha-earth_data",
+        model: str = "alpha-earth",
+        path_embeddings: str = "/home/hkerino/Documents/nextoso-dataset",
         path_labels: str = "/home/hkerino/Documents/nextoso-dataset/data/10m/labels",
         path_mapping_folder: str = "/home/hkerino/Documents/nextoso-dataset/data/10m/s2",
         preload: bool = False,
@@ -125,7 +125,9 @@ class alpha_earth_datamodule(LightningDataModule):
         self.num_workers = num_workers
         self.return_id = return_id
 
-        self.data_train = alpha_earth_dataset(
+        path_embeddings = os.path.join(path_embeddings, f"{model}_data")
+
+        self.data_train = embedding_dataset(
             path_embeddings=path_embeddings,
             path_labels=path_labels,
             path_mapping_folder=path_mapping_folder,
@@ -134,7 +136,7 @@ class alpha_earth_datamodule(LightningDataModule):
             label_type=label_type,
             return_id=return_id,
         )
-        self.data_val = alpha_earth_dataset(
+        self.data_val = embedding_dataset(
             path_embeddings=path_embeddings,
             path_labels=path_labels,
             path_mapping_folder=path_mapping_folder,
@@ -143,7 +145,7 @@ class alpha_earth_datamodule(LightningDataModule):
             label_type=label_type,
             return_id=return_id,
         )
-        self.data_test = alpha_earth_dataset(
+        self.data_test = embedding_dataset(
             path_embeddings=path_embeddings,
             path_labels=path_labels,
             path_mapping_folder=path_mapping_folder,

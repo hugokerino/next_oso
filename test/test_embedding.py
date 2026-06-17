@@ -1,7 +1,7 @@
 import torch
 
-from alpha_earth import dataset_alpha, decode_lightning_module
-from mains.main_alpha_earth import MLP_Decoder
+from embedding import dataset_embedding, decode_lightning_module
+from mains.main_embedding import MLP_Decoder
 
 
 class Args:
@@ -15,11 +15,12 @@ class Args:
         self.label_type = "probas"
 
 
-def test_alpha_earth():
+def test_embedding():
     args = Args()
 
-    datamodule = dataset_alpha.alpha_earth_datamodule(
-        path_embeddings="/home/hkerino/Documents/nextoso-dataset/alpha-earth_data",
+    datamodule = dataset_embedding.embedding_datamodule(
+        model="alpha-earth",
+        path_embeddings="/home/hkerino/Documents/nextoso-dataset",
         path_labels="/home/hkerino/Documents/nextoso-dataset/data/10m/labels",
         path_mapping_folder="/home/hkerino/Documents/nextoso-dataset/data/10m/s2",
         fold_train=[1],
