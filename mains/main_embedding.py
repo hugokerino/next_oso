@@ -58,7 +58,6 @@ def main(config):
     # Paths
     model = args.model
     path_logs = os.path.join(config.path_logs, model)
-    path_embedding = os.path.join(config.path_embedding, model)
     date = datetime.now().date().strftime("%Y-%m-%d")
     base_log_dir = os.path.join(path_logs, date)
     log_dir = base_log_dir
@@ -70,7 +69,7 @@ def main(config):
     # Data
     datamodule = dataset_embedding.embedding_datamodule(
         model=model,
-        path_embeddings=path_embedding,
+        path_embeddings=args.path_embedding,
         path_labels=config.path_label,
         path_mapping_folder=config.path_mapping_folder,
         fold_train=config.folds_train,
@@ -84,7 +83,7 @@ def main(config):
 
     # Correct number of layer depending of the chosen model
     if model == "alpha-earth":
-        mlp = [64, 32, 25]
+        mlp = [64, 64, 32, 25]
     elif model == "tessera":
         mlp = [128, 64, 32, 25]
 
@@ -131,7 +130,9 @@ if __name__ == "__main__":
     parser = ArgumentParser()
 
     # Which embeddings
-    parser.add_argument("--model", type=str, choices=["alpha-earth", "tessera"])
+    parser.add_argument(
+        "--model", type=str, required=True, choices=["alpha-earth", "tessera"]
+    )
 
     # Path arguments
     parser.add_argument(

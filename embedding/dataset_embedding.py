@@ -13,17 +13,20 @@ import pandas
 class embedding_dataset(tdata.Dataset):
     def __init__(
         self,
-        path_embeddings: str = "/home/hkerino/Documents/nextoso-dataset/alpha-earth_data",
+        model: str = "alpha-earth",
+        path_embeddings: str = "/home/hkerino/Documents/nextoso-dataset",
         path_labels: str = "/home/hkerino/Documents/nextoso-dataset/data/10m/labels",
         path_mapping_folder: str = "/home/hkerino/Documents/nextoso-dataset/data/10m/s2",
         fold=None | list[int],
         label_type: str = "max_class",
+        mask: bool = "False",  # Detect invalid pixel in embedding and put those pixel at 0 for label to not take them into account in training
         preload: bool = False,
         return_id: bool = False,  # cannot be True if preload = True
     ):
-        self.path_embeddings = path_embeddings
+        self.path_embeddings = os.path.join(path_embeddings, f"{model}_data")
         self.path_labels = path_labels
         self.label_type = label_type
+        self.mask = mask
         self.preload = preload
         self.return_id = return_id
 
@@ -45,7 +48,7 @@ class embedding_dataset(tdata.Dataset):
                 f
                 for f in all_embedding_files
                 if f.endswith(".npy")
-                and maps_id_to_fold[f"s2_{f.split('_')[2].split('.')[0]}.nc"]["fold"]
+                and maps_id_to_fold[f"s2_{f.split('_')[1].split('.')[0]}.nc"]["fold"]
                 in fold
             ]
         else:
@@ -67,11 +70,11 @@ class embedding_dataset(tdata.Dataset):
     def _load_sample(self, filename):
         """Chargement d'un sample depuis le disque."""
         # Embedding
-        embedding_npy = np.load(os.path.join(self.path_embeddings, filename))
+        embedding_npy = np.load(os.path.join(self.path_embeddings, filename))  # (C,H,W)
         embedding = torch.from_numpy(embedding_npy)
 
         # Label
-        id = filename.split("_")[2].split(".")[0]
+        id = filename.split("_")[1].split(".")[0]
         to_open_label = os.path.join(self.path_labels, f"label_{id}.nc")
 
         with xr.open_dataset(to_open_label) as label_data:
@@ -89,6 +92,10 @@ class embedding_dataset(tdata.Dataset):
                             labels_probas[k, :, :] == -1, 0, labels_probas[k, :, :]
                         )
                 label = torch.from_numpy(labels_probas).float()
+
+        if self.mask:
+            mask = ~(embedding == 0).all(dim=0)
+            label[~mask] = 0
 
         if self.return_id:
             return embedding, label, id
@@ -118,6 +125,7 @@ class embedding_datamodule(LightningDataModule):
         batch_size: int = 32,
         num_workers: int = 4,
         label_type: str = "max_class",
+        mask: bool = "False",
         return_id: bool = False,
     ):
         super().__init__()
@@ -125,33 +133,48 @@ class embedding_datamodule(LightningDataModule):
         self.num_workers = num_workers
         self.return_id = return_id
 
-        path_embeddings = os.path.join(path_embeddings, f"{model}_data")
+        all_folds = fold_train + fold_val + fold_test
+
+        if not all(1 <= fold <= 5 for fold in all_folds):
+            raise ValueError(f"Fold values must be between 1 and 5. Got {all_folds}")
+
+        if len(set(all_folds)) != len(all_folds):
+            raise ValueError("Folds_train, folds_val and folds_test must be disjoint.")
+
+        if not all((fold_train, fold_val, fold_test)):
+            raise ValueError("Folds cannot be empty.")
 
         self.data_train = embedding_dataset(
+            model=model,
             path_embeddings=path_embeddings,
             path_labels=path_labels,
             path_mapping_folder=path_mapping_folder,
             fold=fold_train,
             preload=preload,
             label_type=label_type,
+            mask=mask,
             return_id=return_id,
         )
         self.data_val = embedding_dataset(
+            model=model,
             path_embeddings=path_embeddings,
             path_labels=path_labels,
             path_mapping_folder=path_mapping_folder,
             fold=fold_val,
             preload=preload,
             label_type=label_type,
+            mask=mask,
             return_id=return_id,
         )
         self.data_test = embedding_dataset(
+            model=model,
             path_embeddings=path_embeddings,
             path_labels=path_labels,
             path_mapping_folder=path_mapping_folder,
             fold=fold_test,
             preload=preload,
             label_type=label_type,
+            mask=mask,
             return_id=return_id,
         )
 

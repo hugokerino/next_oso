@@ -17,9 +17,9 @@ class Args:
 
 def test_embedding():
     args = Args()
-
+    model = "alpha-earth"
     datamodule = dataset_embedding.embedding_datamodule(
-        model="alpha-earth",
+        model=model,
         path_embeddings="/home/hkerino/Documents/nextoso-dataset",
         path_labels="/home/hkerino/Documents/nextoso-dataset/data/10m/labels",
         path_mapping_folder="/home/hkerino/Documents/nextoso-dataset/data/10m/s2",
@@ -32,8 +32,15 @@ def test_embedding():
         label_type="probas",
     )
 
+    if model == "alpha-earth":
+        mlp = [64, 32, 25]
+    elif model == "tessera":
+        mlp = [128, 64, 32, 25]
+    else:
+        print(f"{model} not recognized")
+
     classifier = decode_lightning_module.DecodeEmbedding(
-        decoder=MLP_Decoder(mlp=[64, 32, 25], dropout=0.1), args=args
+        decoder=MLP_Decoder(mlp=mlp, dropout=0.1), args=args
     )
 
     train_loader = datamodule.train_dataloader()

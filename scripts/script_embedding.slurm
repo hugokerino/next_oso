@@ -30,8 +30,9 @@ module load pixi
 
 echo "Launch python file"
 
-pixi run -e gpu python mains/main_alpha_earth.py \
-    --path_embedding "/work/THEIA/CES/oso/hugok/alpha_earth_data" \
+pixi run -e gpu python mains/main_embedding.py \
+    --model "alpha-earth" \
+    --path_embedding "/work/THEIA/CES/oso/hugok" \
     --path_label "/work/THEIA/CES/oso/hugok/labels" \
     --path_mapping_folder "/work/THEIA/CES/oso/hugok/s2_data" \
     --path_logs "/work/THEIA/CES/oso/hugok/next_oso/logs/alpha-earth" \
