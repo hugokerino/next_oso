@@ -201,9 +201,7 @@ class classifier(L.LightningModule):
             .permute(0, 3, 1, 2)
             .contiguous()
         )
-        pred = y_logit.argmax(dim=1)
-
-        return pred
+        return y_logit
 
     def on_before_optimizer_step(self, optimizer):
         # Calcul de la norme globale des gradients (pas de clipping ici)

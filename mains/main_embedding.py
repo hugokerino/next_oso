@@ -79,6 +79,7 @@ def main(config):
         num_workers=config.num_worker,
         preload=config.preload_data,
         label_type=config.label_type,
+        mask=True,
     )
 
     # Correct number of layer depending of the chosen model

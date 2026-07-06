@@ -21,7 +21,8 @@ class next_oso_Dataset(tdata.Dataset):
         norm_pretrained_alise: bool = False,
         remove_invalid_temp: bool = True,
         folds=None,
-        mask_needed: bool = False,
+        mask_needed: bool = False,  # if True return the mask of S2 validity
+        mask_invalid: bool = True,  # if True put zeros in labels where S2 is invalid
         return_id: bool = False,
         label_type: str = "max_class",
         date_type: str = "relative",
@@ -37,6 +38,7 @@ class next_oso_Dataset(tdata.Dataset):
         self.remove_invalid_temp = remove_invalid_temp
         self.folds = folds
         self.mask_needed = mask_needed
+        self.mask_invalid = mask_invalid
         self.return_id = return_id
         self.use_spatial_coords = True if path_mnt is not None else False
         self.label_type = label_type
@@ -208,6 +210,7 @@ class next_oso_Dataset(tdata.Dataset):
                     label_numpy == -1, 0, label_numpy
                 )  # Replace -1 by 0
                 label = torch.from_numpy(label_numpy).long()  # h x w
+
             if self.label_type == "probas":
                 labels_probas = np.zeros((25, 128, 128))
                 for k, var in enumerate(self.name_labels):
@@ -216,13 +219,26 @@ class next_oso_Dataset(tdata.Dataset):
                         labels_probas[k, :, :] = np.where(
                             labels_probas[k, :, :] == -1, 0, labels_probas[k, :, :]
                         )  # Replace -1 by 0
-                label = torch.from_numpy(labels_probas).float()
+                label = torch.from_numpy(labels_probas).float()  # c x h x w
+
             if self.label_type == "erode_max_class":
                 label_eroded = utils_data.erode_class_max(label_data, buff=-10).data
                 label_eroded = np.where(
                     label_eroded == -1, 0, label_eroded
                 )  # Replace -1 by 0
                 label = torch.from_numpy(label_eroded).long()  # h x w
+
+            if self.mask_invalid:
+                mask_label = ~(
+                    torch.from_numpy(s2_data["S2_mask"].to_numpy()) == 0
+                ).all(dim=0)  # everywhere s2 mask is invalid for all timestamp
+                if (
+                    self.label_type == "max_class"
+                    or self.label_type == "erode_max_class"
+                ):
+                    label[~mask_label] = 0
+                if self.label_type == "probas":
+                    label[:, ~mask_label] = 0
 
         sample = (s2, date, mask, geo)
 

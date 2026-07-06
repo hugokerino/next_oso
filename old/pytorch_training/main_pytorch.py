@@ -10,8 +10,9 @@ from argparse import ArgumentParser
 from torch.utils.tensorboard import SummaryWriter
 
 from data_functions import dataset
-from src import pytorch_training, metrics
-from src.pytorch_training import train, val
+from old.pytorch_training import pytorch_training
+from src import metrics
+from old.pytorch_training.pytorch_training import train, val
 
 #
 ########################################

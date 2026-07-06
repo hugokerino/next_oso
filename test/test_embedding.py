@@ -29,7 +29,8 @@ def test_embedding():
         batch_size=8,
         num_workers=1,
         preload=False,
-        label_type="probas",
+        label_type="max_class",
+        mask=True,
     )
 
     if model == "alpha-earth":
