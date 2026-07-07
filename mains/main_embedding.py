@@ -11,7 +11,7 @@ import torch
 import torch.nn as nn
 import os
 import pprint
-from argparse import ArgumentParser
+from argparse import ArgumentParser, BooleanOptionalAction
 from datetime import datetime
 import signal
 
@@ -137,7 +137,7 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--time_feature", type=bool, default=False
+        "--time_feature", action=BooleanOptionalAction, default=False
     )  # Should be True for MALICE
 
     # Path arguments
@@ -178,7 +178,7 @@ if __name__ == "__main__":
         "--label_type", type=str, default="max_class", choices=["max_class", "probas"]
     )
     parser.add_argument("--num_worker", type=int, default=1)
-    parser.add_argument("--preload_data", type=bool, default=True)
+    parser.add_argument("--preload_data", action=BooleanOptionalAction, default=True)
 
     # Training arguments
     parser.add_argument("--batch_size", type=int, default=8)
