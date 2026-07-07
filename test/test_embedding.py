@@ -12,21 +12,22 @@ class Args:
         self.path_name_class = (
             "/home/hkerino/Documents/nextoso-dataset/data/auxiliary/OSO/oso_classes.csv"
         )
-        self.label_type = "probas"
+        self.label_type = "max_class"
+        self.time_feature = True
 
 
 def test_embedding():
     args = Args()
-    model = "alpha-earth"
+    model = "malice"  # alpha-eath, tessera, malice
     datamodule = dataset_embedding.embedding_datamodule(
         model=model,
-        path_embeddings="/home/hkerino/Documents/nextoso-dataset",
+        path_embeddings="/home/hkerino/Documents/model_data/MALICE",  # "/home/hkerino/Documents/nextoso-dataset",
         path_labels="/home/hkerino/Documents/nextoso-dataset/data/10m/labels",
         path_mapping_folder="/home/hkerino/Documents/nextoso-dataset/data/10m/s2",
         fold_train=[1],
         fold_val=[2],
         fold_test=[3],
-        batch_size=8,
+        batch_size=2,
         num_workers=1,
         preload=False,
         label_type="max_class",
@@ -37,6 +38,8 @@ def test_embedding():
         mlp = [64, 32, 25]
     elif model == "tessera":
         mlp = [128, 64, 32, 25]
+    elif model == "malice":
+        mlp = [640, 320, 64, 25]
     else:
         print(f"{model} not recognized")
 

@@ -13,7 +13,7 @@ import pandas
 class embedding_dataset(tdata.Dataset):
     def __init__(
         self,
-        model: str = "alpha-earth",
+        model: str = "alpha-earth",  # "tessera", "malice"
         path_embeddings: str = "/home/hkerino/Documents/nextoso-dataset",
         path_labels: str = "/home/hkerino/Documents/nextoso-dataset/data/10m/labels",
         path_mapping_folder: str = "/home/hkerino/Documents/nextoso-dataset/data/10m/s2",
@@ -23,6 +23,7 @@ class embedding_dataset(tdata.Dataset):
         preload: bool = False,
         return_id: bool = False,  # cannot be True if preload = True
     ):
+        self.model = model
         self.path_embeddings = os.path.join(path_embeddings, f"{model}_data")
         self.path_labels = path_labels
         self.label_type = label_type
@@ -48,12 +49,17 @@ class embedding_dataset(tdata.Dataset):
                 f
                 for f in all_embedding_files
                 if f.endswith(".npy")
+                or f.endswith(".pt")
                 and maps_id_to_fold[f"s2_{f.split('_')[1].split('.')[0]}.nc"]["fold"]
                 in fold
             ]
         else:
             self.embedding_files = sorted(
-                [f for f in os.listdir(self.path_embeddings) if f.endswith(".npy")]
+                [
+                    f
+                    for f in os.listdir(self.path_embeddings)
+                    if f.endswith(".npy") or f.endswith(".pt")
+                ]
             )
 
         # Préchargement en RAM si demandé
@@ -70,8 +76,16 @@ class embedding_dataset(tdata.Dataset):
     def _load_sample(self, filename):
         """Chargement d'un sample depuis le disque."""
         # Embedding
-        embedding_npy = np.load(os.path.join(self.path_embeddings, filename))  # (C,H,W)
-        embedding = torch.from_numpy(embedding_npy)
+        if filename.endswith(".npy"):
+            embedding_npy = np.load(
+                os.path.join(self.path_embeddings, filename)
+            )  # (C,H,W)
+            embedding = torch.from_numpy(embedding_npy)
+
+        elif filename.endswith(".pt"):
+            embedding = torch.load(
+                os.path.join(self.path_embeddings, filename)
+            )  # (T, C, H, W)
 
         # Label
         id = filename.split("_")[1].split(".")[0]
@@ -94,7 +108,11 @@ class embedding_dataset(tdata.Dataset):
                 label = torch.from_numpy(labels_probas).float()
 
         if self.mask:
-            mask = ~(embedding == 0).all(dim=0)
+            if embedding.dim() == 4:  # (T, C, H, W)
+                mask = ~(embedding == 0).all(dim=0).all(dim=0)  # (H, W)
+            else:  # (C, H, W)
+                mask = ~(embedding == 0).all(dim=0)  # (H, W)
+
             label[~mask] = 0
 
         if self.return_id:

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH -J alphaearth
+#SBATCH -J malice
 #SBATCH -A theia_oso
 #SBATCH -o script_logs/out_ae%j.out
 #SBATCH -e script_logs/err_ae%j.err
@@ -31,16 +31,16 @@ module load pixi
 echo "Launch python file"
 
 pixi run -e gpu python mains/main_embedding.py \
-    --model "alpha-earth" \
-    --path_embedding "/work/THEIA/CES/oso/hugok" \
+    --model "malice" \
+    --path_embedding "/work/THEIA/CES/oso/hugok/malice" \
     --path_label "/work/THEIA/CES/oso/hugok/labels" \
     --path_mapping_folder "/work/THEIA/CES/oso/hugok/s2_data" \
-    --path_logs "/work/THEIA/CES/oso/hugok/next_oso/logs/alpha-earth" \
+    --path_logs "/work/THEIA/CES/oso/hugok/next_oso/logs/malice" \
     --path_name_class "/work/THEIA/CES/oso/hugok/files_s2/oso_classes.csv" \
-    --batch_size 64 \
+    --batch_size 32 \
     --num_worker 15 \
     --max_epochs 1000 \
     --preload_data True \
-    --label_type "probas"
+    --label_type "max_class"
 
 echo "End"

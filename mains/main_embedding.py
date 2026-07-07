@@ -47,7 +47,6 @@ class MLP_Decoder(nn.Module):
 
     def forward(self, x):
         x = self.layer(x)
-
         if self.dropout is not None:
             x = self.dropout(x)
 
@@ -87,6 +86,8 @@ def main(config):
         mlp = [64, 64, 32, 25]
     elif model == "tessera":
         mlp = [128, 64, 32, 25]
+    elif model == "malice":
+        mlp = [640, 320, 64, 25]
 
     # Model
     decoder = MLP_Decoder(mlp=mlp, dropout=0.1)
@@ -132,8 +133,12 @@ if __name__ == "__main__":
 
     # Which embeddings
     parser.add_argument(
-        "--model", type=str, required=True, choices=["alpha-earth", "tessera"]
+        "--model", type=str, required=True, choices=["alpha-earth", "tessera", "malice"]
     )
+
+    parser.add_argument(
+        "--time_feature", type=bool, default=False
+    )  # Should be True for MALICE
 
     # Path arguments
     parser.add_argument(

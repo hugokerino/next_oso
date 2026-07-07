@@ -22,7 +22,7 @@ class DecodeEmbedding(L.LightningModule):
     def __init__(self, decoder: nn.Module, args):
         super().__init__()
         self.decoder: nn.Module = decoder
-
+        self.time_feature: bool = args.time_feature
         self.num_class: int = args.num_class
         self.lr: float = args.lr
         self.max_epochs: int = args.max_epochs
@@ -52,14 +52,22 @@ class DecodeEmbedding(L.LightningModule):
         self.y_true_test: list[torch.Tensor] = []
 
     def forward(self, x):
-        x_ = rearrange(x, "b c h w -> (b h w) c ")
+        b_s = x.shape[0]
+        if self.time_feature:
+            h_s, w_s = x.shape[3], x.shape[4]
+            x_ = rearrange(x, "b t c h w -> (b h w) (t c)")
+        else:
+            h_s, w_s = x.shape[2], x.shape[3]
+            x_ = rearrange(x, "b c h w -> (b h w) c ")
+
         out = self.decoder(x_)
+
         logits = rearrange(
             out,
             "(b h w) c  -> b c h w",
-            b=x.shape[0],
-            h=x.shape[2],
-            w=x.shape[3],
+            b=b_s,
+            h=h_s,
+            w=w_s,
         )
         return logits
 
