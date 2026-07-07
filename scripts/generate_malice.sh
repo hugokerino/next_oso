@@ -15,7 +15,7 @@ mkdir -p script_logs
 PATH_s2='/work/THEIA/CES/oso/hugok/s2_data/'
 PATH_label='/work/THEIA/CES/oso/hugok/labels'
 PATH_class_name='/work/THEIA/CES/oso/hugok/files_s2/oso_classes.csv'
-PATH_save_embedding='/work/THEIA/CES/oso/hugok/MALICE/embeddings'
+PATH_save_embedding='/work/THEIA/CES/oso/hugok/malice/embeddings'
 PATH_csv_norm='/work/THEIA/CES/oso/hugok/malice/norm_MALICE_s2.csv'
 PATH_model_onnx='/work/THEIA/CES/oso/hugok/malice/malice_s2.onnx'
 
