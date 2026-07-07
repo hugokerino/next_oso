@@ -31,6 +31,8 @@ echo "Launch python file"
 pixi run -e gpu python analyse_results/make_predictions.py \
     --model malice \
     --path_embedding "/work/THEIA/CES/oso/hugok/malice" \
+    --path_label "/work/THEIA/CES/oso/hugok/labels" \
+    --path_mapping_folder "/work/THEIA/CES/oso/hugok/s2_data" \
     --path_preds "/work/THEIA/CES/oso/hugok/malice"
 
 echo "End"
