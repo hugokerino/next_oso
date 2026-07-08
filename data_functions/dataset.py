@@ -65,6 +65,9 @@ class next_oso_Dataset(tdata.Dataset):
         ), "Cannot use both norm and norm_pretrained_alise at the same time."
 
     def _collect_files(self) -> None:
+        if self.label_type == "v2":
+            self.path_label = f"{self.path_label}_v2"
+
         for zone in range(1, 10):
             zone_dir = os.path.join(self.path_s2, str(zone))
             if self.folds is None:
@@ -192,7 +195,7 @@ class next_oso_Dataset(tdata.Dataset):
             if self.mask_needed:
                 mask = torch.from_numpy(
                     s2_data["S2_mask"].to_numpy()
-                )  # t x h x w, 1 == 'invalid' 0 == 'valid'
+                ).bool()  # t x h x w, 1 == 'invalid' 0 == 'valid'
 
             if self.date_type == "relative":
                 date = torch.from_numpy(
@@ -206,6 +209,13 @@ class next_oso_Dataset(tdata.Dataset):
         with xr.open_dataset(to_open_label) as label_data:
             if self.label_type == "max_class":
                 label_numpy = label_data["max_class_1"].data  # NumPy
+                label_numpy = np.where(
+                    label_numpy == -1, 0, label_numpy
+                )  # Replace -1 by 0
+                label = torch.from_numpy(label_numpy).long()  # h x w
+
+            if self.label_type == "v2":
+                label_numpy = label_data["labels_no_overlap"].data  # NumPy
                 label_numpy = np.where(
                     label_numpy == -1, 0, label_numpy
                 )  # Replace -1 by 0

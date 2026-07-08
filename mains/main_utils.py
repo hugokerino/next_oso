@@ -96,7 +96,7 @@ def select_criterion(loss: str):
 
 def get_precision():
     if not torch.cuda.is_available():
-        return "16"  # CPU en local
+        return "32"  # CPU en local
     if torch.cuda.is_bf16_supported():
         return "bf16-mixed"  # A100, RTX 3090+
     return "16-mixed"

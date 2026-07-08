@@ -18,7 +18,6 @@ import matplotlib.gridspec as gridspec
 
 # For RGB array
 def to_RGB(img_multi_spec: np.ndarray | torch.Tensor | xr.Dataset, norm=True):
-
     img_rgb = np.empty([128, 128, 3])
 
     if isinstance(img_multi_spec, xr.Dataset):
@@ -54,7 +53,6 @@ def remove_invalid(s2_xarray):
 
 
 def normalisation(s2_array, norm_fold):
-
     s2_normalized = np.zeros_like(s2_array, dtype=np.float32)
 
     # Normalize per band
@@ -114,7 +112,6 @@ def s2_spectrale_indice(s2):
 
 
 def mean_entropy_per_class_per_eco_zone(path_labels, path_oso_class):
-
     entropy_per_zone_class = defaultdict(lambda: defaultdict(list))
 
     # Chemin vers le dossier racine contenant les dossiers 1-9
@@ -166,7 +163,6 @@ def find_nan_label(dataset):
 def erode_class_max(
     labels: str | xr.Dataset, variable: str = "max_class_1", buff: int = -10
 ) -> xr.DataArray:
-
     if isinstance(labels, str):
         ds = rioxarray.open_rasterio(labels)
         assert isinstance(ds, xr.Dataset)
@@ -364,7 +360,6 @@ def count_label(dataset, plot=True):
 
 
 def count_timestep_dataloard(dataset, plot=True, num_workers=8):
-
     # Fonction collate qui ne récupère que les dates
     def collate_dates(batch):
         return [item[0][1] for item in batch]
@@ -405,7 +400,6 @@ def count_timestep_dataloard(dataset, plot=True, num_workers=8):
 
 
 def histogram_valid_per_pixel(dataset, plot=True, density=False, num_workers=8):
-
     def collate_masks(batch):
         return [item[0][2] for item in batch]  # (T,H,W)
 
@@ -450,7 +444,6 @@ def histogram_valid_per_pixel(dataset, plot=True, density=False, num_workers=8):
 
 
 def plot_label(patch: xr.Dataset | np.ndarray):
-
     if isinstance(patch, xr.Dataset):
         label = patch["max_class_1"].data
     else:
@@ -471,7 +464,7 @@ def plot_nextoso(dataset, idx=0, first_date=0, lenght=5):
     # --- Figure 1 : Images RGB et masques ---
     fig1, axes1 = plt.subplots(2, lenght, figsize=(15, 8))
 
-    (x, dates, masks), y = dataset[idx]
+    (x, dates, masks, geo), y = dataset[idx]
 
     for t in range(lenght):
         # Affichage de l'image RGB
@@ -483,7 +476,12 @@ def plot_nextoso(dataset, idx=0, first_date=0, lenght=5):
         axes1[0, t].axis("off")
 
         # Affichage du masque
-        axes1[1, t].imshow(masks[first_date + t, :, :], cmap="Greys", vmin=0, vmax=1)
+        if masks is not None:
+            axes1[1, t].imshow(
+                masks[first_date + t, :, :], cmap="Greys", vmin=0, vmax=1
+            )
+        else:
+            axes1[1, t].text(0.5, 0.5, "No mask", ha="center", va="center", fontsize=12)
         axes1[1, t].axis("off")
 
     fig1.tight_layout()
@@ -515,7 +513,6 @@ def plot_preds_labels_and_img(
     batch_size,
     batch_index,
 ):
-
     # Créer une figure avec GridSpec pour gérer la layout
     fig = plt.figure(figsize=(20, batch_size * 3))
     gs = gridspec.GridSpec(batch_size, 6, width_ratios=[1, 1, 1, 1, 1, 0.05])
@@ -569,7 +566,6 @@ def plot_preds_labels_and_img(
 
 
 def mean_entropy_per_class(path_labels, path_oso_class):
-
     entropy_per_class = defaultdict(list)
 
     for label in os.listdir(path_labels):
@@ -604,7 +600,6 @@ def mean_entropy_per_class(path_labels, path_oso_class):
 
 
 def density_repartition(path_labels: str, name: str, plot=True):
-
     probas_list = []
 
     for label in os.listdir(path_labels):
@@ -637,7 +632,6 @@ def density_repartition(path_labels: str, name: str, plot=True):
 
 
 def density_repartition_all_classes(path_labels: str, plot=True):
-
     all_probas = {}
 
     for name in names_class:
@@ -779,7 +773,6 @@ def plot_nan(patch):
 
 
 def plot_entropy_per_zone_for_class(mean_entropy, classe):
-
     zones = sorted(mean_entropy.keys())
     means = [
         mean_entropy[zone][classe]["mean"]
@@ -828,7 +821,6 @@ def plot_entropy_per_zone_for_class(mean_entropy, classe):
 def plot_label_confusion(
     path_labels, path_oso_class, proba_threshold=0.5, secondary_threshold=0.2
 ):
-
     n_classes = len(names_class)
 
     list_names = []
@@ -914,7 +906,6 @@ def plot_label_confusion(
 
 
 def plot_pred_and_label(y_true, y_pred, rgb_img, y_entropie, class_idx, idx_to_plot):
-
     samples_with_class = []
     for idx in range(y_true.shape[0]):
         patch = y_true[idx, :, :]

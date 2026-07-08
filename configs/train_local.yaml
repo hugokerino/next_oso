@@ -3,11 +3,11 @@ path_s2: /home/hkerino/Documents/nextoso-dataset/data/10m/s2
 path_label: /home/hkerino/Documents/nextoso-dataset/data/10m/labels
 path_oso_classes: /home/hkerino/Documents/nextoso-dataset/data/auxiliary/OSO/oso_classes.csv
 path_logs: /home/hkerino/Documents/next_oso/logs/light_training
-path_mnt : null  #/home/hkerino/Documents/nextoso-dataset/data/10m/mnt #if passed = used. Pass null to don't use spatial coords
+path_mnt : /home/hkerino/Documents/nextoso-dataset/data/10m/mnt #null #if passed = used. Pass null to don't use spatial coords
 
 # Data
 num_worker: 21
-label_type: max_class
+label_type: v2
 num_class: 25
 folds_train: [1]
 folds_val: [4]

@@ -74,9 +74,11 @@ def test_dataset_return_data():
 def test_dataset_label_type():
     d_max_class = dataset.next_oso_Dataset(label_type="max_class")
     d_probas = dataset.next_oso_Dataset(label_type="probas")
+    d_v2 = dataset.next_oso_Dataset(label_type="v2")
 
     assert (d_max_class.__getitem__(1000)[1]).shape == (128, 128)
     assert (d_probas.__getitem__(1000)[1]).shape == (25, 128, 128)
+    assert (d_v2.__getitem__(1000)[1]).shape == (128, 128)
 
 
 def test_dataset_date_type():
