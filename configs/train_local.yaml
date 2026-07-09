@@ -3,7 +3,7 @@ path_s2: /home/hkerino/Documents/nextoso-dataset/data/10m/s2
 path_label: /home/hkerino/Documents/nextoso-dataset/data/10m/labels
 path_oso_classes: /home/hkerino/Documents/nextoso-dataset/data/auxiliary/OSO/oso_classes.csv
 path_logs: /home/hkerino/Documents/next_oso/logs/light_training
-path_mnt : /home/hkerino/Documents/nextoso-dataset/data/10m/mnt #null #if passed = used. Pass null to don't use spatial coords
+path_mnt : null #/home/hkerino/Documents/nextoso-dataset/data/10m/mnt #if passed = used. Pass null to don't use spatial coords
 
 # Data
 num_worker: 21
@@ -17,7 +17,7 @@ sequence_packing: false
 # Training
 criterion : cross_entropy
 optimizer_scheduler : reduce_on_plateau
-epochs_max: 1
+epochs_max: 100
 batch_size: 1
 test_model: true
 accelerator: auto

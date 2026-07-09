@@ -350,13 +350,107 @@ def count_label(dataset, plot=True):
     normalized_count = classes / (np.sum(classes))
 
     if plot:
-        plt.figure(figsize=(12, 6))
-        plt.title("Normalized labels repartition")
-        plt.bar(range(normalized_count.shape[0]), normalized_count)
-        plt.xticks(range(len(normalized_count)), dataset.name_labels, rotation=90)
-        plt.ylabel("Labels occurence")
+        fig, ax = plt.subplots(figsize=(12, 6))
+        ax.set_title("Normalized labels repartition")
+        bars = ax.bar(range(normalized_count.shape[0]), normalized_count)
+        ax.set_xticks(range(len(normalized_count)))
+        ax.set_xticklabels(dataset.name_labels, rotation=90)
+        ax.set_ylabel("Labels occurence")
+
+        # Afficher le chiffre brut au dessus de chaque barre
+        for bar, count in zip(bars, classes):
+            ax.text(
+                bar.get_x() + bar.get_width() / 2,
+                bar.get_height(),
+                f"{int(count):,}",
+                ha="center",
+                va="bottom",
+                fontsize=7,
+            )
+
+        plt.tight_layout()
+        plt.show()
 
     return normalized_count
+
+
+def compare_dataset(
+    dataset1, dataset2, label1="Dataset 1", label2="Dataset 2", plot=True
+):
+    def count_classes(dataset):
+        classes = np.zeros(25)
+        for i in range(len(dataset)):
+            labels = dataset[i][1].flatten().numpy()
+            if np.any(labels < 0):
+                continue
+            classes += np.bincount(labels.astype(int), minlength=25)
+        return classes
+
+    classes1 = count_classes(dataset1)
+    classes2 = count_classes(dataset2)
+
+    norm1 = classes1 / classes1.sum()
+    norm2 = classes2 / classes2.sum()
+
+    if plot:
+        x = np.arange(25)
+        width = 0.35
+
+        fig, ax = plt.subplots(figsize=(16, 6))
+        bars1 = ax.bar(
+            x - width / 2,
+            norm1,
+            width,
+            label=label1,
+            color="#3266ad",
+            edgecolor="white",
+            linewidth=0.5,
+        )
+        bars2 = ax.bar(
+            x + width / 2,
+            norm2,
+            width,
+            label=label2,
+            color="#c0392b",
+            edgecolor="white",
+            linewidth=0.5,
+        )
+
+        # Chiffres bruts au dessus des barres
+        for bar, count in zip(bars1, classes1):
+            if count > 0:
+                ax.text(
+                    bar.get_x() + bar.get_width() / 2,
+                    bar.get_height(),
+                    f"{int(count):,}",
+                    ha="center",
+                    va="bottom",
+                    fontsize=6,
+                    color="#3266ad",
+                )
+
+        for bar, count in zip(bars2, classes2):
+            if count > 0:
+                ax.text(
+                    bar.get_x() + bar.get_width() / 2,
+                    bar.get_height(),
+                    f"{int(count):,}",
+                    ha="center",
+                    va="bottom",
+                    fontsize=6,
+                    color="#c0392b",
+                )
+
+        ax.set_xticks(x)
+        ax.set_xticklabels(dataset1.name_labels, rotation=90, fontsize=8)
+        ax.set_ylabel("Proportion de labels (normalisée)")
+        ax.set_title("Comparaison de la répartition des labels")
+        ax.legend()
+        ax.grid(True, linestyle="--", alpha=0.4, axis="y")
+        plt.tight_layout()
+        plt.show()
+
+    return norm1, norm2
 
 
 def count_timestep_dataloard(dataset, plot=True, num_workers=8):

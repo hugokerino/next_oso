@@ -41,7 +41,9 @@ class alise_embedding_dataset(tdata.Dataset):
             )
         )
         if fold is not None:
-            all_embedding_files = sorted(os.listdir(path_embeddings))
+            all_embedding_files = sorted(
+                [f for f in os.listdir(path_embeddings) if f.endswith(".pt")]
+            )
             self.embedding_files = [
                 f
                 for f in all_embedding_files
@@ -51,7 +53,9 @@ class alise_embedding_dataset(tdata.Dataset):
                 in fold
             ]
         else:
-            self.embedding_files = sorted(os.listdir(path_embeddings))
+            self.embedding_files = sorted(
+                [f for f in os.listdir(path_embeddings) if f.endswith(".pt")]
+            )
 
     def __len__(self):
         return len(self.embedding_files)

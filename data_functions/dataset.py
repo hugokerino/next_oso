@@ -44,8 +44,8 @@ class next_oso_Dataset(tdata.Dataset):
         self.label_type = label_type
         self.reference_date = np.datetime64(reference_date)
         self.date_type = date_type
-        self.s2_files: list[str] = []
-        self.label_files: list[str] = []
+        self.s2_files: dict[str, str] = {}
+        self.label_files: dict[str, str] = {}
         self.ids: list[str] = []
         self.ids_per_fold: dict[str, str] = {}
         self.norms: dict[str, float] = {}
@@ -80,14 +80,14 @@ class next_oso_Dataset(tdata.Dataset):
                 for s2_nc_file in s2_nc_files:
                     path_s2_file = os.path.join(zone_dir_fold, s2_nc_file)
                     if os.path.exists(path_s2_file):
-                        self.s2_files.append(path_s2_file)
                         file_id = s2_nc_file.split("_")[1].split(".")[0]
+                        self.s2_files[file_id] = path_s2_file
                         self.ids.append(file_id)
                         path_label_file = os.path.join(
                             self.path_label, f"label_{file_id}.nc"
                         )
                         if os.path.exists(path_label_file):
-                            self.label_files.append(path_label_file)
+                            self.label_files[file_id] = path_label_file
                         else:
                             raise FileNotFoundError(
                                 f"Avertissement : Le fichier label {path_s2_file} est introuvable."
@@ -135,7 +135,7 @@ class next_oso_Dataset(tdata.Dataset):
         ]
 
     def __len__(self) -> int:
-        return len(self.s2_files)
+        return len(self.ids)
 
     def __iter__(self):
         for i in range(len(self)):
@@ -143,17 +143,19 @@ class next_oso_Dataset(tdata.Dataset):
 
     def __getitem__(self, idx: int | str) -> tuple:
         if isinstance(idx, int):
-            to_open_s2 = self.s2_files[idx]
-            to_open_label = self.label_files[idx]
-            # file_basename = os.path.basename(self.s2_files[idx])
             id = self.ids[idx]
+            to_open_s2 = self.s2_files[id]
+            to_open_label = self.label_files[id]
 
-        if isinstance(idx, str):
-            complete_path = os.path.join(self.path_s2, self._get_file_mapping(idx))
-            to_open_s2 = os.path.join(complete_path, f"s2_{idx}.nc")
-            to_open_label = os.path.join(self.path_label, f"label_{idx}.nc")
-            # file_basename = f"s2_{idx}.nc"
+        elif isinstance(idx, str):
             id = idx
+            if idx in self.s2_files and idx in self.label_files:
+                to_open_s2 = self.s2_files[idx]
+                to_open_label = self.label_files[idx]
+            else:
+                complete_path = os.path.join(self.path_s2, self._get_file_mapping(idx))
+                to_open_s2 = os.path.join(complete_path, f"s2_{idx}.nc")
+                to_open_label = os.path.join(self.path_label, f"label_{idx}.nc")
 
         with xr.open_dataset(to_open_s2) as s2_data:
             if self.remove_invalid_temp:
