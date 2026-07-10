@@ -13,3 +13,4 @@ PATH_TO_SAVE_netcdf : /work/THEIA/CES/oso/hugok/predictions/netcdf
 PATH_TO_s2: /work/THEIA/CES/oso/hugok/s2_data
 PATH_TO_oso_classes: /work/THEIA/CES/oso/hugok/files_s2/oso_classes.csv
 PATH_TO_mnt: null
+PATH_TO_EMBEDDINGS : /work/THEIA/CES/oso/hugok/
