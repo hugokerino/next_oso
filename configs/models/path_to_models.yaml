@@ -1,0 +1,15 @@
+BASE_PATH : /home/hkerino/Documents/next_oso/logs #/work/THEIA/CES/oso/hugok/next_oso/logs
+
+alpha-earth : /alpha-earth/2026-06-18/Checkpoints/epoch=398-step=13167.ckpt
+tessera : /tessera/2026-06-18/Checkpoints/epoch=182-step=6222.ckpt
+malice : /malice/malice/2026-07-07/Checkpoints/epoch=106-step=28997.ckpt
+LTAE : /light_training/LTAE_2026-05-28/Checkpoints/epoch=124-step=135250.ckpt
+UTAE : /light_training/UTAE_2026-05-28/Checkpoints/epoch=79-step=86560.ckpt
+ALISE : /light_training/ALISE_2026-07-09/Checkpoints/epoch=55-step=121128.ckpt
+
+PATH_TO_LABELS : /work/THEIA/CES/oso/hugok/labels_v2
+PATH_TO_RGB_IMG : /work/THEIA/CES/oso/hugok/plot_s2
+PATH_TO_SAVE_netcdf : /work/THEIA/CES/oso/hugok/predictions/netcdf
+PATH_TO_s2: /work/THEIA/CES/oso/hugok/s2_data
+PATH_TO_oso_classes: /work/THEIA/CES/oso/hugok/files_s2/oso_classes.csv
+PATH_TO_mnt: null

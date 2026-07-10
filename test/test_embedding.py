@@ -18,7 +18,7 @@ class Args:
 
 def test_embedding():
     args = Args()
-    model = "malice"  # alpha-eath, tessera, malice
+    model = "tessera"  # alpha-eath, tessera, malice
     datamodule = dataset_embedding.embedding_datamodule(
         model=model,
         path_embeddings="/home/hkerino/Documents/model_data/MALICE",  # "/home/hkerino/Documents/nextoso-dataset",
