@@ -48,8 +48,7 @@ class embedding_dataset(tdata.Dataset):
             self.embedding_files = [
                 f
                 for f in all_embedding_files
-                if f.endswith(".npy")
-                or f.endswith(".pt")
+                if (f.endswith(".npy") or f.endswith(".pt"))
                 and maps_id_to_fold[f"s2_{f.split('_')[1].split('.')[0]}.nc"]["fold"]
                 in fold
             ]
