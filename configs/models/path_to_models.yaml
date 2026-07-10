@@ -1,4 +1,4 @@
-BASE_PATH : /home/hkerino/Documents/next_oso/logs #/work/THEIA/CES/oso/hugok/next_oso/logs
+BASE_PATH : /work/THEIA/CES/oso/hugok/next_oso/logs #/home/hkerino/Documents/next_oso/logs
 
 alpha-earth : /alpha-earth/2026-06-18/Checkpoints/epoch=398-step=13167.ckpt
 tessera : /tessera/2026-06-18/Checkpoints/epoch=182-step=6222.ckpt
