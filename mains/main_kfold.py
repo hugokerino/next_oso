@@ -6,7 +6,7 @@ from lightning.pytorch.callbacks import (
     EarlyStopping,
 )
 from lightning.pytorch.plugins.environments import SLURMEnvironment
-from lightning.pytorch.tuner import Tuner
+import pandas
 
 import signal
 import json
@@ -21,10 +21,16 @@ from src import lightning_module, metrics
 from mains.main_utils import load_config, build_model, select_criterion, get_precision
 
 torch.serialization.add_safe_globals([metrics.FocalLoss])
+torch.set_float32_matmul_precision("high")
+torch.backends.cuda.enable_flash_sdp(
+    False
+)  # if using flash attention implementation batch_size cannot exceed 65535 (int16)
+torch.backends.cuda.enable_mem_efficient_sdp(
+    True
+)  # no constraint on bacth size but more VRAM usage, should be less efficient
 
 
 def main(config):
-
     date = datetime.now().date().strftime("%Y-%m-%d")
 
     ########################################
@@ -42,13 +48,18 @@ def main(config):
     log_fold = os.path.join(log_dir, f"fold_{str(config['fold_index'] + 1)}")
 
     criterion = select_criterion(config["criterion"])
-    encoder, decoder, mask_need = build_model(config)
-
+    encoder, decoder, batch_size = build_model(config)
+    config["batch_size"] = (
+        batch_size  # Update batch size in config for data loading and lightning module
+    )
     # config["selected_fold"] holds the actual tuple/list of [train, val, test] for this job
     selected_fold = config["selected_fold"]
 
     dl_train, dl_val, dl_test = dataset.get_loaders(
         path_s2=config["path_s2"],
+        path_mnt=config[
+            "path_mnt"
+        ],  # if not None, add spatial vars to the decoding part
         path_label=config["path_label"],
         path_oso_class=config["path_oso_classes"],
         folds_train=selected_fold[0],
@@ -57,10 +68,11 @@ def main(config):
         batch_size=config["batch_size"],
         num_worker=config["num_worker"],
         label_type=config["label_type"],
-        mask_needed=mask_need,
-        norm=True,
-        remove_invalid_temp=True,
-        shuffle=True,
+        mask_needed=config["mask_need"],
+        norm=True
+        if config["model"] in ["LTAE", "UTAE", "ALISE", "ALISE_encoding"]
+        else False,
+        norm_alise=True if config["model"] == "ALISE_pretrained" else False,
     )
     checkpoint_callback = ModelCheckpoint(
         dirpath=os.path.join(log_fold, "Checkpoints/"),
@@ -72,7 +84,7 @@ def main(config):
     tb_logger = TensorBoardLogger(
         log_fold, name="tensorboards", default_hp_metric=False
     )
-    early_stop = EarlyStopping(monitor="val_fscore", mode="max", patience=10)
+    early_stop = EarlyStopping(monitor="val_fscore", mode="max", patience=20)
     list_callback = [
         checkpoint_callback,
         early_stop,
@@ -82,10 +94,12 @@ def main(config):
     if config["test_model"]:
         tb_logger = None
         list_callback = None
-        limit_batches = 2
+
+    limit_batches = 2
+
     plugin = None
     if config["running_on_trex_gpu"]:
-        plugin = [SLURMEnvironment(requeue_signal=signal.SIGHUP, auto_requeue=True)]
+        plugin = [SLURMEnvironment(requeue_signal=signal.SIGUSR1, auto_requeue=True)]
 
     trainer = L.Trainer(
         logger=tb_logger,
@@ -110,27 +124,14 @@ def main(config):
         decoder,
         batch_size=config["batch_size"],
         loss_fn=criterion,
-        mask_need=mask_need,
         lr=config["learning_rate"],
     )
+
     ########################################
     # TRAINING
     ########################################
     print("\nTRAINING ...")
     sys.stdout.flush()
-    # Initial learning rate finder
-    lr_init = (
-        Tuner(trainer)
-        .lr_find(
-            model=classifier,
-            train_dataloaders=dl_train,
-            num_training=config["num_sample_lr_finder"],
-        )
-        .suggestion()
-    )
-    if lr_init is not None:
-        lr_init = 100 * lr_init
-        classifier.lr = lr_init
 
     # Training
     trainer.fit(model=classifier, train_dataloaders=dl_train, val_dataloaders=dl_val)
@@ -149,7 +150,12 @@ def main(config):
             decoder=decoder,
             loss_fn=criterion,
             batch_size=config["batch_size"],
+            name_class=pandas.read_csv(config["path_oso_classes"])
+            .get("name_class")
+            .values,
+            path_save_excel=f"{log_fold}/metrics.xlsx",
         )
+
     trainer.test(model=best_classifier, dataloaders=dl_test)
 
     ########################################

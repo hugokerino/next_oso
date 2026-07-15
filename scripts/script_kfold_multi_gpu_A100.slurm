@@ -9,13 +9,13 @@
 #SBATCH -N 1
 #SBATCH --ntasks=2
 #SBATCH --cpus-per-task=16
-#SBATCH --mem-per-cpu=4000M 
+#SBATCH --mem-per-cpu=4000M
 
-#SBATCH --gpus=a100_40g:2 
+#SBATCH --gpus=a100_40g:2
 #SBATCH --partition=gpu_std
 #SBATCH --qos=gpu_all
 
-#SBATCH --time=15:00:00             # Walltime
+#SBATCH --time=24:00:00             # Walltime
 #SBATCH --signal=SIGUSR1@90         # For auto-resubmit
 #SBATCH --array=0-4  # 5 folds (indices 0-4), but SLURM will run up to 2 in parallel based on available GPUs
 

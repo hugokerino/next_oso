@@ -35,6 +35,7 @@ class classifier(L.LightningModule):
         H: int = 128,
         W: int = 128,
         name_class=None,
+        path_save_excel=None,
     ):
         super().__init__()
 
@@ -67,6 +68,7 @@ class classifier(L.LightningModule):
         self.kappa = MulticlassCohenKappa(num_classes=self.num_class, ignore_index=0)
         self.name_class = name_class
         # self.save_hyperparameters(ignore=["encoder", "decoder", "loss_fn"])
+        self.path_save_excel = path_save_excel
 
     def _forward(self, batch):
         inputs, y = batch
@@ -157,35 +159,42 @@ class classifier(L.LightningModule):
         y_preds = torch.cat(self.y_pred_test, dim=0)
         y_trues = torch.cat(self.y_true_test, dim=0)
 
-        # Global metrics
-        acc = self.acc_metric(y_preds, y_trues)
-        cm = self.cm_metric(y_preds, y_trues)
-        f1 = self.f_score_metric(y_preds, y_trues)[1:].mean().item()
-        miou = self.miou_metric(y_preds, y_trues)[1:].mean().item()
-        kappa = self.kappa(y_preds, y_trues)
-
-        # Log des métriques globales
-        test_metrics = {
-            "Test_accuracy": acc,
-            "Test_f1_score": f1,
-            "Test_Miou": miou,
-            "Test Kappa": kappa,
-        }
-
-        table_metrics = metrics.create_markdown_table(test_metrics)
-        table_metrics_per_class = metrics.metrics_per_class(
-            y_preds, y_trues, self.num_class, self.name_class
+        metrics_dict = metrics.compute_metrics(
+            y_preds=y_preds,
+            y_trues=y_trues,
+            acc_metric=self.acc_metric,
+            cm_metric=self.cm_metric,
+            f_score_metric=self.f_score_metric,
+            miou_metric=self.miou_metric,
+            kappa_metric=self.kappa,
+            num_class=self.num_class,
+            names_class=self.name_class,
         )
 
-        # Figures
-        cm_fig = metrics.convert_cm_to_figure(cm.cpu())
+        md_global, md_class = metrics.metrics_to_markdown(metrics_dict)
+
+        cm_fig = metrics.convert_cm_to_figure(metrics_dict["cm"].cpu())
 
         if self.logger:
-            self.logger.experiment.add_text("Test_Metrics", table_metrics)
             self.logger.experiment.add_text(
-                "Test_Metrics per class", table_metrics_per_class
+                "Test_Metrics",
+                md_global,
             )
-            self.logger.experiment.add_figure("Confusion Matrix", cm_fig, close=True)
+            self.logger.experiment.add_text(
+                "Test_Metrics per class",
+                md_class,
+            )
+            self.logger.experiment.add_figure(
+                "Confusion Matrix",
+                cm_fig,
+                close=True,
+            )
+
+        if self.path_save_excel is not None:
+            metrics.metrics_to_excel(
+                metrics=metrics_dict,
+                path=self.path_save_excel,
+            )
 
     def predict_step(self, batch):
         y_logits, _ = self._forward(batch)

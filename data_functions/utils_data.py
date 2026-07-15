@@ -6,6 +6,7 @@ import pandas
 import os
 import json
 import rioxarray
+import rasterio
 from rasterio.features import rasterize
 import geopandas as gpd
 from collections import defaultdict
@@ -334,7 +335,7 @@ normalized_colors = [
 cmap = ListedColormap(normalized_colors)
 
 
-def count_label(dataset, plot=True):
+def count_label(dataset, normalized=False, plot=True):
     classes = np.zeros(25)
 
     for i in range(len(dataset)):
@@ -347,14 +348,20 @@ def count_label(dataset, plot=True):
         counts = np.bincount(labels, minlength=25)
         classes += counts
 
-    normalized_count = classes / (np.sum(classes))
+    if normalized:
+        classes = classes / (np.sum(classes))
 
     if plot:
         fig, ax = plt.subplots(figsize=(12, 6))
-        ax.set_title("Normalized labels repartition")
-        bars = ax.bar(range(normalized_count.shape[0]), normalized_count)
-        ax.set_xticks(range(len(normalized_count)))
-        ax.set_xticklabels(dataset.name_labels, rotation=90)
+        ax.set_title("Labels repartition")
+        bars = ax.bar(range(classes.shape[0]), classes)
+        ax.set_xticks(range(len(classes)))
+        ax.set_xticklabels(
+            dataset.name_labels,
+            rotation=45,
+            ha="right",
+            rotation_mode="anchor",
+        )
         ax.set_ylabel("Labels occurence")
 
         # Afficher le chiffre brut au dessus de chaque barre
@@ -371,7 +378,7 @@ def count_label(dataset, plot=True):
         plt.tight_layout()
         plt.show()
 
-    return normalized_count
+    return classes
 
 
 def compare_dataset(
@@ -551,6 +558,91 @@ def plot_label(patch: xr.Dataset | np.ndarray):
     ax.axis("off")
 
     return
+
+
+def plot_label_and_entropy(id: int, label: str):
+    patch = xr.open_dataset(f"{label}/label_{id:04d}.nc")
+    label = patch["max_class_1"].data
+    entropy = patch["entropy_proba"].data
+
+    fig, ax = plt.subplots(1, 2, figsize=(12, 8))
+
+    # Labels
+    ax[0].set_title("Labels")
+    im = ax[0].imshow(label, cmap=cmap, vmin=0, vmax=24)
+    cbar = fig.colorbar(im, ax=ax[0], ticks=np.arange(25))
+    cbar.ax.set_yticklabels([names_class[i] for i in range(25)])
+    ax[0].axis("off")
+
+    # Entropy
+    ax[1].set_title("Entropy")
+    etrpy = ax[1].imshow(entropy)
+    fig.colorbar(etrpy, ax=ax[1])
+    ax[1].axis("off")
+
+    plt.tight_layout()
+
+
+def plot_label_and_entropy2(id: int, s2_rgb: str, label: str):
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+    with rasterio.open(f"{s2_rgb}/s2_{id:04d}.tif") as src:
+        s2 = src.read()
+
+    rgb = np.stack(
+        [
+            s2[0],  # B04
+            s2[1],  # B03
+            s2[2],  # B02
+        ],
+        axis=-1,
+    )
+
+    # Normalisation pour affichage
+    rgb = rgb.astype(np.float32)
+    rgb = np.clip(rgb / np.percentile(rgb, 98), 0, 1)
+    patch = xr.open_dataset(f"{label}/label_{id:04d}.nc")
+
+    # Patch
+    label = patch["max_class_1"].data
+    entropy = patch["entropy_proba"].data
+
+    fig, ax = plt.subplots(
+        1,
+        3,
+        figsize=(15, 5),
+        constrained_layout=True,
+    )
+
+    # ====================================================
+    # RGB
+    # ====================================================
+    ax[0].imshow(rgb)
+    ax[0].set_title("S2 RGB")
+    ax[0].axis("off")
+
+    # ====================================================
+    # Labels
+    # ====================================================
+    im = ax[1].imshow(label, cmap=cmap, vmin=0, vmax=24)
+    ax[1].set_title("Labels")
+    ax[1].axis("off")
+
+    divider = make_axes_locatable(ax[1])
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+    cbar = fig.colorbar(im, cax=cax, ticks=np.arange(25))
+    cbar.ax.set_yticklabels(names_class)
+
+    # ====================================================
+    # Entropy
+    # ====================================================
+    etrpy = ax[2].imshow(entropy)
+    ax[2].set_title("Entropy")
+    ax[2].axis("off")
+
+    divider = make_axes_locatable(ax[2])
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+    fig.colorbar(etrpy, cax=cax)
 
 
 # Plot RGB images sequence with associated date, mask and label
