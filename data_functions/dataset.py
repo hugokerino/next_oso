@@ -271,6 +271,7 @@ def get_loaders(
     batch_size: int = 4,
     num_worker: int = 1,
     label_type: str = "max_class",
+    label_type_test: str = "max_class",
     norm: bool = True,
     norm_alise: bool = False,
     sequence_packing: bool = False,
@@ -279,7 +280,7 @@ def get_loaders(
     shuffle: bool = True,
     pass_id: bool = False,
 ) -> list[torch.utils.data.DataLoader]:
-    def make_loader(folds, shuffle) -> torch.utils.data.DataLoader:
+    def make_loader(folds, shuffle, type_label) -> torch.utils.data.DataLoader:
         dataset = next_oso_Dataset(
             path_s2=path_s2,
             path_mnt=path_mnt,
@@ -290,7 +291,7 @@ def get_loaders(
             remove_invalid_temp=remove_invalid_temp,
             folds=folds,
             mask_needed=mask_needed,
-            label_type=label_type,
+            label_type=type_label,
             return_id=pass_id,
         )
         if sequence_packing:
@@ -321,5 +322,10 @@ def get_loaders(
         raise ValueError("Folds cannot be empty.")
 
     return list(
-        map(make_loader, [folds_train, folds_val, folds_test], [shuffle, False, False])
+        map(
+            make_loader,
+            [folds_train, folds_val, folds_test],
+            [shuffle, False, False],
+            [label_type, label_type, label_type_test],
+        )
     )

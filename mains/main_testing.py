@@ -17,7 +17,6 @@ torch.set_float32_matmul_precision("high")
 
 
 def main(config, log_dir):
-
     ########################################
     # MODEL
     ########################################
@@ -48,8 +47,8 @@ def main(config, log_dir):
         batch_size=batch_size,
         num_worker=config["num_worker"],
         label_type=config["label_type"],
+        label_type_test="max_class",  # config["label_type"],
         mask_needed=config["mask_need"],
-        use_spatial_coords=config["use_spatial_coords"],
         norm=True
         if config["model"] in ["LTAE", "UTAE", "ALISE", "ALISE_encoding"]
         else False,
@@ -60,7 +59,7 @@ def main(config, log_dir):
     )
 
     tb_logger = TensorBoardLogger(
-        log_dir, name="tensorboards", version=0, default_hp_metric=False
+        log_dir, name="tensorboards", version=1, default_hp_metric=False
     )
 
     trainer = L.Trainer(
@@ -90,7 +89,6 @@ def main(config, log_dir):
         decoder=decoder,
         loss_fn=criterion,
         batch_size=batch_size,
-        use_spatial_coords=config["use_spatial_coords"],
         name_class=pandas.read_csv(config["path_oso_classes"]).get("name_class").values,
     )
 
