@@ -244,13 +244,10 @@ class next_oso_Dataset(tdata.Dataset):
                 mask_label = ~(
                     torch.from_numpy(s2_data["S2_mask"].to_numpy()) == 0
                 ).all(dim=0)  # everywhere s2 mask is invalid for all timestamp
-                if (
-                    self.label_type == "max_class"
-                    or self.label_type == "erode_max_class"
-                ):
-                    label[~mask_label] = 0
                 if self.label_type == "probas":
                     label[:, ~mask_label] = 0
+                else:
+                    label[~mask_label] = 0
 
         sample = (s2, date, mask, geo)
 
