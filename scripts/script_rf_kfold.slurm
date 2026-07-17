@@ -19,6 +19,13 @@ ZONE=$(( TASK_ID % 9 ))
 
 echo "SLURM_ARRAY_TASK_ID=${TASK_ID} -> FOLD=${FOLD}, ZONE=${ZONE}"
 
+cd $SLURM_SUBMIT_DIR
+echo -e "\nRépertoire courant : $(pwd)"
+
+echo "Load pixi envs"
+module purge
+module load pixi
+
 # Create log directory and redirect stdout/stderr at runtime to include fold/zone
 LOG_DIR=script_logs
 mkdir -p "${LOG_DIR}"
@@ -29,12 +36,9 @@ echo "Redirecting stdout -> ${OUT_FILE}  stderr -> ${ERR_FILE}"
 # Replace SLURM's static -o/-e logs for per-task logs using shell redirection
 exec 1>"${OUT_FILE}" 2>"${ERR_FILE}"
 
-# Example: run training script (uncomment and adapt the command below)
-# srun --export=ALL python3 /home/hkerino/Documents/next_oso/RandomForest/main_RF.py --fold ${FOLD} --zone ${ZONE}
-
-pixi run python RandomForest/main_RF_kfold.py \
+pixi run --frozen python RandomForest/main_RF_kfold.py \
     --config_train RandomForest/config_RF_kfold.yaml \
-    --fold_index $FOLD \
-    --eco_zone $ZONE
+    --fold_index ${FOLD} \
+    --eco_zone ${ZONE}
 
 echo "End script"

@@ -43,18 +43,11 @@ def main(config):
 
     # Classifier
     RF_classifier = RandomForestClassifier(
-        n_estimators=5,
-        min_samples_split=50,
-        min_samples_leaf=20,
-        max_depth=3,
-    )
-
-    # RF_classifier = RandomForestClassifier(
-    #     min_samples_split=25,
-    #     n_jobs=-1,
-    #     verbose=1,
-    #     random_state=42,
-    # )
+         min_samples_split=25,
+         n_jobs=-1,
+         verbose=1,
+         random_state=42,
+     )
 
     # Training
     print("\nTRAINING ...")

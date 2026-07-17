@@ -94,8 +94,7 @@ def main(config):
     if config["test_model"]:
         tb_logger = None
         list_callback = None
-
-    limit_batches = 2
+        limit_batches = 2
 
     plugin = None
     if config["running_on_trex_gpu"]:
@@ -103,7 +102,7 @@ def main(config):
 
     trainer = L.Trainer(
         logger=tb_logger,
-        accumulate_grad_batches=2,
+        accumulate_grad_batches=1,
         log_every_n_steps=10,
         callbacks=list_callback,
         max_epochs=config["epochs_max"],

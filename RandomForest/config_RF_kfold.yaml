@@ -1,15 +1,15 @@
 # Paths
-#path_s2: /work/THEIA/CES/oso/hugok/s2_data
-#path_label: /work/THEIA/CES/oso/hugok/labels
-#path_logs: /work/THEIA/CES/oso/hugok/next_oso/logs/RF
+path_s2: /work/THEIA/CES/oso/hugok/s2_data
+path_label: /work/THEIA/CES/oso/hugok/labels
+path_logs: /work/THEIA/CES/oso/hugok/next_oso/logs/RF
 
-path_s2: /home/hkerino/Documents/nextoso-dataset/data/10m/s2
-path_label: /home/hkerino/Documents/nextoso-dataset/data/10m/labels
-path_logs: /home/hkerino/Documents/next_oso/logs/RF
+#path_s2: /home/hkerino/Documents/nextoso-dataset/data/10m/s2
+#path_label: /home/hkerino/Documents/nextoso-dataset/data/10m/labels
+#path_logs: /home/hkerino/Documents/next_oso/logs/RF
 
 folds :
-  - [[1], [4], [5]]
-  - [[2], [5], [1]]
+  - [[1,2,3], [4], [5]]
+  - [[2,3,4], [5], [1]]
   - [[3,4,5], [1], [2]]
   - [[4,5,1], [2], [3]]
   - [[5,1,2], [3], [4]]
