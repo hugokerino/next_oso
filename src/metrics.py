@@ -295,6 +295,9 @@ def metrics_to_excel(metrics, path):
     Sauvegarde les métriques dans un fichier Excel.
     """
 
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
     df_global = pd.DataFrame(
         {
             "Metric": metrics["global"].keys(),
