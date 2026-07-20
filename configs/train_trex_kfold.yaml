@@ -22,8 +22,8 @@ sequence_packing: false
 # Training
 criterion : cross_entropy
 optimizer_scheduler : reduce_on_plateau
-epochs_max: 150
-batch_size: 1
+epochs_max: 200
+batch_size: 4
 test_model: false
 accelerator: "gpu"
 devices: 1

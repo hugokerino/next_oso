@@ -40,8 +40,8 @@ def calculate_and_save_metrics_RF_kfold_preds(path_to_logs):
     for fold in sorted(os.listdir(path_to_logs)):
         list_preds = []
         list_trues = []
-        for zone in sorted(os.path.join(os.listdir(path_to_logs), fold)):
-            name_folder = os.path.join(os.listdir(path_to_logs), fold, zone)
+        for zone in sorted(os.listdir(os.path.join(path_to_logs, fold))):
+            name_folder = os.path.join(path_to_logs, fold, zone)
             list_preds.append(np.load(f"{name_folder}/y_pred.npy"))
             list_trues.append(np.load(f"{name_folder}/y_true.npy"))
 
@@ -62,7 +62,7 @@ def calculate_and_save_metrics_RF_kfold_preds(path_to_logs):
 
         metrics_to_excel(
             metrics=metrics_dict,
-            path=f"{os.path.join(os.listdir(path_to_logs), fold)}/metrics.xlsx",
+            path=f"{os.path.join(path_to_logs, fold)}/metrics.xlsx",
         )
 
     return
