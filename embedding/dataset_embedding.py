@@ -76,15 +76,17 @@ class embedding_dataset(tdata.Dataset):
         """Chargement d'un sample depuis le disque."""
         # Embedding
         if filename.endswith(".npy"):
-            embedding_npy = np.load(
-                os.path.join(self.path_embeddings, filename)
-            )  # (C,H,W)
+            embedding_npy = np.load(os.path.join(self.path_embeddings, filename))
+            # ensure float32 to avoid dtype mismatch (numpy defaults to float64)
+            if embedding_npy.dtype != np.float32:
+                embedding_npy = embedding_npy.astype(np.float32)
             embedding = torch.from_numpy(embedding_npy)
 
         elif filename.endswith(".pt"):
-            embedding = torch.load(
-                os.path.join(self.path_embeddings, filename)
-            )  # (T, C, H, W)
+            embedding = torch.load(os.path.join(self.path_embeddings, filename))
+            # ensure float32
+            if torch.is_tensor(embedding) and embedding.dtype != torch.float32:
+                embedding = embedding.float()
 
         # Label
         id = filename.split("_")[1].split(".")[0]
@@ -97,7 +99,8 @@ class embedding_dataset(tdata.Dataset):
                 label = torch.from_numpy(label_numpy).long()
 
             elif self.label_type == "probas":
-                labels_probas = np.zeros((25, 128, 128))
+                # use float32 for probabilistic labels to match model dtype expectations
+                labels_probas = np.zeros((25, 128, 128), dtype=np.float32)
                 for k, var in enumerate(self.name_labels):
                     if var in list(label_data.data_vars):
                         labels_probas[k, :, :] = label_data[var].data
