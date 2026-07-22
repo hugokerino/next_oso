@@ -36,9 +36,11 @@ task_id=${SLURM_ARRAY_TASK_ID:-0}
 # Load folds from YAML configuration
 fold_config=$(pixi run -e gpu python scripts/get_folds_from_yaml.py $task_id)
 IFS='|' read -r folds_train_selected folds_val_selected folds_test_selected <<< "$fold_config"
+read -r -a folds_train_array <<< "$folds_train_selected"
+read -r -a folds_val_array <<< "$folds_val_selected"
+read -r -a folds_test_array <<< "$folds_test_selected"
 
-
-pixi run -e gpu python mains/main_embedding.py \
+pixi run -e gpu python mains/main_embedding_kfold.py \
     --model "alpha-earth" \
     --time_feature \
     --path_embedding "/work/THEIA/CES/oso/hugok/alpha_earth" \
@@ -51,9 +53,9 @@ pixi run -e gpu python mains/main_embedding.py \
     --num_worker 6 \
     --max_epochs 1000 \
     --label_type "max_class" \
-    --folds_train "${folds_train_selected}" \
-    --folds_val "${folds_val_selected}" \
-    --fold_test "${folds_test_selected}"
+    --folds_train "${folds_train_array[@]}" \
+    --folds_val "${folds_val_array[@]}" \
+    --fold_test "${folds_test_array[@]}" \
     --fold_index "${task_id}"
 
 echo "End"
