@@ -58,13 +58,9 @@ def main(config):
     path_logs = os.path.join(config.path_logs, model)
     date = datetime.now().date().strftime("%Y-%m-%d")
     base_log_dir = os.path.join(path_logs, f"{date}_kfold")
-    log_dir = base_log_dir
-    counter = 1
-    while os.path.exists(log_dir):
-        log_dir = f"{base_log_dir}_{counter}"
-        counter += 1
+    os.makedirs(base_log_dir, exist_ok=True)
 
-    log_fold = os.path.join(log_dir, f"fold_{args.fold_index + 1}")
+    log_fold = os.path.join(base_log_dir, f"fold_{args.fold_index + 1}")
     os.makedirs(log_fold, exist_ok=True)
 
     # Data
