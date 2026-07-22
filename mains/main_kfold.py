@@ -122,6 +122,7 @@ def main(config):
         encoder,
         decoder,
         batch_size=config["batch_size"],
+        optimizer_scheduler=config["optimizer_scheduler"],
         loss_fn=criterion,
         lr=config["learning_rate"],
     )

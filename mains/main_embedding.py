@@ -111,7 +111,7 @@ def main(config):
             EarlyStopping(monitor="val_fscore", mode="max", patience=20),
         ],
         max_epochs=config.max_epochs,  # if torch.cuda.is_available() else 5,
-        plugins=[SLURMEnvironment(requeue_signal=signal.SIGHUP, auto_requeue=True)]
+        plugins=[SLURMEnvironment(requeue_signal=signal.SIGUSR1, auto_requeue=True)]
         if torch.cuda.is_available()
         else None,
         profiler=SimpleProfiler(dirpath=log_dir, filename="Profiler"),
