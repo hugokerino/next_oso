@@ -277,9 +277,13 @@ def pad_pastis_collate(batch, len_max_seq=61, pad_value=0, merge_label=True):
 
 
 def get_loaders_pastis(
-    path_pastis,
-    batch_size,
-):
+    path_pastis: str,
+    batch_size: int,
+    num_worker: int,
+    folds_train: list,
+    folds_val: list,
+    folds_test: list,
+) -> list[torch.utils.data.DataLoader]:
     def make_loader(folds, shuffle):
         dt = PASTIS_Dataset(folder=path_pastis, folds=folds)
         return torch.utils.data.DataLoader(
@@ -287,7 +291,13 @@ def get_loaders_pastis(
             batch_size=batch_size,
             collate_fn=pad_pastis_collate,
             shuffle=shuffle,
-            num_workers=15,
+            num_workers=num_worker,
         )
 
-    return map(make_loader, [[1, 2, 3], [4], [5]], [True, False, False])
+    return list(
+        map(
+            make_loader,
+            [folds_train, folds_val, folds_test],
+            [True, False, False],
+        )
+    )

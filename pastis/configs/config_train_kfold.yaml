@@ -1,0 +1,28 @@
+# Paths
+path_pastis: /work/THEIA/CES/oso/hugok/pastis
+path_logs: /work/THEIA/CES/oso/hugok/next_oso/pastis/logs
+
+# Data
+num_worker: 4
+num_class: 19
+folds :
+  - [[1,2,3], [4], [5]]
+  - [[2,3,4], [5], [1]]
+  - [[3,4,5], [1], [2]]
+  - [[4,5,1], [2], [3]]
+  - [[5,1,2], [3], [4]]
+
+
+# Training
+criterion : cross_entropy
+optimizer_scheduler : reduce_on_plateau
+epochs_max: 300
+batch_size: 4
+test_model: False
+accelerator: "gpu"
+devices: 1
+nodes: 1
+strategy: "auto" #choose among "auto" 'ddp', 'ddp_unused_parameters', 'ddp_find_unused_parameters_true' #UTAE n'est pas compatible avec DDP
+running_on_trex_gpu: True
+learning_rate: 0.0001
+logs : True

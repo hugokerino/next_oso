@@ -34,8 +34,8 @@ class classifier(L.LightningModule):
         num_classe: int = 25,
         H: int = 128,
         W: int = 128,
-        name_class=None,
-        path_save_excel=None,
+        name_class: dict | None = None,
+        path_save_excel: str | None = None,
     ):
         super().__init__()
 
