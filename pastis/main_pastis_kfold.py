@@ -5,6 +5,7 @@ from lightning.pytorch.callbacks import (
     ModelCheckpoint,
     EarlyStopping,
 )
+from lightning.pytorch.profilers import SimpleProfiler
 from lightning.pytorch.plugins.environments import SLURMEnvironment
 
 import signal
@@ -77,6 +78,8 @@ def main(config):
         log_fold, name="tensorboards", default_hp_metric=False
     )
     early_stop = EarlyStopping(monitor="val_fscore", mode="max", patience=20)
+    profiler = SimpleProfiler(log_fold)
+
     list_callback = [
         checkpoint_callback,
         early_stop,
@@ -108,7 +111,9 @@ def main(config):
         limit_test_batches=limit_batches,
         precision=get_precision(),
         plugins=plugin,
+        profiler=profiler,
     )
+
     # Model
     classifier = lightning_module.classifier(
         encoder,
@@ -144,7 +149,7 @@ def main(config):
             decoder=decoder,
             loss_fn=criterion,
             batch_size=config["batch_size"],
-            num_class=config["num_class"],
+            num_classe=config["num_class"],
             name_class=name_class,
             path_save_excel=f"{log_fold}/metrics.xlsx",
         )
