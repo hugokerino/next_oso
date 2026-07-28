@@ -12,7 +12,7 @@ from argparse import ArgumentParser
 
 def main(args):
     # bounding box of next oso dataset
-    next_oso_extent = gpd.read_file(args.aois_path)
+    aois = gpd.read_file(args.aois_path)
     year = args.year
 
     # Initialize earthengine session and retrieve alpha-earth_embeddings
@@ -23,11 +23,11 @@ def main(args):
         "GOOGLE/SATELLITE_EMBEDDING/V1/ANNUAL"
     ).filterDate(f"{year}-01-01", f"{year}-12-31")
 
-    bbox_done = os.listdir(args.save_path)
+    bbox_done = os.listdir(args.save_npy_path)
 
     # Download embeddings per polygon
-    for index, row in next_oso_extent.iterrows():
-        id, polygon = row["new_id"], row["geometry"]
+    for index, row in aois.iterrows():
+        id, polygon = row["ID_PATCH"], row["geometry"]
 
         if f"alpha_earth_{f'{id:04d}'}.npy" not in bbox_done:
             bbox_done.append(f"alpha_earth_{f'{id:04d}'}.npy")
@@ -72,12 +72,12 @@ def main(args):
 
             # Save the reprojected image
             np.save(
-                os.path.join(args.save_path, f"alpha_earth_{id:04d}.npy"),
+                os.path.join(args.save_npy_path, f"alpha_earth_{id:04d}.npy"),
                 dst,
             )
 
             print(
-                f"Saved alpha-earth embedding for polygon {id:04d}\n {len(bbox_done)}/{len(next_oso_extent)}"
+                f"Saved alpha-earth embedding for polygon {id:04d}\n {len(bbox_done)}/{len(aois)}"
             )
 
 
