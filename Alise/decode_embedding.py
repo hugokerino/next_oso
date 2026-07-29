@@ -47,9 +47,7 @@ class alise_embedding_dataset(tdata.Dataset):
             self.embedding_files = [
                 f
                 for f in all_embedding_files
-                if self.maps_id_to_fold[f"s2_{f.split('_')[1].split('.')[0]}.nc"][
-                    "fold"
-                ]
+                if self.maps_id_to_fold[f"{f.split('_')[1].split('.')[0]}"]["fold"]
                 in fold
             ]
         else:

@@ -14,6 +14,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from einops import rearrange
 import pandas
+import json
 
 from src import metrics
 
@@ -27,7 +28,7 @@ class DecodeEmbedding(L.LightningModule):
         self.lr: float = args.lr
         self.max_epochs: int = args.max_epochs
         self.path_name_class: str = args.path_name_class
-        self.path_save_excel: str = args.path_save_excel
+        self.path_save_excel: None | str = args.path_save_excel
 
         self.loss_fn = (
             torch.nn.CrossEntropyLoss(ignore_index=0)
@@ -128,11 +129,22 @@ class DecodeEmbedding(L.LightningModule):
         y_preds = torch.cat(self.y_pred_test, dim=0)
         y_trues = torch.cat(self.y_true_test, dim=0)
 
-        name_class = (
-            pandas.read_csv(self.path_name_class).get("name_class").values
-            if self.path_name_class is not None
-            else None
-        )
+        if self.path_name_class is not None:
+            if str(self.path_name_class).endswith(".csv"):
+                name_class = (
+                    pandas.read_csv(self.path_name_class).get("name_class").values
+                )
+            elif str(self.path_name_class).endswith(".json"):
+                try:
+                    with open(self.path_name_class, "r") as f:
+                        name_class = json.load(f)
+                except Exception as exc:
+                    print(
+                        f"Error loading JSON name_class from {self.path_name_class}: {exc}"
+                    )
+                    name_class = None
+            else:
+                name_class = None
 
         metrics_dict = metrics.compute_metrics(
             y_preds=y_preds,

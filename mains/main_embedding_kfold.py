@@ -65,6 +65,7 @@ def main(config):
 
     # Data
     datamodule = dataset_embedding.embedding_datamodule(
+        data=args.data,
         model=model,
         path_embeddings=args.path_embedding,
         path_labels=config.path_label,
@@ -92,7 +93,7 @@ def main(config):
     decoder = MLP_Decoder(mlp=mlp, dropout=0.1)
     classifier = decode_lightning_module.DecodeEmbedding(decoder=decoder, args=config)
 
-    limit_batch = None  # if torch.cuda.is_available() else 4
+    limit_batch = 2  # if torch.cuda.is_available() else 4
 
     # training
     trainer = Trainer(
@@ -127,6 +128,11 @@ if __name__ == "__main__":
     print("\nPARSE ARGUMENTS ...")
     L.seed_everything(42, workers=True)
     parser = ArgumentParser()
+
+    # Which embeddings
+    parser.add_argument(
+        "--data", type=str, required=True, choices=["next_oso", "pastis"]
+    )
 
     # Which embeddings
     parser.add_argument(

@@ -8,21 +8,24 @@ import numpy as np
 import xarray as xr
 from tqdm import tqdm
 import pandas
+import geopandas as gdp
 
 
 class embedding_dataset(tdata.Dataset):
     def __init__(
         self,
+        data: str = "next_oso",  # pastis
         model: str = "alpha-earth",  # "tessera", "malice"
         path_embeddings: str = "/home/hkerino/Documents/nextoso-dataset",
         path_labels: str = "/home/hkerino/Documents/nextoso-dataset/data/10m/labels",
         path_mapping_folder: str = "/home/hkerino/Documents/nextoso-dataset/data/10m/s2",
         fold=None | list[int],
-        label_type: str = "max_class",
+        label_type: None | str = "max_class",
         mask: bool = "False",  # Detect invalid pixel in embedding and put those pixel at 0 for label to not take them into account in training
         preload: bool = False,
         return_id: bool = False,  # cannot be True if preload = True
     ):
+        self.data = data
         self.model = model
         self.path_embeddings = os.path.join(path_embeddings, f"{model}_data")
         self.path_labels = path_labels
@@ -39,9 +42,16 @@ class embedding_dataset(tdata.Dataset):
             )
             self.name_labels = pandas.read_csv(path_oso_class).get("name_class").values
 
-        maps_id_to_fold = json.load(
-            open(os.path.join(path_mapping_folder, "file_mapping.json"), "r")
-        )
+        if self.data == "next_oso":
+            maps_id_to_fold = json.load(
+                open(os.path.join(path_mapping_folder, "file_mapping.json"), "r")
+            )
+        if self.data == "pastis":
+            meta = gdp.read_file(os.path.join(path_mapping_folder, "metadata.geojson"))
+            maps_id_to_fold = {
+                str(id_patch): {"fold": fold}
+                for id_patch, fold in zip(meta["ID_PATCH"], meta["Fold"])
+            }
 
         if fold is not None:
             all_embedding_files = sorted(os.listdir(self.path_embeddings))
@@ -49,8 +59,7 @@ class embedding_dataset(tdata.Dataset):
                 f
                 for f in all_embedding_files
                 if (f.endswith(".npy") or f.endswith(".pt"))
-                and maps_id_to_fold[f"s2_{f.split('_')[1].split('.')[0]}.nc"]["fold"]
-                in fold
+                and maps_id_to_fold[f"{f.split('_')[1].split('.')[0]}"]["fold"] in fold
             ]
         else:
             self.embedding_files = sorted(
@@ -90,24 +99,31 @@ class embedding_dataset(tdata.Dataset):
 
         # Label
         id = filename.split("_")[1].split(".")[0]
-        to_open_label = os.path.join(self.path_labels, f"label_{id}.nc")
+        if self.data == "next_oso":
+            to_open_label = os.path.join(self.path_labels, f"label_{id}.nc")
 
-        with xr.open_dataset(to_open_label) as label_data:
-            if self.label_type == "max_class":
-                label_numpy = label_data["max_class_1"].data
-                label_numpy = np.where(label_numpy == -1, 0, label_numpy)
-                label = torch.from_numpy(label_numpy).long()
+            with xr.open_dataset(to_open_label) as label_data:
+                if self.label_type == "max_class":
+                    label_numpy = label_data["max_class_1"].data
+                    label_numpy = np.where(label_numpy == -1, 0, label_numpy)
+                    label = torch.from_numpy(label_numpy).long()
 
-            elif self.label_type == "probas":
-                # use float32 for probabilistic labels to match model dtype expectations
-                labels_probas = np.zeros((25, 128, 128), dtype=np.float32)
-                for k, var in enumerate(self.name_labels):
-                    if var in list(label_data.data_vars):
-                        labels_probas[k, :, :] = label_data[var].data
-                        labels_probas[k, :, :] = np.where(
-                            labels_probas[k, :, :] == -1, 0, labels_probas[k, :, :]
-                        )
-                label = torch.from_numpy(labels_probas).float()
+                elif self.label_type == "probas":
+                    # use float32 for probabilistic labels to match model dtype expectations
+                    labels_probas = np.zeros((25, 128, 128), dtype=np.float32)
+                    for k, var in enumerate(self.name_labels):
+                        if var in list(label_data.data_vars):
+                            labels_probas[k, :, :] = label_data[var].data
+                            labels_probas[k, :, :] = np.where(
+                                labels_probas[k, :, :] == -1, 0, labels_probas[k, :, :]
+                            )
+                    label = torch.from_numpy(labels_probas).float()
+
+        if self.data == "pastis":
+            to_open_label = os.path.join(self.path_labels, f"TARGET_{id}.npy")
+            label_numpy = np.load(to_open_label)[0].astype(int)
+            label_numpy[label_numpy == 19] = 0  # merge Background & Void label
+            label = torch.from_numpy(label_numpy).long()
 
         if self.mask:
             if embedding.dim() == 4:  # (T, C, H, W)
@@ -134,6 +150,7 @@ class embedding_dataset(tdata.Dataset):
 class embedding_datamodule(LightningDataModule):
     def __init__(
         self,
+        data: str = "next_oso",  # "pastis"
         model: str = "alpha-earth",
         path_embeddings: str = "/home/hkerino/Documents/nextoso-dataset",
         path_labels: str = "/home/hkerino/Documents/nextoso-dataset/data/10m/labels",
@@ -144,7 +161,7 @@ class embedding_datamodule(LightningDataModule):
         fold_test=None | list[int],
         batch_size: int = 32,
         num_workers: int = 4,
-        label_type: str = "max_class",
+        label_type: None | str = "max_class",
         mask: bool = "False",
         return_id: bool = False,
     ):
@@ -165,6 +182,7 @@ class embedding_datamodule(LightningDataModule):
             raise ValueError("Folds cannot be empty.")
 
         self.data_train = embedding_dataset(
+            data=data,
             model=model,
             path_embeddings=path_embeddings,
             path_labels=path_labels,
@@ -176,6 +194,7 @@ class embedding_datamodule(LightningDataModule):
             return_id=return_id,
         )
         self.data_val = embedding_dataset(
+            data=data,
             model=model,
             path_embeddings=path_embeddings,
             path_labels=path_labels,
@@ -187,6 +206,7 @@ class embedding_datamodule(LightningDataModule):
             return_id=return_id,
         )
         self.data_test = embedding_dataset(
+            data=data,
             model=model,
             path_embeddings=path_embeddings,
             path_labels=path_labels,

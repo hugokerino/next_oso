@@ -67,6 +67,7 @@ def main(config):
 
     # Data
     datamodule = dataset_embedding.embedding_datamodule(
+        data=args.data,
         model=model,
         path_embeddings=args.path_embedding,
         path_labels=config.path_label,
@@ -130,6 +131,10 @@ if __name__ == "__main__":
     print("\nPARSE ARGUMENTS ...")
     L.seed_everything(42, workers=True)
     parser = ArgumentParser()
+    # Which data
+    parser.add_argument(
+        "--data", type=str, required=True, choices=["next_oso", "pastis"]
+    )
 
     # Which embeddings
     parser.add_argument(
