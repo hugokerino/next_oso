@@ -7,7 +7,7 @@ ruff:
 
   before_script:
     - python --version
-    - pip install ruff
+    - pip install ruff==0.15.22
 
   script:
     - ruff check .
