@@ -25,6 +25,7 @@ class PASTIS_Dataset(tdata.Dataset):
         class_mapping=None,
         mono_date=None,
         sats=["S2"],
+        return_id=False,
     ):
         """
         Pytorch Dataset class to load samples from the PASTIS dataset, for semantic and
@@ -83,6 +84,7 @@ class PASTIS_Dataset(tdata.Dataset):
             else class_mapping
         )
         self.sats = sats
+        self.return_id = return_id
 
         # Get metadata
         print("Reading patch metadata . . .")
@@ -208,6 +210,8 @@ class PASTIS_Dataset(tdata.Dataset):
                 }
                 data = {s: data[s][mono_date[s]].unsqueeze(0) for s in self.sats}
                 dates = {s: dates[s][mono_date[s]] for s in self.sats}
+        if self.return_id:
+            return (data, dates), target, id_patch
         else:
             return (data, dates), target
 

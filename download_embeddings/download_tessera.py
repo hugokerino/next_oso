@@ -148,7 +148,8 @@ def main(args):
     aois = gpd.read_file(args.aois_path)
 
     for count, aoi in aois.sort_values("new_id").iterrows():
-        id = f"{aoi['new_id']:04d}"
+        # id = f"{aoi['new_id']:04d}"
+        id = f"{aoi['ID_PATCH']:04d}"
 
         if os.path.exists(os.path.join(save_path, f"tessera_{id}.npy")):
             continue

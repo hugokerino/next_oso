@@ -18,27 +18,6 @@ def main(args):
         "GOOGLE/SATELLITE_EMBEDDING/V1/ANNUAL"
     ).filterDate(f"{year}-01-01", f"{year}-12-31")
 
-    # Split AOIs across SLURM array tasks
-    n_arrays = args.n_arrays
-    array_index = args.array_index
-    if array_index < 1 or array_index > n_arrays:
-        raise ValueError(
-            f"array_index must be between 1 and n_arrays, got {array_index} / {n_arrays}"
-        )
-
-    num_polygons = len(aois)
-    if num_polygons == 0:
-        print("Aucun AOI trouvé dans le fichier fourni.")
-        return
-
-    blocks = np.array_split(np.arange(num_polygons), n_arrays)
-    selected_indices = blocks[array_index - 1]
-    aois = aois.iloc[selected_indices].reset_index(drop=True)
-
-    print(
-        f"Task {array_index}/{n_arrays}: traitement de {len(aois)} polygones sur {num_polygons}"
-    )
-
     bbox_done = os.listdir(args.save_npy_path)
 
     # Download embeddings per polygon
@@ -57,6 +36,7 @@ def main(args):
 
             # Extraire les données pour toutes les bandes et créer un tableau NumPy
             all_data = []
+            failed = False
             for band_name in band_names:
                 try:
                     band = embeddings.select(band_name)
@@ -70,22 +50,30 @@ def main(args):
                     )
                     all_data.append(band_data)
                 except Exception as exc:
+                    failed = True
                     print(f"Erreur pour la bande {band_name}: {exc}")
+                    break
 
-            # Tableau NumPy contenant toutes les bandes
-            dst = np.stack(all_data, axis=0)
+            if failed or len(all_data) != len(band_names):
+                print(
+                    f"Skipping polygon {id:04d} because embedding download failed for one or more bands."
+                )
+                continue
 
-            assert dst.shape == (64, 128, 128)
-
-            # Save the reprojected image
-            np.save(
-                os.path.join(args.save_npy_path, f"alpha_earth_{id:04d}.npy"),
-                dst,
-            )
-
-            print(
-                f"Saved alpha-earth embedding for polygon {id:04d}\n {len(bbox_done)}/{len(aois)}"
-            )
+            try:
+                dst = np.stack(all_data, axis=0)
+                assert dst.shape == (64, 128, 128)
+                np.save(
+                    os.path.join(args.save_npy_path, f"alpha_earth_{id:04d}.npy"),
+                    dst,
+                )
+                print(
+                    f"Saved alpha-earth embedding for polygon {id:04d}\n {len(bbox_done)}/{len(aois)}"
+                )
+            except Exception as exc:
+                print(
+                    f"Erreur lors de la création ou de l'enregistrement de l'embedding pour le polygon {id:04d}: {exc}"
+                )
 
 
 if __name__ == "__main__":
@@ -108,14 +96,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "--earth_engine_project", type=str, required=True, help="Ex:ee-hugobzhk"
     )
-    parser.add_argument(
-        "--array_index",
-        type=int,
-        default=1,
-        help="ID de la tâche SLURM array (1-based)",
-    )
-    parser.add_argument(
-        "--n_arrays", type=int, default=1, help="Nombre total de tâches SLURM array"
-    )
+
     args = parser.parse_args()
     main(args)
