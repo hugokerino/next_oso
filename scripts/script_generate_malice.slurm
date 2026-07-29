@@ -17,7 +17,7 @@ PATH_s2='/work/THEIA/CES/oso/hugok/s2_data/'
 PATH_pastis='/work/THEIA/CES/oso/hugok/pastis'
 PATH_label='/work/THEIA/CES/oso/hugok/labels'
 PATH_class_name='/work/THEIA/CES/oso/hugok/files_s2/oso_classes.csv'
-PATH_save_embedding='/work/THEIA/CES/oso/hugok/malice/embeddings'
+PATH_save_embedding='/work/THEIA/CES/oso/hugok/pastis/malice_data' #'/work/THEIA/CES/oso/hugok/malice/embeddings'
 PATH_csv_norm='/work/THEIA/CES/oso/hugok/malice/norm_MALICE_s2.csv'
 PATH_model_onnx='/work/THEIA/CES/oso/hugok/malice/malice_s2.onnx'
 
@@ -32,7 +32,7 @@ module load pixi
 echo "Launch python file"
 
 pixi run python src/MALICE.py \
-    --data "$data"\
+    --data "$data" \
     --path_s2 "$PATH_s2" \
     --path_mnt "$PATH_mnt" \
     --path_label "$PATH_label" \

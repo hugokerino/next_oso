@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH -J malice
+#SBATCH -J emb_kfold
 #SBATCH -A theia_oso
 #SBATCH -o script_logs/out_emb%j.out
 #SBATCH -e script_logs/err_emb%j.err
@@ -41,21 +41,21 @@ read -r -a folds_val_array <<< "$folds_val_selected"
 read -r -a folds_test_array <<< "$folds_test_selected"
 
 pixi run -e gpu python mains/main_embedding_kfold.py \
-    --model "alpha-earth" \
+    --model "malice" \
     --time_feature \
-    --path_embedding "/work/THEIA/CES/oso/hugok/alpha_earth" \
+    --path_embedding "/work/THEIA/CES/oso/hugok/malice" \
     --path_label "/work/THEIA/CES/oso/hugok/labels" \
     --path_mapping_folder "/work/THEIA/CES/oso/hugok/s2_data" \
     --path_logs "/work/THEIA/CES/oso/hugok/next_oso/logs" \
     --path_name_class "/work/THEIA/CES/oso/hugok/files_s2/oso_classes.csv" \
-    --preload_data \
+    --no-preload_data \
     --batch_size 8 \
     --num_worker 6 \
     --max_epochs 1000 \
     --label_type "max_class" \
     --folds_train "${folds_train_array[@]}" \
     --folds_val "${folds_val_array[@]}" \
-    --fold_test "${folds_test_array[@]}" \
+    --folds_test "${folds_test_array[@]}" \
     --fold_index "${task_id}"
 
 echo "End"
