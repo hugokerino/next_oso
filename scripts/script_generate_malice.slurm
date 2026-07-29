@@ -34,6 +34,7 @@ echo "Launch python file"
 pixi run python src/MALICE.py \
     --data "$data" \
     --path_s2 "$PATH_s2" \
+    --path_pastis "$PATH_pastis" \
     --path_mnt "$PATH_mnt" \
     --path_label "$PATH_label" \
     --path_oso_classes "$PATH_class_name" \

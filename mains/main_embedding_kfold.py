@@ -93,7 +93,7 @@ def main(config):
     decoder = MLP_Decoder(mlp=mlp, dropout=0.1)
     classifier = decode_lightning_module.DecodeEmbedding(decoder=decoder, args=config)
 
-    limit_batch = 2  # if torch.cuda.is_available() else 4
+    limit_batch = 1.0  # if torch.cuda.is_available() else 4
 
     # training
     trainer = Trainer(

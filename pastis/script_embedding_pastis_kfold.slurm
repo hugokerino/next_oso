@@ -43,13 +43,13 @@ read -r -a folds_test_array <<< "$folds_test_selected"
 pixi run -e gpu python mains/main_embedding_kfold.py \
     --data "pastis" \
     --model "alpha-earth" \
-    --time_feature \
+    --no-time_feature \
     --path_embedding "/work/THEIA/CES/oso/hugok/pastis" \
     --path_label "/work/THEIA/CES/oso/hugok/pastis/ANNOTATIONS" \
     --path_mapping_folder "/work/THEIA/CES/oso/hugok/pastis" \
     --path_logs "/work/THEIA/CES/oso/hugok/next_oso/pastis/logs" \
     --path_name_class "/work/THEIA/CES/oso/hugok/pastis/label_names_reduced.json" \
-    --no-preload_data \
+    --preload_data \
     --num_class 19 \
     --batch_size 8 \
     --num_worker 6 \
