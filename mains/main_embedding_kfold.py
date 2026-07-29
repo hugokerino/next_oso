@@ -82,11 +82,11 @@ def main(config):
 
     # Correct number of layer depending of the chosen model
     if model == "alpha-earth":
-        mlp = [64, 64, 32, 25]
+        mlp = [64, 64, 32, config.num_class]
     elif model == "tessera":
-        mlp = [128, 64, 32, 25]
+        mlp = [128, 64, 32, config.num_class]
     elif model == "malice":
-        mlp = [640, 320, 64, 25]
+        mlp = [640, 320, 64, config.num_class]
 
     # Model
     config.path_save_excel = f"{log_fold}/metrics.xlsx"
