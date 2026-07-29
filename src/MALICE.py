@@ -70,7 +70,7 @@ def encode_series_malise_onnx(
 
     if args.data == "pastis":
         # DATA
-        p = PASTIS_Dataset(folder=args.path_pastis, return_id=True)
+        p = PASTIS_Dataset(folder=args.path_pastis, norm=False, return_id=True)
         nbr_sample = p.__len__()
 
         for i in range(nbr_sample):
@@ -80,7 +80,12 @@ def encode_series_malise_onnx(
             if os.path.exists(save_path):
                 continue
 
-            ref_norm = s2["S2"].unsqueeze(dim=0)
+            ref_norm = (
+                transform(s2["S2"].permute(1, 0, 2, 3).contiguous())
+                .permute(1, 0, 2, 3)
+                .contiguous()
+                .unsqueeze(dim=0)
+            )
             dates = dates_["S2"]
 
             input = {
