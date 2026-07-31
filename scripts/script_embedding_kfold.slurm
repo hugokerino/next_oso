@@ -41,8 +41,9 @@ read -r -a folds_val_array <<< "$folds_val_selected"
 read -r -a folds_test_array <<< "$folds_test_selected"
 
 pixi run -e gpu python mains/main_embedding_kfold.py \
+    --data "next_oso" \
     --model "malice" \
-    --time_feature \
+    --decoder_type "mlp" \
     --path_embedding "/work/THEIA/CES/oso/hugok/malice" \
     --path_label "/work/THEIA/CES/oso/hugok/labels" \
     --path_mapping_folder "/work/THEIA/CES/oso/hugok/s2_data" \

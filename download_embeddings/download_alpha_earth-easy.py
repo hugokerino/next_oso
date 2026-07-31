@@ -8,15 +8,15 @@ from argparse import ArgumentParser
 def main(args):
     # bounding box of next oso dataset
     aois = gpd.read_file(args.aois_path)
-    year = args.year
 
     # Initialize earthengine session and retrieve alpha-earth_embeddings
     ee.Initialize(project=args.earth_engine_project)
 
     # Collect embedding year
+    pastis_dates = ["2018-09-01", "2019-11-01"]
     embedding_collection = ee.ImageCollection(
         "GOOGLE/SATELLITE_EMBEDDING/V1/ANNUAL"
-    ).filterDate(f"{year}-01-01", f"{year}-12-31")
+    ).filterDate(pastis_dates[0], pastis_dates[1])
 
     bbox_done = os.listdir(args.save_npy_path)
 
@@ -24,8 +24,8 @@ def main(args):
     for index, row in aois.iterrows():
         id, polygon = row["ID_PATCH"], row["geometry"]
 
-        if f"alpha_earth_{f'{id:04d}'}.npy" not in bbox_done:
-            bbox_done.append(f"alpha_earth_{f'{id:04d}'}.npy")
+        if f"alpha-earth_{f'{id:04d}'}.npy" not in bbox_done:
+            bbox_done.append(f"alpha-earth_{f'{id:04d}'}.npy")
             aoi_ee = ee.Geometry(
                 polygon.__geo_interface__, proj="EPSG:2154", geodesic=False
             )
@@ -64,7 +64,7 @@ def main(args):
                 dst = np.stack(all_data, axis=0)
                 assert dst.shape == (64, 128, 128)
                 np.save(
-                    os.path.join(args.save_npy_path, f"alpha_earth_{id:04d}.npy"),
+                    os.path.join(args.save_npy_path, f"alpha-earth_{id:04d}.npy"),
                     dst,
                 )
                 print(
@@ -87,11 +87,6 @@ if __name__ == "__main__":
         "--save_npy_path",
         type=str,
         default="/home/hkerino/Documents/nextoso-dataset/alpha-earth_data",
-    )
-    parser.add_argument(
-        "--year",
-        type=int,
-        default=2020,
     )
     parser.add_argument(
         "--earth_engine_project", type=str, required=True, help="Ex:ee-hugobzhk"

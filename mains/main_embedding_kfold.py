@@ -7,7 +7,6 @@ from lightning.pytorch.callbacks import (
 from lightning.pytorch.plugins.environments import SLURMEnvironment
 from lightning.pytorch.loggers import TensorBoardLogger
 import torch
-import torch.nn as nn
 import os
 import pprint
 from argparse import ArgumentParser, BooleanOptionalAction
@@ -15,41 +14,9 @@ from datetime import datetime
 import signal
 
 from embedding import dataset_embedding, decode_lightning_module
-from mains.main_utils import get_precision
+from mains.main_utils import get_precision, build_decoder
 
 torch.set_float32_matmul_precision("high")
-
-
-class MLP_Decoder(nn.Module):
-    """
-    MLP de profondeur variable.
-    Exemple :
-        mlp=[64, 32, 25]       -> 64 -> 32 -> 25
-        mlp=[64, 64, 32, 25]   -> 64 -> 64 -> 32 -> 25
-        mlp=[64, 128, 64, 32, 25] -> 64 -> 128 -> 64 -> 32 -> 25
-    """
-
-    def __init__(self, mlp=[64, 32, 25], dropout=None):
-        super().__init__()
-
-        layers = []
-
-        for i in range(len(mlp) - 1):
-            layers.append(nn.Linear(mlp[i], mlp[i + 1]))
-
-            # Pas de ReLU après la dernière couche
-            if i < len(mlp) - 2:
-                layers.append(nn.ReLU())
-
-        self.layer = nn.Sequential(*layers)
-        self.dropout = nn.Dropout(dropout) if dropout is not None else None
-
-    def forward(self, x):
-        x = self.layer(x)
-        if self.dropout is not None:
-            x = self.dropout(x)
-
-        return x
 
 
 def main(config):
@@ -80,20 +47,12 @@ def main(config):
         mask=True,
     )
 
-    # Correct number of layer depending of the chosen model
-    if model == "alpha-earth":
-        mlp = [64, 64, 32, config.num_class]
-    elif model == "tessera":
-        mlp = [128, 64, 32, config.num_class]
-    elif model == "malice":
-        mlp = [640, 320, 64, config.num_class]
-
     # Model
     config.path_save_excel = f"{log_fold}/metrics.xlsx"
-    decoder = MLP_Decoder(mlp=mlp, dropout=0.1)
+    decoder = build_decoder(model, config.decoder_type, config.num_class, dropout=0.1)
     classifier = decode_lightning_module.DecodeEmbedding(decoder=decoder, args=config)
 
-    limit_batch = 2  # if torch.cuda.is_available() else 4
+    limit_batch = 1.0  # if torch.cuda.is_available() else 4
 
     # training
     trainer = Trainer(
@@ -123,7 +82,9 @@ def main(config):
     trainer.fit(classifier, datamodule=datamodule)
 
     # Remove dropout
-    classifier.decoder = MLP_Decoder(mlp=mlp)
+    classifier.decoder = build_decoder(
+        model, config.decoder_type, config.num_class, dropout=0
+    )
     trainer.test(classifier, datamodule=datamodule, ckpt_path="best")
 
 
@@ -141,10 +102,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--model", type=str, required=True, choices=["alpha-earth", "tessera", "malice"]
     )
-
     parser.add_argument(
-        "--time_feature", action=BooleanOptionalAction, default=False
-    )  # Should be True for MALICE
+        "--decoder_type", type=str, required=True, choices=["mlp", "cnn"]
+    )
 
     # Path arguments
     parser.add_argument(

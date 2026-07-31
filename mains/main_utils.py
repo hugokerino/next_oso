@@ -1,5 +1,6 @@
 import yaml
 import torch
+import torch.nn as nn
 import numpy as np
 from src import LTAE, UTAE, utils_model, metrics
 from Alise import ALISE, sse, transformer, temporal_proj, master_query_decoding
@@ -100,3 +101,120 @@ def get_precision():
     if torch.cuda.is_bf16_supported():
         return "bf16-mixed"  # A100, RTX 3090+
     return "16-mixed"
+
+
+class MLP_Decoder(nn.Module):
+    """
+    MLP de profondeur variable.
+    Exemple :
+        mlp=[64, 32, 25]       -> 64 -> 32 -> 25
+        mlp=[64, 64, 32, 25]   -> 64 -> 64 -> 32 -> 25
+        mlp=[64, 128, 64, 32, 25] -> 64 -> 128 -> 64 -> 32 -> 25
+    """
+
+    def __init__(self, mlp=[64, 32, 25], dropout=None):
+        super().__init__()
+
+        layers = []
+
+        for i in range(len(mlp) - 1):
+            layers.append(nn.Linear(mlp[i], mlp[i + 1]))
+
+            # Pas de ReLU après la dernière couche
+            if i < len(mlp) - 2:
+                layers.append(nn.ReLU())
+
+        self.layer = nn.Sequential(*layers)
+        self.dropout = nn.Dropout(dropout) if dropout is not None else None
+
+    def forward(self, x):
+        x = self.layer(x)
+        if self.dropout is not None:
+            x = self.dropout(x)
+
+        return x
+
+
+class CNN_Decoder(nn.Module):
+    """
+    CNN de profondeur variable.
+
+    Exemple :
+        cnn=[64, 32, 25]
+            -> Conv(64→32) -> ReLU
+            -> Conv(32→25)
+
+        cnn=[64, 64, 32, 25]
+            -> Conv(64→64) -> ReLU
+            -> Conv(64→32) -> ReLU
+            -> Conv(32→25)
+
+    Toutes les convolutions conservent la résolution spatiale.
+    """
+
+    def __init__(
+        self,
+        cnn=[64, 32, 25],
+        kernel_size=3,
+        dropout=None,
+        bias=True,
+    ):
+        super().__init__()
+
+        padding = kernel_size // 2
+
+        layers = []
+
+        for i in range(len(cnn) - 1):
+            layers.append(
+                nn.Conv2d(
+                    in_channels=cnn[i],
+                    out_channels=cnn[i + 1],
+                    kernel_size=kernel_size,
+                    padding=padding,
+                    bias=bias,
+                )
+            )
+
+            # Pas d'activation sur la dernière couche
+            if i < len(cnn) - 2:
+                layers.append(nn.ReLU(inplace=True))
+
+        self.layer = nn.Sequential(*layers)
+
+        self.dropout = nn.Dropout2d(dropout) if dropout is not None else None
+
+    def forward(self, x):
+        x = self.layer(x)
+
+        if self.dropout is not None:
+            x = self.dropout(x)
+
+        return x
+
+
+def build_decoder(model, decoder_type, num_class, dropout):
+    ENCODER_DIM = {
+        "alpha-earth": 64,
+        "tessera": 128,
+        "malice": 640,
+    }
+
+    in_channels = ENCODER_DIM[model]
+
+    if decoder_type == "mlp":
+        layers = [in_channels, 64, 32, num_class]
+        return MLP_Decoder(
+            mlp=layers,
+            dropout=dropout,
+        )
+
+    elif decoder_type == "cnn":
+        layers = [in_channels, 128, 64, num_class]
+        return CNN_Decoder(
+            cnn=layers,
+            dropout=dropout,
+        )
+
+    else:
+        raise ValueError(f"Unknown decoder {decoder_type}")

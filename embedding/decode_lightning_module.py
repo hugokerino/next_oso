@@ -17,13 +17,13 @@ import pandas
 import json
 
 from src import metrics
+from mains.main_utils import MLP_Decoder, CNN_Decoder
 
 
 class DecodeEmbedding(L.LightningModule):
     def __init__(self, decoder: nn.Module, args):
         super().__init__()
         self.decoder: nn.Module = decoder
-        self.time_feature: bool = args.time_feature
         self.num_class: int = args.num_class
         self.lr: float = args.lr
         self.max_epochs: int = args.max_epochs
@@ -56,22 +56,31 @@ class DecodeEmbedding(L.LightningModule):
 
     def forward(self, x):
         b_s = x.shape[0]
-        if self.time_feature:
-            h_s, w_s = x.shape[3], x.shape[4]
-            x_ = rearrange(x, "b t c h w -> (b h w) (t c)")
-        else:
-            h_s, w_s = x.shape[2], x.shape[3]
-            x_ = rearrange(x, "b c h w -> (b h w) c ")
 
-        out = self.decoder(x_)
+        if isinstance(self.decoder, MLP_Decoder):
+            if x.shape == 5:  # time dimension
+                h_s, w_s = x.shape[3], x.shape[4]
+                x_ = rearrange(x, "b t c h w -> (b h w) (t c)")
+            else:
+                h_s, w_s = x.shape[2], x.shape[3]
+                x_ = rearrange(x, "b c h w -> (b h w) c")
 
-        logits = rearrange(
-            out,
-            "(b h w) c  -> b c h w",
-            b=b_s,
-            h=h_s,
-            w=w_s,
-        )
+            out = self.decoder(x_)
+
+            logits = rearrange(
+                out,
+                "(b h w) c -> b c h w",
+                b=b_s,
+                h=h_s,
+                w=w_s,
+            )
+
+        elif isinstance(self.decoder, CNN_Decoder):
+            if x.shape == 5:  # time dimension
+                x = rearrange(x, "b t c h w -> b (t c) h w")
+
+            logits = self.decoder(x)
+
         return logits
 
     def _shared_step(self, batch, step_name, log_on_step, log_on_epoch):
