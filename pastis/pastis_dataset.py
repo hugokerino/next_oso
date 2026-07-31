@@ -18,7 +18,7 @@ import torch.utils.data as tdata
 class PASTIS_Dataset(tdata.Dataset):
     def __init__(
         self,
-        folder,
+        folder="/home/hkerino/Documents/PASTIS",
         norm=True,
         folds=None,
         reference_date="2018-09-01",

@@ -32,7 +32,7 @@ class DecodeEmbedding(L.LightningModule):
 
         self.loss_fn = (
             torch.nn.CrossEntropyLoss(ignore_index=0)
-            if args.label_type == "max_class"
+            if args.label_type == "max_class" or args.label_type is None
             else torch.nn.CrossEntropyLoss()
         )
         self.acc_metric = MulticlassAccuracy(
