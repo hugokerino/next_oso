@@ -58,7 +58,7 @@ class DecodeEmbedding(L.LightningModule):
         b_s = x.shape[0]
 
         if isinstance(self.decoder, MLP_Decoder):
-            if x.shape == 5:  # time dimension
+            if x.ndim == 5:  # time dimension
                 h_s, w_s = x.shape[3], x.shape[4]
                 x_ = rearrange(x, "b t c h w -> (b h w) (t c)")
             else:
@@ -76,7 +76,7 @@ class DecodeEmbedding(L.LightningModule):
             )
 
         elif isinstance(self.decoder, CNN_Decoder):
-            if x.shape == 5:  # time dimension
+            if x.ndim == 5:  # time dimension
                 x = rearrange(x, "b t c h w -> b (t c) h w")
 
             logits = self.decoder(x)
