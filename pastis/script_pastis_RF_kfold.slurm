@@ -39,7 +39,7 @@ exec 1>"${OUT_FILE}" 2>"${ERR_FILE}"
 pixi run python pastis/main_pastis_RF_kfold.py \
     --path_pastis /work/THEIA/CES/oso/hugok/pastis \
     --path_logs /pastis/logs/RF \
-    --config_folds configs/fold.yaml
+    --config_folds configs/fold.yaml \
     --fold_index ${FOLD} \
     --tile ${TILE}
 

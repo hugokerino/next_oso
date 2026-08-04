@@ -20,8 +20,12 @@ def main(config):
     grid = pd.date_range(start=T0, end=T_fin, freq="10D")
 
     with open(config.config_folds, "r") as f:
-        folds = yaml.safe_load(f)
-    selected_fold = folds[config.fold_index]
+        folds_data = yaml.safe_load(f)
+
+    if "folds" not in folds_data:
+        raise ValueError("config_folds must contain a top-level 'folds' key")
+
+    selected_fold = folds_data["folds"][config.fold_index]
 
     # Datasets
     print("\nLOADING DATA ...")
