@@ -19,6 +19,7 @@ from torchmetrics.classification import (
 from einops import rearrange, repeat
 
 from src import metrics
+from src.utils_model import MLP_Decoder, CNN_Decoder
 
 
 class classifier(L.LightningModule):
@@ -71,8 +72,10 @@ class classifier(L.LightningModule):
         self.path_save_excel = path_save_excel
 
     def _forward(self, batch):
-        inputs, y = batch
+        ### Unpack the batch ###
+        inputs, _ = batch
         x, dates = inputs[0], inputs[1]
+        batch_size = x.shape[0]
 
         # Dynamically handle optional mask and geo
         kwargs = {}
@@ -85,14 +88,10 @@ class classifier(L.LightningModule):
         if len(inputs) >= 4:
             geo = inputs[3]
 
-        # if geo is not None:
-        #     geo = repeat(geo, "B C H W -> B C D H W", D=x.shape[2])
-        #     x = torch.concat([x, geo], dim=1)
-
+        ### Encoding ###
         z = self.encoder(
             x, batch_positions=dates, **kwargs
         )  # (bhw x d) or (bhw x t x d)
-        # print("Encoder output shape:", z.shape)
 
         if geo is not None:
             geo = rearrange(geo, "b c h w -> (b h w) c")  # bhw x 4
@@ -101,19 +100,38 @@ class classifier(L.LightningModule):
             elif z.ndim == 3:  # (bhw x t x d)
                 geo = repeat(geo, "bhw c -> bhw t c", t=z.shape[1])  # bhw x t x 4
                 z = torch.cat([z, geo], dim=2)  # bhw x t x (d+4)
-            # print("After adding geo, encoder output shape:", z.shape)
 
-        y_logits = self.decoder(z)
-        y_logits = (
-            y_logits.view(x.shape[0], self.H, self.W, self.num_class)
-            .permute(0, 3, 1, 2)
-            .contiguous()
-        )
-        return y_logits, y
+        ### Decoding ###
+        if isinstance(self.decoder, MLP_Decoder):
+            if z.ndim == 3:  # time dimension
+                z = rearrange(z, "bhw t c -> bhw (t c)")  # bhw x (t c)
+
+            out = self.decoder(z)
+            logits = rearrange(
+                out,
+                "(b h w) c -> b c h w",
+                b=batch_size,
+                h=self.H,
+                w=self.W,
+            )
+
+        elif isinstance(self.decoder, CNN_Decoder):
+            if z.ndim == 3:  # time dimension
+                z = rearrange(
+                    z, "(b h w) t c -> b (t c) h w", b=batch_size, h=self.H, w=self.W
+                )  # b (t c) h w
+            else:
+                z = rearrange(
+                    z, "(b h w) c -> b c h w", b=batch_size, h=self.H, w=self.W
+                )  # b c h w
+
+            logits = self.decoder(z)
+
+        return logits
 
     def _shared_step(self, batch, step_name, log_on_step, log_on_epoch):
-        y_logits, y = self._forward(batch)
-
+        y_logits = self._forward(batch)
+        _, y = batch
         loss = self.loss_fn(y_logits, y)
 
         y_pred = torch.softmax(y_logits, dim=1).argmax(dim=1)
@@ -147,9 +165,9 @@ class classifier(L.LightningModule):
         self._shared_step(batch, step_name="val", log_on_step=False, log_on_epoch=True)
 
     def test_step(self, batch):
-        y_logits, y = self._forward(batch)
+        y_logits = self._forward(batch)
         self.y_pred_test.append(torch.softmax(y_logits, dim=1).argmax(dim=1))
-
+        _, y = batch
         if y.ndim == 4:  # means that we are using probability label
             y = y.argmax(dim=1)
         self.y_true_test.append(y)
@@ -197,7 +215,7 @@ class classifier(L.LightningModule):
             )
 
     def predict_step(self, batch):
-        y_logits, _ = self._forward(batch)
+        y_logits = self._forward(batch)
         probas = torch.softmax(y_logits, dim=1)
         return probas
 

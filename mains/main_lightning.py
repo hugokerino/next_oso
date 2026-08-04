@@ -33,7 +33,6 @@ torch.backends.cuda.enable_mem_efficient_sdp(
 
 
 def main(config):
-
     date = datetime.now().date().strftime("%Y-%m-%d")
 
     ########################################
@@ -84,7 +83,9 @@ def main(config):
     print("\nTRAINING ...")
     sys.stdout.flush()
 
-    base_log_dir = os.path.join(config["path_logs"], f"{config['model']}_{date}")
+    base_log_dir = os.path.join(
+        config["path_logs"], f"{config['model']}_{config['decoder_type']}_{date}"
+    )
     log_dir = base_log_dir
     counter = 1
     while os.path.exists(log_dir):

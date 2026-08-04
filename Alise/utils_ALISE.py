@@ -66,24 +66,3 @@ class MLP_on_time_features(nn.Module):
         x = rearrange(x, "B T C -> B (T C)")
 
         return self.dropout(self.mlp(x))
-
-
-class MLP_Simple_Decoder(nn.Module):
-    """
-    MLP with one hidden layer
-    """
-
-    def __init__(self, mlp=[640, 64, 19], dropout=None):
-        super().__init__()
-        self.layer = nn.Sequential(
-            nn.Linear(mlp[0], mlp[1]),
-            nn.ReLU(),
-            nn.Linear(mlp[1], mlp[2]),
-        )
-        self.dropout = nn.Dropout(dropout) if dropout is not None else None
-
-    def forward(self, x):
-        x = rearrange(x, "B T C -> B (T C)")
-        return (
-            self.dropout(self.layer(x)) if self.dropout is not None else self.layer(x)
-        )

@@ -17,7 +17,7 @@ import pandas
 import json
 
 from src import metrics
-from mains.main_utils import MLP_Decoder, CNN_Decoder
+from src.utils_model import MLP_Decoder, CNN_Decoder
 
 
 class DecodeEmbedding(L.LightningModule):

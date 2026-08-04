@@ -24,7 +24,7 @@ def main(config):
     model = args.model
     path_logs = os.path.join(config.path_logs, model)
     date = datetime.now().date().strftime("%Y-%m-%d")
-    base_log_dir = os.path.join(path_logs, f"{date}_kfold")
+    base_log_dir = os.path.join(path_logs, f"{config.decoder_type}_{date}_kfold")
     os.makedirs(base_log_dir, exist_ok=True)
 
     log_fold = os.path.join(base_log_dir, f"fold_{args.fold_index + 1}")

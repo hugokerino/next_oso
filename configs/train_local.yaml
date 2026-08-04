@@ -15,9 +15,10 @@ folds_test: [5]
 sequence_packing: false
 
 # Training
+decoder_type: cnn #choose among "mlp" or "cnn"
 criterion : cross_entropy
 optimizer_scheduler : reduce_on_plateau
-epochs_max: 100
+epochs_max: 2
 batch_size: 1
 test_model: true
 accelerator: auto

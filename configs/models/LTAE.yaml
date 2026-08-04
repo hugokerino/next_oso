@@ -11,5 +11,5 @@ encoder:
   positional_encoding: true
 
 decoder:
-  mlp: [128, 64, 25]
+  layers: [128, 64, 25]
   dropout: 0.2

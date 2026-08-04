@@ -5,21 +5,7 @@ from einops import rearrange
 import yaml
 
 from src import lightning_module, LTAE, UTAE, utils_model
-from Alise import ALISE, sse, transformer, temporal_proj, utils_ALISE
-
-
-class DummyEncoder(torch.nn.Module):
-    def forward(self, x, batch_positions):
-        x = rearrange(x, "b c t h w -> (b h w) (t c)")  # Flatten time and channels
-        return x
-
-
-class DummyDecoder(torch.nn.Module):
-    def forward(self, x):
-        x = torch.nn.Linear(x.shape[1], 25)(
-            x
-        )  # Dummy linear layer to produce logits for 25 classes
-        return x
+from Alise import ALISE, sse, transformer, temporal_proj
 
 
 def run_lightning_steps(model, batch):
@@ -35,7 +21,6 @@ def run_lightning_steps(model, batch):
 
 @pytest.fixture
 def dummy_batch():
-
     batch_size, T, C, H, W = 2, 15, 10, 64, 64
 
     s2 = torch.randn(batch_size, C, T, H, W)
@@ -45,18 +30,20 @@ def dummy_batch():
     return s2, dates, labels
 
 
-def get_models(ltae_config, utae_config, alise_config):
+def get_models(ltae_config, utae_config, alise_config, decoder_type="cnn"):
+    decoder = (
+        utils_model.MLP_Decoder if decoder_type == "mlp" else utils_model.CNN_Decoder
+    )
     return [
-        ("dummy", DummyEncoder(), DummyDecoder()),
         (
             "LTAE",
             LTAE.LTAE2d(**ltae_config["encoder"]),
-            utils_model.MLPDecoder(**ltae_config["decoder"]),
+            decoder(**ltae_config["decoder"]),
         ),
         (
             "UTAE",
             UTAE.UTAE(**utae_config["encoder"]),
-            utils_model.MLPDecoder(**utae_config["decoder"]),
+            decoder(**utae_config["decoder"]),
         ),
         (
             "ALISE",
@@ -78,7 +65,7 @@ def get_models(ltae_config, utae_config, alise_config):
                     **alise_config["encoder"]["temporal_projector"],
                 ),
             ),
-            utils_ALISE.MLP_Simple_Decoder(**alise_config["decoder"]),
+            decoder(**alise_config["decoder"]),
         ),
     ]
 
@@ -94,14 +81,26 @@ alise_config = yaml.safe_load(
 )
 
 
+def get_model_parameters(ltae_config, utae_config, alise_config):
+    params = []
+    for decoder_type in ("mlp", "cnn"):
+        for name, encoder, decoder in get_models(
+            ltae_config, utae_config, alise_config, decoder_type=decoder_type
+        ):
+            params.append(
+                pytest.param(name, encoder, decoder, id=f"{name}-{decoder_type}")
+            )
+    return params
+
+
 @pytest.mark.parametrize(
     "name, encoder, decoder",
-    get_models(ltae_config, utae_config, alise_config),
-    ids=lambda x: x if isinstance(x, str) else None,
+    get_model_parameters(ltae_config, utae_config, alise_config),
 )
 def test_default_lightning_module(name, encoder, decoder, dummy_batch):
     """
-    Test default behaviour, train step, val step, test step for all integrated models (LTAE, UTAE, ALISE) + dummy one to debug if error
+    Test default behaviour, train step, val step, test step for all integrated models
+    with both MLP and CNN decoders.
     """
     s2, dates, target_tensor = dummy_batch
     batch_size = s2.shape[0]
@@ -117,28 +116,27 @@ def test_default_lightning_module(name, encoder, decoder, dummy_batch):
         W=W,
     )
 
-    # Default config => input_tensor = s2,dates, label_type = max_class
-    input_tensor = (s2, dates)  # Tuple of inputs
+    # Default config => input_tensor = s2, dates, label_type = max_class
+    input_tensor = (s2, dates)
     run_lightning_steps(model=model, batch=(input_tensor, target_tensor))
 
     # Simulating label_type = probas
     num_class = 25
-    target_tensor = torch.rand((batch_size, num_class, H, W))  # (B, num_class, H, W)
+    target_tensor = torch.rand((batch_size, num_class, H, W))
     run_lightning_steps(model=model, batch=(input_tensor, target_tensor))
 
 
 # Change config to adapt to mnt
-ltae_config["decoder"]["mlp"][0] += 4
-utae_config["decoder"]["mlp"][0] += 4
-alise_config["decoder"]["mlp"][0] += (
+ltae_config["decoder"]["layers"][0] += 4
+utae_config["decoder"]["layers"][0] += 4
+alise_config["decoder"]["layers"][0] += (
     4 * alise_config["encoder"]["temporal_projector"]["n_q"]
 )
 
 
 @pytest.mark.parametrize(
     "name, encoder, decoder",
-    get_models(ltae_config, utae_config, alise_config),
-    ids=lambda x: x if isinstance(x, str) else None,
+    get_model_parameters(ltae_config, utae_config, alise_config),
 )
 def test_lightning_module_mnt(name, encoder, decoder, dummy_batch):
     """

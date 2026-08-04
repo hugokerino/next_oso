@@ -20,5 +20,5 @@ encoder:
   padding_mode: reflect
 
 decoder:
-  mlp: [32, 25]
+  layers: [32, 25]
   dropout: 0.2

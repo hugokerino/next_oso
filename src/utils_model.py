@@ -33,29 +33,82 @@ class PositionalEncoder(nn.Module):
 
 
 # Classic MLP Network
-class MLPDecoder(nn.Module):
+class MLP_Decoder(nn.Module):
     """
     a simple MLP
     """
 
-    def __init__(self, mlp=[128, 64, 19], dropout=0.2):
+    def __init__(self, layers=[128, 64, 19], dropout=0.2):
         super().__init__()
-        self.n_neurons = copy.deepcopy(mlp)
+        self.n_neurons = copy.deepcopy(layers)
         layers = []
         for i in range(len(self.n_neurons) - 1):
             layers.append(nn.Linear(self.n_neurons[i], self.n_neurons[i + 1]))
             if i < len(self.n_neurons) - 2:
-                layers.extend(
-                    [
-                        # nn.BatchNorm1d(self.n_neurons[i + 1]),
-                        nn.ReLU(),
-                    ]
-                )
+                layers.extend([nn.ReLU()])
         self.mlp = nn.Sequential(*layers)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
         return self.dropout(self.mlp(x))
+
+
+class CNN_Decoder(nn.Module):
+    """
+    CNN de profondeur variable.
+
+    Exemple :
+        cnn=[64, 32, 25]
+            -> Conv(64→32) -> ReLU
+            -> Conv(32→25)
+
+        cnn=[64, 64, 32, 25]
+            -> Conv(64→64) -> ReLU
+            -> Conv(64→32) -> ReLU
+            -> Conv(32→25)
+
+    Toutes les convolutions conservent la résolution spatiale.
+    """
+
+    def __init__(
+        self,
+        layers=[64, 32, 25],
+        kernel_size=3,
+        dropout=None,
+        bias=True,
+    ):
+        super().__init__()
+
+        padding = kernel_size // 2
+        self.n_neurons = copy.deepcopy(layers)
+
+        layers = []
+        for i in range(len(self.n_neurons) - 1):
+            layers.append(
+                nn.Conv2d(
+                    in_channels=self.n_neurons[i],
+                    out_channels=self.n_neurons[i + 1],
+                    kernel_size=kernel_size,
+                    padding=padding,
+                    bias=bias,
+                )
+            )
+
+            # Pas d'activation sur la dernière couche
+            if i < len(self.n_neurons) - 2:
+                layers.append(nn.ReLU(inplace=True))
+
+        self.layer = nn.Sequential(*layers)
+
+        self.dropout = nn.Dropout2d(dropout) if dropout is not None else None
+
+    def forward(self, x):
+        x = self.layer(x)
+
+        if self.dropout is not None:
+            x = self.dropout(x)
+
+        return x
 
 
 # Function use to duplicate batch to image dimension
@@ -88,7 +141,7 @@ class Temp_Proj_and_MLPDecoder(nn.Module):
         self.temporal_proj = temporal_proj.LearnedQMultiHeadAttention(
             n_head=n_head, d_k=d_k, d_in=d_in, n_q=n_q
         )
-        self.mlp_decoder = MLPDecoder(mlp=mlp, dropout=dropout)
+        self.mlp_decoder = MLP_Decoder(mlp=mlp, dropout=dropout)
 
     def forward(self, x, pad_mask=None):
         x = self.temporal_proj(x, pad_mask=pad_mask)
