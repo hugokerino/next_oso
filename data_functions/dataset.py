@@ -67,6 +67,8 @@ class next_oso_Dataset(tdata.Dataset):
     def _collect_files(self) -> None:
         if self.label_type == "v2":
             self.path_label = f"{self.path_label}_v2"
+        if self.label_type == "v3":
+            self.path_label = f"{self.path_label}_v3"
 
         for zone in range(1, 10):
             zone_dir = os.path.join(self.path_s2, str(zone))
@@ -90,7 +92,7 @@ class next_oso_Dataset(tdata.Dataset):
                             self.label_files[file_id] = path_label_file
                         else:
                             raise FileNotFoundError(
-                                f"Avertissement : Le fichier label {path_s2_file} est introuvable."
+                                f"Avertissement : Le fichier label {path_label_file} est introuvable."
                             )
                     else:
                         raise FileNotFoundError(
@@ -209,7 +211,7 @@ class next_oso_Dataset(tdata.Dataset):
                 date = s2_data["time"].data
 
         with xr.open_dataset(to_open_label) as label_data:
-            if self.label_type == "max_class":
+            if self.label_type == "max_class" or self.label_type == "v3":
                 label_numpy = label_data["max_class_1"].data  # NumPy
                 label_numpy = np.where(
                     label_numpy == -1, 0, label_numpy

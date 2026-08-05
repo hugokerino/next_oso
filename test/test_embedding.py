@@ -80,7 +80,7 @@ def test_embedding():
 
 def test_embedding_pastis():
     args = Args(num_class=19, label_type=None, path_save_excel=None)
-    model = "alpha-eath"  # alpha-eath, tessera, malice
+    model = "alpha-earth"  # alpha-eath, tessera, malice
     datamodule = dataset_embedding.embedding_datamodule(
         data="pastis",
         model=model,

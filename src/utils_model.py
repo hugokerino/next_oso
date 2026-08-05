@@ -32,25 +32,27 @@ class PositionalEncoder(nn.Module):
         return sinusoid_table
 
 
-# Classic MLP Network
 class MLP_Decoder(nn.Module):
     """
-    a simple MLP
+    A simple MLP.
     """
 
     def __init__(self, layers=[128, 64, 19], dropout=0.2):
         super().__init__()
+
         self.n_neurons = copy.deepcopy(layers)
-        layers = []
+        modules = []
+
         for i in range(len(self.n_neurons) - 1):
-            layers.append(nn.Linear(self.n_neurons[i], self.n_neurons[i + 1]))
+            modules.append(nn.Linear(self.n_neurons[i], self.n_neurons[i + 1]))
             if i < len(self.n_neurons) - 2:
-                layers.extend([nn.ReLU()])
-        self.mlp = nn.Sequential(*layers)
+                modules.append(nn.ReLU())
+
+        self.layer = nn.Sequential(*modules)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
-        return self.dropout(self.mlp(x))
+        return self.dropout(self.layer(x))
 
 
 class CNN_Decoder(nn.Module):

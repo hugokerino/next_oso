@@ -130,7 +130,6 @@ def create_RF_dataset_PASTIS(
     label_list = []
 
     for i in range(len(ids)):
-        print("Processing patch: ", i + 1, "/", len(ids))
         id_patch = ids[i]
 
         ## S2 ##

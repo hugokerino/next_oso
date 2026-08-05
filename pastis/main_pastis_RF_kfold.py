@@ -30,14 +30,14 @@ def main(config):
     # Datasets
     print("\nLOADING DATA ...")
     sys.stdout.flush()
-    (X_train, Y_train) = create_RF_dataset_PASTIS(
+    (X_train, Y_train, _) = create_RF_dataset_PASTIS(
         path_folder=config.path_pastis,
         folders=selected_fold[0],
         tile=config.tile,
         grid_time=grid,
     )
 
-    (X_test, Y_test) = create_RF_dataset_PASTIS(
+    (X_test, Y_test, ids_test) = create_RF_dataset_PASTIS(
         path_folder=config.path_pastis,
         folders=selected_fold[2],
         tile=config.tile,
