@@ -36,6 +36,7 @@ def main(config, log_dir):
     print("\nLOADING DATA ...")
     sys.stdout.flush()
 
+    # Need all S2 data
     _, _, dl_test = dataset.get_loaders(
         path_s2=config["path_s2"],
         path_mnt=config["path_mnt"],
