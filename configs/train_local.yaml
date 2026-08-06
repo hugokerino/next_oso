@@ -7,7 +7,7 @@ path_mnt : null #/home/hkerino/Documents/nextoso-dataset/data/10m/mnt #if passed
 
 # Data
 num_worker: 21
-label_type: v2
+label_type: v3
 num_class: 25
 folds_train: [1]
 folds_val: [4]
