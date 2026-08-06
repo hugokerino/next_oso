@@ -16,7 +16,7 @@ __pycache__/
 dist/
 build/
 
-#Logs folder 
+#Logs folder
 logs/
 pastis/logs/
 script_logs/
@@ -25,3 +25,4 @@ lightning_logs/
 
 #Notebook use for quick test
 test.ipynb
+analyse_results/*.ipynb
