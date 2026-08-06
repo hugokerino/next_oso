@@ -296,6 +296,11 @@ names_class = (
 )  # Doit contenir 25 entrées (0 à 24)
 num_class = len(names_class)
 
+names_class_english = pandas.read_csv(
+    "/home/hkerino/Documents/nextoso-dataset/data/auxiliary/OSO/oso_classes_english.csv",
+    dtype=str,
+)
+
 # Colormap personnalisée (25 couleurs, dont gris pour 'nan')
 # Définition des couleurs personnalisées (RVB 0-255)
 OSO_COLORS = {
@@ -354,10 +359,61 @@ def count_label(dataset, normalized=False, plot=True):
     if plot:
         fig, ax = plt.subplots(figsize=(12, 6))
         ax.set_title("Labels repartition")
-        bars = ax.bar(range(classes.shape[0]), classes)
+
+        # Determine bar colors from cmap (fall back to sampling if needed)
+        try:
+            n = classes.shape[0]
+        except Exception:
+            n = 25
+
+        if hasattr(cmap, "colors") and len(cmap.colors) >= n:
+            bar_colors = list(cmap.colors)[:n]
+        else:
+            bar_colors = [cmap(i / (n - 1)) for i in range(n)]
+
+        bars = ax.bar(range(classes.shape[0]), classes, color=bar_colors)
+
+        def clean_english_label(label):
+            s = str(label).strip().strip('"')
+            if "," in s:
+                s = s.split(",", 1)[1].strip()
+            if "." in s:
+                s = s.split(".", 1)[1].strip()
+            s = s.replace(" ", "_")
+            if "_" in s:
+                first, rest = s.split("_", 1)
+                if first.isdigit() and rest and rest[0].isdigit():
+                    rest = rest.lstrip("0123456789").lstrip("_")
+                    s = f"{first}_{rest}"
+            return s
+
+        try:
+            if isinstance(names_class_english, pandas.DataFrame):
+                if names_class_english.shape[1] == 1:
+                    raw_labels = names_class_english.iloc[:, 0].astype(str).tolist()
+                elif "name_class" in names_class_english.columns:
+                    raw_labels = names_class_english["name_class"].astype(str).tolist()
+                else:
+                    raw_labels = names_class_english.iloc[:, 0].astype(str).tolist()
+            elif isinstance(names_class_english, pandas.Series):
+                raw_labels = names_class_english.astype(str).tolist()
+            else:
+                raw_labels = list(names_class_english)
+
+            english_labels = [clean_english_label(v) for v in raw_labels]
+        except Exception:
+            english_labels = None
+
+        if english_labels is None or len(english_labels) != classes.shape[0]:
+            tick_labels = getattr(
+                dataset, "name_labels", [str(i) for i in range(classes.shape[0])]
+            )
+        else:
+            tick_labels = english_labels
+
         ax.set_xticks(range(len(classes)))
         ax.set_xticklabels(
-            dataset.name_labels,
+            tick_labels,
             rotation=45,
             ha="right",
             rotation_mode="anchor",
