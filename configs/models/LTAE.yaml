@@ -1,0 +1,15 @@
+model: LTAE
+mask_need: true
+
+encoder:
+  input_dim: 10
+  n_head: 16
+  d_k: 8
+  d_model: 128
+  T: 1000
+  return_att: false
+  positional_encoding: true
+
+decoder:
+  layers: [128, 64, 25]
+  dropout: 0.2

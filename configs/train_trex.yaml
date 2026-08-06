@@ -1,0 +1,30 @@
+# Paths
+path_s2: /work/THEIA/CES/oso/hugok/s2_data
+path_label: /work/THEIA/CES/oso/hugok/labels
+path_oso_classes: /work/THEIA/CES/oso/hugok/files_s2/oso_classes.csv
+path_logs: /work/THEIA/CES/oso/hugok/next_oso/logs/light_training
+path_mnt: null #/work/THEIA/CES/oso/hugok/mnt_data #if passed = used. Pass null to don't use spatial coords in training
+
+# Data
+num_worker: 4
+label_type: v3
+num_class: 25
+folds_train: [1, 2, 3]
+folds_val: [4]
+folds_test: [5]
+sequence_packing: false
+
+# Training
+decoder_type: mlp #choose among "mlp" or "cnn"
+criterion : cross_entropy
+optimizer_scheduler : reduce_on_plateau
+epochs_max: 300
+batch_size: 1 # or None (then choose automatically with respect to the model used)
+test_model: false
+accelerator:  "gpu"
+devices: 1
+nodes: 1
+strategy: "auto" #choose among "auto" 'ddp', 'ddp_unused_parameters', 'ddp_find_unused_parameters_true' #UTAE n'est pas compatible avec DDP
+running_on_trex_gpu: true
+learning_rate: 0.0001
+logs : True

@@ -1,0 +1,32 @@
+model: ALISE
+mask_need: false
+
+encoder:
+  embedding_dim: 64
+  sse:
+    inplanes: 10
+    encoder_widths: [64, 64, 64, 128]
+    decoder_widths: [32, 32, 64, 128]
+    encoder_norm: group
+    padding_mode: reflect
+    decoding_norm: group
+    return_maps: false
+    str_conv_k: 4
+    str_conv_s: 2
+    str_conv_p: 1
+    skip_conv_norm: group
+  transformer:
+    d_model: 64
+    nhead: 4
+    dim_feedforward: 128
+    dropout: 0.2
+    batch_first: true
+    num_layers: 2
+  temporal_projector:
+    n_head: 4
+    d_k: 32
+    n_q: 10
+
+decoder:
+  mlp: [640, 64, 19]
+  dropout: 0.1

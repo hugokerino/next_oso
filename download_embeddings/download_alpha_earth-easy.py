@@ -1,0 +1,96 @@
+import os
+import numpy as np
+import geopandas as gpd
+import ee
+from argparse import ArgumentParser
+
+
+def main(args):
+    # bounding box of next oso dataset
+    aois = gpd.read_file(args.aois_path)
+
+    # Initialize earthengine session and retrieve alpha-earth_embeddings
+    ee.Initialize(project=args.earth_engine_project)
+
+    # Collect embedding year
+    pastis_dates = ["2018-09-01", "2019-11-01"]
+    embedding_collection = ee.ImageCollection(
+        "GOOGLE/SATELLITE_EMBEDDING/V1/ANNUAL"
+    ).filterDate(pastis_dates[0], pastis_dates[1])
+
+    bbox_done = os.listdir(args.save_npy_path)
+
+    # Download embeddings per polygon
+    for index, row in aois.iterrows():
+        id, polygon = row["ID_PATCH"], row["geometry"]
+
+        if f"alpha-earth_{f'{id:04d}'}.npy" not in bbox_done:
+            bbox_done.append(f"alpha-earth_{f'{id:04d}'}.npy")
+            aoi_ee = ee.Geometry(
+                polygon.__geo_interface__, proj="EPSG:2154", geodesic=False
+            )
+            embeddings = embedding_collection.filterBounds(aoi_ee).first().clip(aoi_ee)
+
+            # Lire toutes les bandes de A00 à A63
+            band_names = [f"A{i:02d}" for i in range(64)]
+
+            # Extraire les données pour toutes les bandes et créer un tableau NumPy
+            all_data = []
+            failed = False
+            for band_name in band_names:
+                try:
+                    band = embeddings.select(band_name)
+                    data = band.reduceRegion(
+                        reducer=ee.Reducer.toList(),
+                        geometry=aoi_ee,
+                        scale=10,
+                    ).getInfo()
+                    band_data = np.flipud(
+                        np.array(data.get(band_name)).reshape((128, 128))
+                    )
+                    all_data.append(band_data)
+                except Exception as exc:
+                    failed = True
+                    print(f"Erreur pour la bande {band_name}: {exc}")
+                    break
+
+            if failed or len(all_data) != len(band_names):
+                print(
+                    f"Skipping polygon {id:04d} because embedding download failed for one or more bands."
+                )
+                continue
+
+            try:
+                dst = np.stack(all_data, axis=0)
+                assert dst.shape == (64, 128, 128)
+                np.save(
+                    os.path.join(args.save_npy_path, f"alpha-earth_{id:04d}.npy"),
+                    dst,
+                )
+                print(
+                    f"Saved alpha-earth embedding for polygon {id:04d}\n {len(bbox_done)}/{len(aois)}"
+                )
+            except Exception as exc:
+                print(
+                    f"Erreur lors de la création ou de l'enregistrement de l'embedding pour le polygon {id:04d}: {exc}"
+                )
+
+
+if __name__ == "__main__":
+    parser = ArgumentParser()
+    parser.add_argument(
+        "--aois_path",
+        type=str,
+        default="/home/hkerino/Documents/nextoso-dataset/data/aoi/nextoso_extent.gpkg",
+    )
+    parser.add_argument(
+        "--save_npy_path",
+        type=str,
+        default="/home/hkerino/Documents/nextoso-dataset/alpha-earth_data",
+    )
+    parser.add_argument(
+        "--earth_engine_project", type=str, required=True, help="Ex:ee-hugobzhk"
+    )
+
+    args = parser.parse_args()
+    main(args)
