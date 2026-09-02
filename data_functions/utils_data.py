@@ -296,10 +296,6 @@ names_class = (
 )  # Doit contenir 25 entrées (0 à 24)
 num_class = len(names_class)
 
-names_class_english = pandas.read_csv(
-    "/home/hkerino/Documents/nextoso-dataset/data/auxiliary/OSO/oso_classes_english.csv",
-    dtype=str,
-)
 
 # Colormap personnalisée (25 couleurs, dont gris pour 'nan')
 # Définition des couleurs personnalisées (RVB 0-255)
@@ -342,7 +338,10 @@ cmap = ListedColormap(normalized_colors)
 
 def count_label(dataset, normalized=False, plot=True):
     classes = np.zeros(25)
-
+    names_class_english = pandas.read_csv(
+        "/home/hkerino/Documents/nextoso-dataset/data/auxiliary/OSO/oso_classes_english.csv",
+        dtype=str,
+    )
     for i in range(len(dataset)):
         labels = dataset[i][1].flatten().numpy()
         if np.any(labels < 0):
