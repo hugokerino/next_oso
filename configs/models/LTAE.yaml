@@ -1,5 +1,5 @@
 model: LTAE
-mask_need: true
+mask_need: false
 
 encoder:
   input_dim: 10
