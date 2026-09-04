@@ -35,7 +35,7 @@ task_id=${SLURM_ARRAY_TASK_ID:-0}
 
 
 pixi run -e gpu python mains/main_embedding_kfold.py \
-    --config "/work/THEIA/CES/oso/hugok/next_oso/configs/FM_models/train_trex_kfold" \
+    --config "/work/THEIA/CES/oso/hugok/next_oso/configs/FM_models/train_trex_kfold.yaml" \
     --fold_index $SLURM_ARRAY_TASK_ID  # Pass the fold index from the array
 
 echo "End"

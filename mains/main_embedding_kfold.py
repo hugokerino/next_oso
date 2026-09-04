@@ -55,7 +55,7 @@ def main(config):
     # Model
     config["path_save_excel"] = f"{log_fold}/metrics.xlsx"
     decoder = build_decoder(model, config["decoder_type"], config["data"], dropout=0.1)
-    classifier = decode_lightning_module.DecodeEmbedding(decoder=decoder, args=config)
+    classifier = decode_lightning_module.DecodeEmbedding(decoder=decoder, config=config)
 
     limit_batch = 1.0  # if torch.cuda.is_available() else 4
 
@@ -73,7 +73,7 @@ def main(config):
             ),
             EarlyStopping(monitor="val_fscore", mode="max", patience=20),
         ],
-        max_epochs=config.max_epochs,  # if torch.cuda.is_available() else 5,
+        max_epochs=config["max_epochs"],  # if torch.cuda.is_available() else 5,
         plugins=[SLURMEnvironment(requeue_signal=signal.SIGUSR1, auto_requeue=True)]
         if torch.cuda.is_available()
         else None,
