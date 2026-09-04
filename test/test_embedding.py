@@ -4,28 +4,7 @@ from embedding import dataset_embedding, decode_lightning_module
 from src.utils_model import MLP_Decoder, CNN_Decoder
 
 
-class Args:
-    def __init__(
-        self,
-        num_class: int = 25,
-        lr: float = 1e-3,
-        max_epochs: int = 2,
-        path_name_class: str = (
-            "/home/hkerino/Documents/nextoso-dataset/data/auxiliary/OSO/oso_classes.csv"
-        ),
-        label_type: str = "max_class",
-        path_save_excel=None,
-    ):
-        self.num_class = num_class
-        self.lr = lr
-        self.max_epochs = max_epochs
-        self.path_name_class = path_name_class
-        self.label_type = label_type
-        self.path_save_excel = path_save_excel
-
-
 def test_embedding():
-    args = Args()
     model = "malice"  # alpha-eath, tessera, malice
     datamodule = dataset_embedding.embedding_datamodule(
         data="next_oso",
@@ -52,11 +31,20 @@ def test_embedding():
     else:
         print(f"{model} not recognized")
 
+    config = {
+        "data": "next_oso",
+        "lr": 1e-3,
+        "max_epochs": 2,
+        "path_name_class": "/home/hkerino/Documents/nextoso-dataset/data/auxiliary/OSO/oso_classes.csv",
+        "label_type": "max_class",
+        "path_save_excel": None,
+    }
+
     classifier_MLP = decode_lightning_module.DecodeEmbedding(
-        decoder=MLP_Decoder(layers=layers, dropout=0.1), args=args
+        decoder=MLP_Decoder(layers=layers, dropout=0.1), config=config
     )
     classifier_CNN = decode_lightning_module.DecodeEmbedding(
-        decoder=CNN_Decoder(layers=layers, dropout=0.1), args=args
+        decoder=CNN_Decoder(layers=layers, dropout=0.1), config=config
     )
 
     # Training step
@@ -79,7 +67,15 @@ def test_embedding():
 
 
 def test_embedding_pastis():
-    args = Args(num_class=19, label_type=None, path_save_excel=None)
+    config = {
+        "data": "pastis",
+        "lr": 1e-3,
+        "max_epochs": 2,
+        "path_name_class": "/home/hkerino/Documents/PASTIS/label_names_reduced.json",
+        "label_type": None,
+        "path_save_excel": None,
+    }
+
     model = "alpha-earth"  # alpha-eath, tessera, malice
     datamodule = dataset_embedding.embedding_datamodule(
         data="pastis",
@@ -107,10 +103,10 @@ def test_embedding_pastis():
         print(f"{model} not recognized")
 
     classifier_MLP = decode_lightning_module.DecodeEmbedding(
-        decoder=MLP_Decoder(layers=layers, dropout=0.1), args=args
+        decoder=MLP_Decoder(layers=layers, dropout=0.1), config=config
     )
     classifier_CNN = decode_lightning_module.DecodeEmbedding(
-        decoder=CNN_Decoder(layers=layers, dropout=0.1), args=args
+        decoder=CNN_Decoder(layers=layers, dropout=0.1), config=config
     )
 
     train_loader = datamodule.train_dataloader()
