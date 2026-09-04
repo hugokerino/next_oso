@@ -24,7 +24,7 @@ class DecodeEmbedding(L.LightningModule):
     def __init__(self, decoder: nn.Module, config: dict):
         super().__init__()
         self.decoder: nn.Module = decoder
-        self.num_class: int = config.get("num_class")
+        self.num_class: int = 25 if config.get("data") == "next_oso" else 19
         self.lr: float = config.get("lr")
         self.max_epochs: int = config.get("max_epochs")
         self.path_name_class: str = config.get("path_name_class")
