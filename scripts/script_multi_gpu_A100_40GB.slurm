@@ -9,9 +9,9 @@
 #SBATCH -N 1
 #SBATCH --ntasks=2
 #SBATCH --cpus-per-task=16
-#SBATCH --mem-per-cpu=4000M 
+#SBATCH --mem-per-cpu=4000M
 
-#SBATCH --gpus=a100_40g:2 
+#SBATCH --gpus=a100_40g:2
 #SBATCH --partition=gpu_std
 #SBATCH --qos=gpu_all
 
@@ -40,9 +40,9 @@ export PATH=$(dirname $(which pixi)):$PATH
 echo "Launch python file"
 
 srun --export=ALL --ntasks-per-node=2 --cpus-per-task=16 pixi run -e gpu python mains/main_lightning.py \
-    --config_train configs/train_trex.yaml \
+    --config_train configs/models/train_trex.yaml \
     --config_model configs/models/UTAE.yaml
- 
+
 stop_monitoring.sh --name $MODELNAME
 
 echo "End"

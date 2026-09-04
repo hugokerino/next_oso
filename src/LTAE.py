@@ -70,7 +70,14 @@ class LTAE2d(nn.Module):
     def forward(self, x, batch_positions=None, pad_mask=None, return_comp=False):
         b, c, t, h, w = x.shape  # (b,c,t,h,w)
 
-        if pad_mask is not None:
+        if pad_mask is None:
+            pad_mask = (
+                (batch_positions == 0)
+                .unsqueeze(-1)
+                .repeat((1, 1, h))
+                .unsqueeze(-1)
+                .repeat((1, 1, 1, w))
+            )
             pad_mask = (
                 pad_mask.permute(0, 2, 3, 1).contiguous().view(b * h * w, t).bool()
             )  # (bhw)xt

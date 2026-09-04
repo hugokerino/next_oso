@@ -172,7 +172,9 @@ if __name__ == "__main__":
     print("\nPARSE ARGUMENTS ...")
     L.seed_everything(42, workers=True)
     parser = ArgumentParser()
-    parser.add_argument("--config_train", type=str, default="configs/train_local.yaml")
+    parser.add_argument(
+        "--config_train", type=str, default="configs/models/train_local.yaml"
+    )
     parser.add_argument(
         "--config_model", type=str, required=True, help="Ex: configs/models/LTAE.yaml"
     )
@@ -185,12 +187,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     config = load_config(args.config_train, args.config_model)
-
-    # Select only the specified fold
-    if args.fold_index < 0 or args.fold_index >= len(config["folds"]):
-        raise ValueError(
-            f"Invalid fold_index {args.fold_index}. Must be between 0 and {len(config['folds']) - 1}."
-        )
 
     config["selected_fold"] = config["folds"][args.fold_index]
     config["fold_index"] = args.fold_index

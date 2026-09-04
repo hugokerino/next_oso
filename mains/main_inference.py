@@ -126,7 +126,9 @@ if __name__ == "__main__":
     print("\nPARSE ARGUMENTS ...")
     L.seed_everything(42, workers=True)
     parser = ArgumentParser()
-    parser.add_argument("--config_train", type=str, default="configs/train_local.yaml")
+    parser.add_argument(
+        "--config_train", type=str, default="configs/models/train_local.yaml"
+    )
     parser.add_argument(
         "--config_model", type=str, required=True, help="Ex: configs/models/UTAE.yaml"
     )
