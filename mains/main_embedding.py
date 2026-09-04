@@ -55,9 +55,9 @@ def main(config):
     # Model
     config["path_save_excel"] = f"{log_dir}/metrics.xlsx"
     decoder = build_decoder(model, config["decoder_type"], config["data"], dropout=0.1)
-    classifier = decode_lightning_module.DecodeEmbedding(decoder=decoder, args=config)
+    classifier = decode_lightning_module.DecodeEmbedding(decoder=decoder, config=config)
 
-    limit_batch = None  # if torch.cuda.is_available() else 4
+    limit_batch = 2  # if torch.cuda.is_available() else 4
 
     # training
     trainer = Trainer(
