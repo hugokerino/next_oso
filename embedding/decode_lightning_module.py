@@ -21,18 +21,19 @@ from src.utils_model import MLP_Decoder, CNN_Decoder
 
 
 class DecodeEmbedding(L.LightningModule):
-    def __init__(self, decoder: nn.Module, args):
+    def __init__(self, decoder: nn.Module, config: dict):
         super().__init__()
         self.decoder: nn.Module = decoder
-        self.num_class: int = args.num_class
-        self.lr: float = args.lr
-        self.max_epochs: int = args.max_epochs
-        self.path_name_class: str = args.path_name_class
-        self.path_save_excel: None | str = args.path_save_excel
+        self.num_class: int = config.get("num_class")
+        self.lr: float = config.get("lr")
+        self.max_epochs: int = config.get("max_epochs")
+        self.path_name_class: str = config.get("path_name_class")
+        self.path_save_excel: None | str = config.get("path_save_excel")
 
         self.loss_fn = (
             torch.nn.CrossEntropyLoss(ignore_index=0)
-            if args.label_type == "max_class" or args.label_type is None
+            if config.get("label_type") == "max_class"
+            or config.get("label_type") is None
             else torch.nn.CrossEntropyLoss()
         )
         self.acc_metric = MulticlassAccuracy(
