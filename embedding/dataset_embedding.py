@@ -19,7 +19,7 @@ class embedding_dataset(tdata.Dataset):
         path_embeddings: str = "/home/hkerino/Documents/nextoso-dataset",
         path_labels: str = "/home/hkerino/Documents/nextoso-dataset/data/10m/labels",
         path_mapping_folder: str = "/home/hkerino/Documents/nextoso-dataset/data/10m/s2",
-        fold=None | list[int],
+        fold: None | list[int] = None,
         label_type: None | str = "max_class",
         mask: bool = "False",  # Detect invalid pixel in embedding and put those pixel at 0 for label to not take them into account in training
         preload: bool = False,
@@ -166,8 +166,19 @@ class embedding_datamodule(LightningDataModule):
         return_id: bool = False,
     ):
         super().__init__()
+        self.data = data
+        self.model = model
+        self.path_embeddings = path_embeddings
+        self.path_labels = path_labels
+        self.path_mapping_folder = path_mapping_folder
+        self.preload = preload
+        self.fold_train = fold_train
+        self.fold_val = fold_val
+        self.fold_test = fold_test
         self.batch_size = batch_size
         self.num_workers = num_workers
+        self.label_type = label_type
+        self.mask = mask
         self.return_id = return_id
 
         all_folds = fold_train + fold_val + fold_test

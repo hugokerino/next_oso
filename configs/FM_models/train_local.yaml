@@ -18,7 +18,16 @@ decoder_type : mlp
 batch_size : 1
 lr : 0.001
 max_epochs : 1
+
 # Folds
 folds_train: [1, 2, 3]
 folds_val: [4]
 folds_test: [5]
+
+# Folds
+folds :
+  - [[1,2,3], [4], [5]]
+  - [[2,3,4], [5], [1]]
+  - [[3,4,5], [1], [2]]
+  - [[4,5,1], [2], [3]]
+  - [[5,1,2], [3], [4]]
