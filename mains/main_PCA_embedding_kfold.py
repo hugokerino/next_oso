@@ -92,7 +92,12 @@ class embedding_datamodule_pca(embedding_datamodule):
 
     def create_pca(self, fold: list[int], n_component: int = 10, nb_patches: int = 10):
         pca = PCA(n_components=n_component, svd_solver="full")
-        dataset = embedding_dataset(fold=fold)
+        dataset = embedding_dataset(
+            path_embeddings=self.path_embeddings,
+            path_labels=self.path_labels,
+            path_mapping_folder=self.path_mapping_folder,
+            fold=fold,
+        )
         X = np.empty((0, 64))  # (n_samples, n_features)
         for i in range(nb_patches):
             embedding, label = dataset.__getitem__(i)
