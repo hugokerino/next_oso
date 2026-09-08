@@ -75,10 +75,12 @@ class embedding_dataset(tdata.Dataset):
             print(f"Préchargement de {len(self.embedding_files)} patches en RAM...")
             self.embeddings_cache = []
             self.labels_cache = []
+            self.dict_data = {}
             for f in tqdm(self.embedding_files):
                 emb, lbl = self._load_sample(f)
                 self.embeddings_cache.append(emb)
                 self.labels_cache.append(lbl)
+                self.dict_data[f.split("_")[1].split(".")[0]] = emb, lbl
             print("Préchargement terminé.")
 
     def _load_sample(self, filename):
@@ -141,10 +143,20 @@ class embedding_dataset(tdata.Dataset):
     def __len__(self):
         return len(self.embedding_files)
 
-    def __getitem__(self, idx):
-        if self.preload:
-            return self.embeddings_cache[idx], self.labels_cache[idx]
-        return self._load_sample(self.embedding_files[idx])
+    def __getitem__(self, idx: int | str):
+        if isinstance(idx, int):
+            filename = self.embedding_files[idx]
+            if self.preload:
+                return self.embeddings_cache[idx], self.labels_cache[idx]
+
+        if isinstance(idx, str):
+            idx = f"{int(idx):04d}"
+            extensions = self.embedding_files[0].split(".")[1]
+            filename = self.model + "_" + idx + "." + extensions
+            if self.preload:
+                return self.dict_data[idx]
+
+        return self._load_sample(filename)
 
 
 class embedding_datamodule(LightningDataModule):
