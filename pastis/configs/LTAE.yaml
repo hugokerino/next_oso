@@ -1,5 +1,5 @@
 model: LTAE
-mask_need: true
+mask_need: false
 
 encoder:
   input_dim: 10
@@ -11,5 +11,5 @@ encoder:
   positional_encoding: true
 
 decoder:
-  mlp: [128, 64, 19]
+  layers: [128, 64, 19]
   dropout: 0.2

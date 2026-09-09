@@ -20,7 +20,7 @@ sequence_packing: false
 
 
 # Training
-decoder_type: mlp #choose among "mlp" or "cnn"
+decoder_type: cnn #choose among "mlp" or "cnn"
 criterion : cross_entropy
 optimizer_scheduler : reduce_on_plateau
 epochs_max: 200

@@ -122,7 +122,7 @@ def main(config):
         optimizer_scheduler=config["optimizer_scheduler"],
         loss_fn=criterion,
         lr=config["learning_rate"],
-        num_claesse=config["num_class"],
+        num_classe=config["num_class"],
     )
 
     ########################################

@@ -1,9 +1,9 @@
 #!/bin/bash
 
-#SBATCH -J emb_kfold
+#SBATCH -J emb_pca_kfold
 #SBATCH -A theia_oso
-#SBATCH -o script_logs/out_embk%j.out
-#SBATCH -e script_logs/err_embk%j.err
+#SBATCH -o script_logs/out_pca_embk%j.out
+#SBATCH -e script_logs/err_pca_embk%j.err
 #SBATCH --export=none
 
 #SBATCH -N 1

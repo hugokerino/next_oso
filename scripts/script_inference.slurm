@@ -2,8 +2,8 @@
 
 #SBATCH -J testing
 #SBATCH -A theia_oso
-#SBATCH -o script_logs/out_testingV100%j.out
-#SBATCH -e script_logs/err_testingV100%j.err
+#SBATCH -o script_logs/out_inferenceV100%j.out
+#SBATCH -e script_logs/err_inferenceV100%j.err
 #SBATCH --export=none
 
 #SBATCH -N 1
@@ -30,7 +30,7 @@ echo "Launch python file"
 
 pixi run -e gpu python mains/main_inference.py \
     --config_train configs/models/train_trex.yaml \
-    --config_model configs/models/ALISE.yaml \
-    --path_dir_log /work/THEIA/CES/oso/hugok/next_oso/logs/light_training/ALISE_2026-07-17_kfold/fold_1/
-    --path_save_preds /work/THEIA/CES/oso/hugok/predictions/ALISE_fold_5
+    --config_model configs/models/LTAE.yaml \
+    --path_dir_log /work/THEIA/CES/oso/hugok/next_oso/logs/light_training/LTAE_mlp_2026-09-04_kfold/fold_1 \
+    --path_save_preds /work/THEIA/CES/oso/hugok/predictions/preds_folder_5
 echo "End"

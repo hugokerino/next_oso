@@ -28,5 +28,5 @@ encoder:
     n_q: 10
 
 decoder:
-  mlp: [640, 64, 19]
+  layers: [640, 64, 19]
   dropout: 0.1
