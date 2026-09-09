@@ -103,10 +103,10 @@ def main(config, log_dir, save_preds_dir):
                     continue
 
                 # build per-sample inputs (each element has batch dim)
-                sample_inputs = [t[i] for t in inputs]
+                sample_inputs = [t[i].unsqueeze(dim=0) for t in inputs]
 
                 # Forward single sample through the LightningModule
-                y_logit = best_classifier.forward(sample_inputs)
+                y_logit = best_classifier._forward((sample_inputs, _))
                 probas = torch.softmax(y_logit, dim=1)  # shape (1, C, H, W)
 
                 probs_tensor = probas.squeeze(0).cpu()
