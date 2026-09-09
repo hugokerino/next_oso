@@ -1,6 +1,8 @@
 import torch
+import torch.nn as nn
 import lightning as L
 
+import copy
 import pandas
 import os
 import sys
@@ -13,6 +15,29 @@ from mains.main_utils import load_config, build_model, select_criterion
 
 torch.serialization.add_safe_globals([metrics.FocalLoss])
 torch.set_float32_matmul_precision("high")
+
+
+class MLP_Decoder_mlp_name(nn.Module):
+    """
+    A simple MLP. With name compatible with ancient version
+    """
+
+    def __init__(self, mlp=[128, 64, 19], dropout=0.2):
+        super().__init__()
+
+        self.n_neurons = copy.deepcopy(mlp)
+        modules = []
+
+        for i in range(len(self.n_neurons) - 1):
+            modules.append(nn.Linear(self.n_neurons[i], self.n_neurons[i + 1]))
+            if i < len(self.n_neurons) - 2:
+                modules.append(nn.ReLU())
+
+        self.layer = nn.Sequential(*modules)
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x):
+        return self.dropout(self.layer(x))
 
 
 def main(config, log_dir, save_preds_dir):
@@ -56,6 +81,8 @@ def main(config, log_dir, save_preds_dir):
         shuffle=True,
         pass_id=True,
     )
+
+    decoder = MLP_Decoder_mlp_name(**config)
 
     ########################################
     # INFERENCE
