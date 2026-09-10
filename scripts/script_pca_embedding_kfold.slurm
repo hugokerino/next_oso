@@ -16,7 +16,7 @@
 #SBATCH --partition=gpu_std
 #SBATCH --qos=gpu_all
 
-#SBATCH --time=08:00:00            # Walltime
+#SBATCH --time=05:00:00            # Walltime
 
 #SBATCH --signal=SIGUSR1@90         # For auto-resubmit
 
@@ -37,7 +37,6 @@ task_id=${SLURM_ARRAY_TASK_ID:-0}
 pixi run -e gpu python mains/main_PCA_embedding_kfold.py \
     --config "/work/THEIA/CES/oso/hugok/next_oso/configs/FM_models/train_trex_kfold.yaml" \
     --n_component 32 \
-    --n_patches_estimator 500 \
     --fold_index $SLURM_ARRAY_TASK_ID  # Pass the fold index from the array
 
 echo "End"

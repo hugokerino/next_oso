@@ -4,6 +4,7 @@ from lightning.pytorch.callbacks import (
     ModelCheckpoint,
     EarlyStopping,
 )
+from sklearn.preprocessing import StandardScaler
 from lightning.pytorch.plugins.environments import SLURMEnvironment
 from lightning.pytorch.loggers import TensorBoardLogger
 import torch
@@ -23,41 +24,46 @@ from embedding.decode_lightning_module import DecodeEmbedding
 from mains.main_utils import get_precision
 from src.utils_model import MLP_Decoder
 
+## AS IMPLEMENTED CANNOT WORK WITH MALICE !!!
+
 
 class embedding_dataset_pca(embedding_dataset):
-    def __init__(self, pca, *args, **kwargs):
+    def __init__(self, scaler, pca, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.pca = pca
+        self.scaler = scaler
 
     def __getitem__(self, idx):
         embedding, label = super().__getitem__(idx)
-        embedding_pca = self.pca.transform(embedding.numpy().reshape(-1, 64))
+        n_features = embedding.shape[0]
+        n_pixel = embedding.shape[1]
+
+        emb_reshaped = embedding.numpy().reshape(n_features, n_pixel * n_pixel).T
+        embedding_pca = self.pca.transform(self.scaler.transform(emb_reshaped))
         embedding_pca = torch.from_numpy(
-            embedding_pca.reshape(128, 128, self.pca.n_components)
+            embedding_pca.reshape(n_pixel, n_pixel, self.pca.n_components)
         ).float()
 
         return rearrange(embedding_pca, "h w c -> c h w"), label
 
 
 class embedding_datamodule_pca(embedding_datamodule):
-    def __init__(self, n_component, nb_patches, *args, **kwargs):
+    def __init__(self, n_component, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.pcas = (
-            self.create_pca(
-                fold=kwargs["fold_train"],
-                n_component=n_component,
-                nb_patches=nb_patches,
-            ),
-            self.create_pca(
-                fold=kwargs["fold_val"], n_component=n_component, nb_patches=nb_patches
-            ),
-            self.create_pca(
-                fold=kwargs["fold_test"], n_component=n_component, nb_patches=nb_patches
-            ),
-        )
+
+        # Create and store scaler and pca transform for each fold
+        dict_transform = {}
+        folds = ["train", "val", "test"]
+        for fold in folds:
+            pca, scaler = self.create_scaler_pca(
+                fold=kwargs[f"fold_{fold}"], n_component=n_component
+            )
+            dict_transform[fold] = {"pca": pca, "scaler": scaler}
+        self.dict_transform = dict_transform
 
         self.data_train = embedding_dataset_pca(
-            pca=self.pcas[0],
+            scaler=self.dict_transform["train"]["scaler"],
+            pca=self.dict_transform["train"]["pca"],
             path_embeddings=self.path_embeddings,
             path_labels=self.path_labels,
             path_mapping_folder=self.path_mapping_folder,
@@ -68,7 +74,8 @@ class embedding_datamodule_pca(embedding_datamodule):
             return_id=self.return_id,
         )
         self.data_val = embedding_dataset_pca(
-            pca=self.pcas[1],
+            scaler=self.dict_transform["val"]["scaler"],
+            pca=self.dict_transform["val"]["pca"],
             path_embeddings=self.path_embeddings,
             path_labels=self.path_labels,
             path_mapping_folder=self.path_mapping_folder,
@@ -79,7 +86,8 @@ class embedding_datamodule_pca(embedding_datamodule):
             return_id=self.return_id,
         )
         self.data_test = embedding_dataset_pca(
-            pca=self.pcas[2],
+            scaler=self.dict_transform["test"]["scaler"],
+            pca=self.dict_transform["test"]["pca"],
             path_embeddings=self.path_embeddings,
             path_labels=self.path_labels,
             path_mapping_folder=self.path_mapping_folder,
@@ -90,20 +98,36 @@ class embedding_datamodule_pca(embedding_datamodule):
             return_id=self.return_id,
         )
 
-    def create_pca(self, fold: list[int], n_component: int = 10, nb_patches: int = 10):
-        pca = PCA(n_components=n_component, svd_solver="full")
+    def create_scaler_pca(self, fold: list[int], n_component: int = 10):
         dataset = embedding_dataset(
             path_embeddings=self.path_embeddings,
             path_labels=self.path_labels,
             path_mapping_folder=self.path_mapping_folder,
             fold=fold,
         )
-        X = np.empty((0, 64))  # (n_samples, n_features)
-        for i in range(nb_patches):
-            embedding, label = dataset.__getitem__(i)
-            X = np.concatenate([X, embedding.numpy().reshape(128 * 128, 64)])
-        pca.fit(X)
-        return pca
+        emb = dataset.__getitem__(0)[0]
+        n_features = emb.shape[0]
+        n_pixels = emb.shape[1] * emb.shape[2]
+
+        X = np.empty(
+            (dataset.__len__() * n_pixels, n_features)
+        )  # (n_samples, n_features)
+
+        for i in range(dataset.__len__()):
+            embedding, label = dataset[i]
+            X[i * n_pixels : (i + 1) * n_pixels] = (
+                embedding.numpy().reshape(n_features, n_pixels).T
+            )
+
+        # Scaler
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X)
+
+        # PCA
+        pca = PCA(n_components=n_component)
+        pca.fit(X_scaled)
+
+        return pca, scaler
 
 
 def main(config):
@@ -118,7 +142,6 @@ def main(config):
     os.makedirs(log_fold, exist_ok=True)
 
     # Data
-    # config["selected_fold"] holds the actual tuple/list of [train, val, test] for this job
     selected_fold = config["selected_fold"]
 
     datamodule_pca = embedding_datamodule_pca(
@@ -136,7 +159,6 @@ def main(config):
         label_type=config["label_type"],
         mask=True,
         n_component=config["n_component"],
-        nb_patches=config["n_patches_estimator"],
     )
 
     # Decoder
@@ -190,7 +212,6 @@ if __name__ == "__main__":
 
     # Config PCA
     parser.add_argument("--n_component", type=int, default=10)
-    parser.add_argument("--n_patches_estimator", type=int, default=500)
 
     # Config Kfold
     parser.add_argument("--fold_index", type=int, help="Index of the fold to train on")

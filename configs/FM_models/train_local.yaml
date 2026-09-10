@@ -15,7 +15,7 @@ num_worker: 2
 
 # Training arguments
 decoder_type : mlp
-batch_size : 1
+batch_size : 8
 lr : 0.001
 max_epochs : 1
 
