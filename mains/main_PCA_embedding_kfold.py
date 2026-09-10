@@ -52,18 +52,13 @@ class embedding_datamodule_pca(embedding_datamodule):
         super().__init__(*args, **kwargs)
 
         # Create and store scaler and pca transform for each fold
-        dict_transform = {}
-        folds = ["train", "val", "test"]
-        for fold in folds:
-            pca, scaler = self.create_scaler_pca(
-                fold=kwargs[f"fold_{fold}"], n_component=n_component
-            )
-            dict_transform[fold] = {"pca": pca, "scaler": scaler}
-        self.dict_transform = dict_transform
+        pca, scaler = self.create_scaler_pca(
+            fold=kwargs["fold_train"], n_component=n_component
+        )
 
         self.data_train = embedding_dataset_pca(
-            scaler=self.dict_transform["train"]["scaler"],
-            pca=self.dict_transform["train"]["pca"],
+            scaler=scaler,
+            pca=pca,
             path_embeddings=self.path_embeddings,
             path_labels=self.path_labels,
             path_mapping_folder=self.path_mapping_folder,
@@ -74,8 +69,8 @@ class embedding_datamodule_pca(embedding_datamodule):
             return_id=self.return_id,
         )
         self.data_val = embedding_dataset_pca(
-            scaler=self.dict_transform["val"]["scaler"],
-            pca=self.dict_transform["val"]["pca"],
+            scaler=scaler,
+            pca=pca,
             path_embeddings=self.path_embeddings,
             path_labels=self.path_labels,
             path_mapping_folder=self.path_mapping_folder,
@@ -86,8 +81,8 @@ class embedding_datamodule_pca(embedding_datamodule):
             return_id=self.return_id,
         )
         self.data_test = embedding_dataset_pca(
-            scaler=self.dict_transform["test"]["scaler"],
-            pca=self.dict_transform["test"]["pca"],
+            scaler=scaler,
+            pca=pca,
             path_embeddings=self.path_embeddings,
             path_labels=self.path_labels,
             path_mapping_folder=self.path_mapping_folder,
@@ -226,7 +221,6 @@ if __name__ == "__main__":
     config["selected_fold"] = config["folds"][args.fold_index]
     config["fold_index"] = args.fold_index
     config["n_component"] = args.n_component
-    config["n_patches_estimator"] = args.n_patches_estimator
 
     pprint.pprint(config)
     main(config)
