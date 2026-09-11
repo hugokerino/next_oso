@@ -1,8 +1,6 @@
 import torch
-import torch.nn as nn
 import lightning as L
 
-import copy
 import pandas
 import os
 import sys
@@ -66,7 +64,7 @@ def main(config, log_dir, save_preds_dir):
     sys.stdout.flush()
     checkpoint = os.listdir(os.path.join(log_dir, "Checkpoints/"))[0]
     print(f"Loading checkpoint: {checkpoint}")
-    
+
     best_classifier = lightning_module.classifier.load_from_checkpoint(
         os.path.join(log_dir, "Checkpoints", checkpoint),
         weights_only=True,
