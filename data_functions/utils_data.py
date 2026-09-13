@@ -806,7 +806,7 @@ def plot_preds_labels_and_img(
     return fig
 
 
-def mean_entropy_per_class(path_labels, path_oso_class):
+def mean_entropy_per_class(path_labels):
     entropy_per_class = defaultdict(list)
 
     for label in os.listdir(path_labels):
