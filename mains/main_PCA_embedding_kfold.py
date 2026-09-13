@@ -35,6 +35,10 @@ class embedding_dataset_pca(embedding_dataset):
 
     def __getitem__(self, idx):
         embedding, label = super().__getitem__(idx)
+
+        if embedding.ndim == 4:
+            embedding = rearrange(embedding, "t c h w -> (t c) h w")
+
         n_features = embedding.shape[0]
         n_pixel = embedding.shape[1]
 
@@ -101,6 +105,10 @@ class embedding_datamodule_pca(embedding_datamodule):
             fold=fold,
         )
         emb = dataset.__getitem__(0)[0]
+
+        if emb.ndim == 4:
+            emb = rearrange(emb, "t c h w -> (t c) h w")
+
         n_features = emb.shape[0]
         n_pixels = emb.shape[1] * emb.shape[2]
 
@@ -130,7 +138,9 @@ def main(config):
     model = config["model"]
     path_logs = os.path.join(config["path_logs"], model)
     date = datetime.now().date().strftime("%Y-%m-%d")
-    base_log_dir = os.path.join(path_logs, f"{config['decoder_type']}_{date}_kfold")
+    base_log_dir = os.path.join(
+        path_logs, f"pca_{config['n_component']}_{date}_{config['decoder_type']}_kfold"
+    )
     os.makedirs(base_log_dir, exist_ok=True)
 
     log_fold = os.path.join(base_log_dir, f"fold_{config['fold_index'] + 1}")
