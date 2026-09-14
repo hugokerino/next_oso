@@ -24,8 +24,6 @@ from embedding.decode_lightning_module import DecodeEmbedding
 from mains.main_utils import get_precision
 from src.utils_model import MLP_Decoder
 
-## AS IMPLEMENTED CANNOT WORK WITH MALICE !!!
-
 
 class embedding_dataset_pca(embedding_dataset):
     def __init__(self, scaler, pca, *args, **kwargs):
@@ -63,6 +61,8 @@ class embedding_datamodule_pca(embedding_datamodule):
         self.data_train = embedding_dataset_pca(
             scaler=scaler,
             pca=pca,
+            data=self.data,
+            model=self.model,
             path_embeddings=self.path_embeddings,
             path_labels=self.path_labels,
             path_mapping_folder=self.path_mapping_folder,
@@ -75,6 +75,8 @@ class embedding_datamodule_pca(embedding_datamodule):
         self.data_val = embedding_dataset_pca(
             scaler=scaler,
             pca=pca,
+            data=self.data,
+            model=self.model,
             path_embeddings=self.path_embeddings,
             path_labels=self.path_labels,
             path_mapping_folder=self.path_mapping_folder,
@@ -87,6 +89,8 @@ class embedding_datamodule_pca(embedding_datamodule):
         self.data_test = embedding_dataset_pca(
             scaler=scaler,
             pca=pca,
+            data=self.data,
+            model=self.model,
             path_embeddings=self.path_embeddings,
             path_labels=self.path_labels,
             path_mapping_folder=self.path_mapping_folder,
@@ -99,12 +103,18 @@ class embedding_datamodule_pca(embedding_datamodule):
 
     def create_scaler_pca(self, fold: list[int], n_component: int = 10):
         dataset = embedding_dataset(
+            data=self.data,
+            model=self.model,
             path_embeddings=self.path_embeddings,
             path_labels=self.path_labels,
             path_mapping_folder=self.path_mapping_folder,
+            preload=self.preload,
             fold=fold,
         )
         emb = dataset.__getitem__(0)[0]
+
+        print(f"Model : {dataset.model}")
+        print(f"Original Embedding shape : {emb.shape}")
 
         if emb.ndim == 4:
             emb = rearrange(emb, "t c h w -> (t c) h w")
@@ -118,6 +128,8 @@ class embedding_datamodule_pca(embedding_datamodule):
 
         for i in range(dataset.__len__()):
             embedding, label = dataset[i]
+            if embedding.ndim == 4:
+                embedding = rearrange(embedding, "t c h w -> (t c) h w")
             X[i * n_pixels : (i + 1) * n_pixels] = (
                 embedding.numpy().reshape(n_features, n_pixels).T
             )
@@ -129,6 +141,8 @@ class embedding_datamodule_pca(embedding_datamodule):
         # PCA
         pca = PCA(n_components=n_component)
         pca.fit(X_scaled)
+
+        print(f"PCA calculated with dimension : {n_component}\n")
 
         return pca, scaler
 

@@ -1,6 +1,6 @@
 # Data & model
 data : next_oso
-model : alpha-earth
+model : malice
 
 # Paths
 path_embedding : /home/hkerino/Documents/nextoso-dataset # /work/THEIA/CES/oso/hugok/pastis
