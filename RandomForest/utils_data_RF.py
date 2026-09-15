@@ -28,9 +28,13 @@ def s2_spectrale_indice(s2):
     return s2
 
 
-def interpolate(s2_list, grid):
+def interpolate(s2_list, grid, s2_masks=None):
     dataset_list = []
-    for s2 in s2_list:
+    for idx, s2 in enumerate(s2_list):
+        if s2_masks:
+            s2_mask = s2_masks[idx]  # t h w
+            print(s2_mask.shape)
+
         # time
         time_list = []  # alpha + pair of time to interpolate
 
@@ -105,7 +109,6 @@ def convert_cm_to_figure(cm):
 def erode_class_max(
     labels: str | xr.Dataset, variable: str = "max_class_1", buff: int = -10
 ) -> xr.DataArray:
-
     if isinstance(labels, str):
         ds = rioxarray.open_rasterio(labels)
         assert isinstance(ds, xr.Dataset)
@@ -178,7 +181,6 @@ def erode_class_max(
 
 # For RGB array
 def to_RGB(img_multi_spec: np.ndarray | xr.Dataset, norm=True):
-
     img_rgb = np.empty([128, 128, 3])
 
     if isinstance(img_multi_spec, xr.Dataset):
@@ -213,3 +215,88 @@ def find_clear_img_in_xarray(s2_xr):
         img = s2_xr.isel(time=t_idx)
 
     return to_RGB(img)
+
+
+## New interpolation
+def find_valid_neighbors(var_data, mask_pixel, orig_dates, target_date):
+    """
+    Pour un pixel donné (1D sur T), trouver les indices inf et sup valides.
+    var_data    : (T,)
+    mask_pixel  : (T,) — 0=valide, 1=invalide
+    """
+    valid_t = np.where(mask_pixel == 0)[0]
+
+    if len(valid_t) == 0:
+        return 0.0  # nodata
+
+    valid_dates = [orig_dates[t] for t in valid_t]
+
+    inf_valid = [(t, d) for t, d in zip(valid_t, valid_dates) if d < target_date]
+    sup_valid = [(t, d) for t, d in zip(valid_t, valid_dates) if d > target_date]
+
+    if inf_valid and sup_valid:
+        idx_inf, date_inf = inf_valid[-1]
+        idx_sup, date_sup = sup_valid[0]
+        alpha = (target_date - date_inf) / (date_sup - date_inf)
+        return (1 - alpha) * var_data[idx_sup] + alpha * var_data[idx_inf]
+    elif inf_valid:
+        return var_data[inf_valid[-1][0]]
+    else:
+        return var_data[sup_valid[0][0]]
+
+
+def interpolate_with_mask(s2_list, grid, s2_masks=None):
+    dataset_list = []
+
+    for idx, s2 in enumerate(s2_list):
+        use_mask = s2_masks is not None and idx < len(s2_masks)
+        s2_mask = s2_masks[idx] if use_mask else None
+
+        H = s2["y"].shape[0]
+        W = s2["x"].shape[0]
+        n_vars = len(s2.data_vars)
+        T_orig = len(s2["time"])
+        T_grid = len(grid)
+
+        orig_dates = [pandas.to_datetime(s2["time"][t].data) for t in range(T_orig)]
+        var_arrays = {var: s2[var].values for var in s2.data_vars}
+
+        interpolate_array = np.zeros((T_grid, n_vars, H, W))
+
+        for t_grid, target_date in enumerate(grid):
+            for k, (var, var_data) in enumerate(var_arrays.items()):
+                if not use_mask:
+                    # ── Sans masque — vectorisé ──
+                    inf_idx = [i for i, d in enumerate(orig_dates) if d < target_date]
+                    sup_idx = [i for i, d in enumerate(orig_dates) if d > target_date]
+
+                    if inf_idx and sup_idx:
+                        alpha = (target_date - orig_dates[inf_idx[-1]]) / (
+                            orig_dates[sup_idx[0]] - orig_dates[inf_idx[-1]]
+                        )
+                        interpolate_array[t_grid, k] = (1 - alpha) * var_data[
+                            sup_idx[0]
+                        ] + alpha * var_data[inf_idx[-1]]
+                    elif inf_idx:
+                        interpolate_array[t_grid, k] = var_data[inf_idx[-1]]
+                    else:
+                        interpolate_array[t_grid, k] = var_data[sup_idx[0]]
+
+                else:
+                    # ── Avec masque — vectorisé sur les pixels ──
+                    # Reshape pour traiter tous les pixels en parallèle
+                    var_flat = var_data.reshape(T_orig, -1)  # (T, H*W)
+                    mask_flat = s2_mask.reshape(T_orig, -1)  # (T, H*W)
+                    result = np.zeros(H * W)
+
+                    # Appliquer find_valid_neighbors sur chaque pixel
+                    for p in range(H * W):
+                        result[p] = find_valid_neighbors(
+                            var_flat[:, p], mask_flat[:, p], orig_dates, target_date
+                        )
+
+                    interpolate_array[t_grid, k] = result.reshape(H, W)
+
+        dataset_list.append(interpolate_array)
+
+    return np.stack(dataset_list)

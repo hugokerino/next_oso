@@ -1,4 +1,5 @@
 import os
+import yaml
 import torch
 import numpy as np
 import pandas
@@ -11,6 +12,7 @@ from torchmetrics.classification import (
     MulticlassCohenKappa,
 )
 
+from RandomForest import dataset_RF
 from src.metrics import compute_metrics, metrics_to_excel
 
 num_class = 25
@@ -44,14 +46,42 @@ miou_metric = MulticlassJaccardIndex(
 kappa = MulticlassCohenKappa(num_classes=num_class, ignore_index=0)
 
 
-def calculate_and_save_metrics_RF_kfold_preds(path_to_logs):
+def make_labels_to_compute_metrics(config_yaml, label_type="v2"):
+    with open(config_yaml, "r") as f:
+        cfg = yaml.safe_load(f)
+        config = {**cfg}
+
+    for idx_fold, fold in enumerate(config["selected_fold"]):
+        for eco_zone in range(1, 10):
+            Y_test = dataset_RF.create_dataset(
+                path_s2=config["path_s2"],
+                path_label=config["path_label"],
+                zone=eco_zone,
+                folders=fold[-1],
+                grid_time=None,
+                label_only=True,
+                label_type=label_type,
+            )
+
+            np.save(
+                f"{config['path_logs']}/2026-07-17/fold_{idx_fold + 1}/zone_eco_{eco_zone}/y_true_{label_type}",
+                Y_test.reshape(-1, 128, 128),
+            )
+
+    return
+
+
+def calculate_and_save_metrics_RF_kfold_preds(path_to_logs, label_type="v1"):
     for fold in sorted(os.listdir(path_to_logs)):
         list_preds = []
         list_trues = []
         for zone in sorted(os.listdir(os.path.join(path_to_logs, fold))):
             name_folder = os.path.join(path_to_logs, fold, zone)
             list_preds.append(np.load(f"{name_folder}/y_pred.npy"))
-            list_trues.append(np.load(f"{name_folder}/y_true.npy"))
+            if label_type == "v1":
+                list_trues.append(np.load(f"{name_folder}/y_true.npy"))
+            elif label_type == "v2":
+                list_trues.append(np.load(f"{name_folder}/y_true_v2.npy"))
 
         y_preds = torch.from_numpy(np.concatenate(list_preds, axis=0))
         y_trues = torch.from_numpy(np.concatenate(list_trues, axis=0))
@@ -70,7 +100,7 @@ def calculate_and_save_metrics_RF_kfold_preds(path_to_logs):
 
         metrics_to_excel(
             metrics=metrics_dict,
-            path=f"{os.path.join(path_to_logs, fold)}/metrics.xlsx",
+            path=f"{os.path.join(path_to_logs, fold)}/metrics_{label_type}.xlsx",
         )
 
     return
@@ -79,6 +109,7 @@ def calculate_and_save_metrics_RF_kfold_preds(path_to_logs):
 def calculate_and_save_metrics_OSO_kfold(
     path_oso_maps="/home/hkerino/Documents/OSO_maps",
     path_label="/home/hkerino/Documents/nextoso-dataset/data/10m/labels",
+    label_type="v1",
 ):
     for fold in range(1, 6):
         list_preds = []
@@ -90,9 +121,14 @@ def calculate_and_save_metrics_OSO_kfold(
                     "__xarray_dataarray_variable__"
                 ].data.squeeze()
             )
-            label_xr = xr.open_dataset(f"{path_label}/label_{id}.nc")[
-                "max_class_1"
-            ].data
+            if label_type == "v1":
+                label_xr = xr.open_dataset(f"{path_label}/label_{id}.nc")[
+                    "max_class_1"
+                ].data
+            if label_type == "v2":
+                label_xr = xr.open_dataset(f"{path_label}_v2/label_{id}.nc")[
+                    "labels_no_overlap"
+                ].data
             label = np.where(label_xr == -1, 0, label_xr)
             list_trues.append(label)
 

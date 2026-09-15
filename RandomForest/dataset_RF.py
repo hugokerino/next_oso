@@ -28,6 +28,7 @@ def create_dataset(
 
     path_s2_eco = os.path.join(path_s2, str(zone))
     s2_list = []
+    s2_mask = []
     label_list = []
     if return_label_entropy:
         label_entropy_list = []
@@ -63,6 +64,8 @@ def create_dataset(
                         ]
                     ]
                 )
+                s2_mask.append(s2["S2_mask"])
+
                 if return_img:
                     img_list.append(utils_data_RF.find_clear_img_in_xarray(s2_data))
 
