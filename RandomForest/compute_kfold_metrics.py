@@ -76,6 +76,8 @@ def calculate_and_save_metrics_RF_kfold_preds(path_to_logs, label_type="v1"):
         list_preds = []
         list_trues = []
         for zone in sorted(os.listdir(os.path.join(path_to_logs, fold))):
+            if zone.endswith(".xlsx"):
+                continue
             name_folder = os.path.join(path_to_logs, fold, zone)
             list_preds.append(np.load(f"{name_folder}/y_pred.npy"))
             if label_type == "v1":
@@ -114,10 +116,13 @@ def calculate_and_save_metrics_OSO_kfold(
     for fold in range(1, 6):
         list_preds = []
         list_trues = []
-        for file in os.listdir(f"{path_oso_maps}/{fold}"):
+        files = [
+            f for f in os.listdir(f"{path_oso_maps}/fold_{fold}") if f.endswith(".nc")
+        ]
+        for file in files:
             id = file.split("_")[1].split(".")[0]
             list_preds.append(
-                xr.open_dataset(os.path.join(path_oso_maps, str(fold), file))[
+                xr.open_dataset(os.path.join(path_oso_maps, f"fold_{str(fold)}", file))[
                     "__xarray_dataarray_variable__"
                 ].data.squeeze()
             )
@@ -149,5 +154,5 @@ def calculate_and_save_metrics_OSO_kfold(
 
         metrics_to_excel(
             metrics=metrics_dict,
-            path=f"{os.path.join(path_oso_maps, str(fold))}/metrics.xlsx",
+            path=f"{os.path.join(path_oso_maps, str(fold))}/metrics_{label_type}.xlsx",
         )
