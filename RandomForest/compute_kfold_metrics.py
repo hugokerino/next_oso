@@ -83,7 +83,9 @@ def calculate_and_save_metrics_RF_kfold_preds(path_to_logs, label_type="v1"):
             if label_type == "v1":
                 list_trues.append(np.load(f"{name_folder}/y_true.npy"))
             elif label_type == "v2":
-                list_trues.append(np.load(f"{name_folder}/y_true_v2.npy").astype(np.int16))
+                list_trues.append(
+                    np.load(f"{name_folder}/y_true_v2.npy").astype(np.int16)
+                )
 
         y_preds = torch.from_numpy(np.concatenate(list_preds, axis=0))
         y_trues = torch.from_numpy(np.concatenate(list_trues, axis=0))
@@ -149,7 +151,7 @@ def calculate_and_save_metrics_OSO_kfold(
             miou_metric=miou_metric,
             kappa_metric=kappa,
             num_class=num_class,
-            names_class=name_class,
+            names_class=names_class,
         )
 
         metrics_to_excel(

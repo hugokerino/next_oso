@@ -14,6 +14,7 @@ from argparse import ArgumentParser
 from datetime import datetime
 import signal
 import yaml
+import sys
 
 from sklearn.decomposition import PCA
 import numpy as np
@@ -125,22 +126,27 @@ class embedding_datamodule_pca(embedding_datamodule):
         n_sample_PCA = 100 if emb.ndim == 4 else dataset.__len__()
 
         X = np.empty(
-            (n_sample_PCA * n_pixels, n_features)
+            (n_sample_PCA * n_pixels, n_features), dtype=np.float32
         )  # (n_samples, n_features)
 
+        print("Fill the X matrix")
+        sys.stdout.flush()
         for i in range(n_sample_PCA):
-            embedding, label = dataset[i]
+            embedding, _ = dataset[i]
             if embedding.ndim == 4:
                 embedding = rearrange(embedding, "t c h w -> (t c) h w")
             X[i * n_pixels : (i + 1) * n_pixels] = (
                 embedding.numpy().reshape(n_features, n_pixels).T
             )
-
+        print("X matrix filled")
+        sys.stdout.flush()
         # Scaler
         scaler = StandardScaler()
         X_scaled = scaler.fit_transform(X)
 
         # PCA
+        print("PCA begin")
+        sys.stdout.flush()
         pca = PCA(n_components=n_component)
         pca.fit(X_scaled)
 
