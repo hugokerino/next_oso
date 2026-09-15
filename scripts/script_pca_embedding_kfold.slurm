@@ -9,7 +9,7 @@
 #SBATCH -N 1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=6
-#SBATCH --mem-per-cpu=14G
+#SBATCH --mem-per-cpu=28G
 #SBATCH --array=0-4  # 5 folds (indices 0-4), but SLURM will run up to 2 in parallel based on available GPUs
 
 #SBATCH --gres=gpu:1
@@ -36,7 +36,7 @@ task_id=${SLURM_ARRAY_TASK_ID:-0}
 
 pixi run -e gpu python mains/main_PCA_embedding_kfold.py \
     --config "/work/THEIA/CES/oso/hugok/next_oso/configs/FM_models/train_trex_kfold.yaml" \
-    --n_component 128 \
+    --n_component 16 \
     --fold_index $SLURM_ARRAY_TASK_ID  # Pass the fold index from the array
 
 echo "End"

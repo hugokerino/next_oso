@@ -15,19 +15,18 @@ from torchmetrics.classification import (
 from RandomForest import dataset_RF
 from src.metrics import compute_metrics, metrics_to_excel
 
-num_class = 25
-# name_class = (
-#     pandas.read_csv("/work/THEIA/CES/oso/hugok/files_s2/oso_classes.csv")
-#     .get("name_class")
-#     .values
-# )
-name_class = (
-    pandas.read_csv(
-        "/home/hkerino/Documents/nextoso-dataset/data/auxiliary/OSO/oso_classes.csv"
-    )
-    .get("name_class")
-    .values
+is_cluster = "SLURM_JOB_ID" in os.environ
+path_to_oso_name = (
+    "/work/THEIA/CES/oso/hugok/files_s2/oso_classes.csv"
+    if is_cluster
+    else "/home/hkerino/Documents/nextoso-dataset/data/auxiliary/OSO/oso_classes.csv"
 )
+names_class = (
+    pandas.read_csv(path_to_oso_name).get("name_class").values
+)  # Doit contenir 25 entrées (0 à 24)
+num_class = len(names_class)
+
+
 acc_metric = MulticlassAccuracy(
     num_classes=num_class, ignore_index=0, average="micro"
 )  # Micro for Overall Accuracy
@@ -51,8 +50,9 @@ def make_labels_to_compute_metrics(config_yaml, label_type="v2"):
         cfg = yaml.safe_load(f)
         config = {**cfg}
 
-    for idx_fold, fold in enumerate(config["selected_fold"]):
+    for idx_fold, fold in enumerate(config["folds"]):
         for eco_zone in range(1, 10):
+            print(f"Fold index = {idx_fold}, Fold = {fold[-1]}, eco_zone = {eco_zone}")
             Y_test = dataset_RF.create_dataset(
                 path_s2=config["path_s2"],
                 path_label=config["path_label"],
@@ -83,7 +83,7 @@ def calculate_and_save_metrics_RF_kfold_preds(path_to_logs, label_type="v1"):
             if label_type == "v1":
                 list_trues.append(np.load(f"{name_folder}/y_true.npy"))
             elif label_type == "v2":
-                list_trues.append(np.load(f"{name_folder}/y_true_v2.npy"))
+                list_trues.append(np.load(f"{name_folder}/y_true_v2.npy").astype(np.int16))
 
         y_preds = torch.from_numpy(np.concatenate(list_preds, axis=0))
         y_trues = torch.from_numpy(np.concatenate(list_trues, axis=0))
@@ -97,7 +97,7 @@ def calculate_and_save_metrics_RF_kfold_preds(path_to_logs, label_type="v1"):
             miou_metric=miou_metric,
             kappa_metric=kappa,
             num_class=num_class,
-            names_class=name_class,
+            names_class=names_class,
         )
 
         metrics_to_excel(

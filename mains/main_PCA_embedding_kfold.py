@@ -108,7 +108,7 @@ class embedding_datamodule_pca(embedding_datamodule):
             path_embeddings=self.path_embeddings,
             path_labels=self.path_labels,
             path_mapping_folder=self.path_mapping_folder,
-            preload=self.preload,
+            preload=False,
             fold=fold,
         )
         emb = dataset.__getitem__(0)[0]
@@ -122,11 +122,13 @@ class embedding_datamodule_pca(embedding_datamodule):
         n_features = emb.shape[0]
         n_pixels = emb.shape[1] * emb.shape[2]
 
+        n_sample_PCA = 100 if emb.ndim == 4 else dataset.__len__()
+
         X = np.empty(
-            (dataset.__len__() * n_pixels, n_features)
+            (n_sample_PCA * n_pixels, n_features)
         )  # (n_samples, n_features)
 
-        for i in range(dataset.__len__()):
+        for i in range(n_sample_PCA):
             embedding, label = dataset[i]
             if embedding.ndim == 4:
                 embedding = rearrange(embedding, "t c h w -> (t c) h w")

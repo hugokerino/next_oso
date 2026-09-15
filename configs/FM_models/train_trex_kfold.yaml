@@ -1,6 +1,6 @@
 # Data & model
 data : next_oso
-model : malice
+model : tessera
 
 # Paths
 path_embedding : /work/THEIA/CES/oso/hugok/next_oso_embedding_data # /work/THEIA/CES/oso/hugok/pastis
@@ -10,7 +10,7 @@ path_logs : /work/THEIA/CES/oso/hugok/next_oso/logs # /work/THEIA/CES/oso/hugok/
 path_name_class : /work/THEIA/CES/oso/hugok/files_s2/oso_classes.csv #/work/THEIA/CES/oso/hugok/pastis/label_names_reduced.json
 
 label_type : max_class
-preload_data : false
+preload_data : true
 num_worker: 4
 
 # Training arguments
