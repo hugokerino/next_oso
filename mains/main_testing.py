@@ -1,6 +1,5 @@
 import torch
 import lightning as L
-from lightning.pytorch.loggers import TensorBoardLogger
 
 import pandas
 import os
@@ -59,21 +58,16 @@ def main(config, log_dir):
         shuffle=True,
     )
 
-    tb_logger = TensorBoardLogger(
-        log_dir, name="tensorboards", version=1, default_hp_metric=False
-    )
-
     trainer = L.Trainer(
-        logger=tb_logger,
-        accumulate_grad_batches=1,
+        logger=None,
         log_every_n_steps=10,
-        max_epochs=config["epochs_max"],
         accelerator=config["accelerator"],
         devices=config["devices"],
         num_nodes=config["nodes"],
         strategy=config["strategy"],
         precision=get_precision(),
     )
+
     ########################################
     # TESTING
     ########################################

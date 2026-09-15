@@ -37,6 +37,7 @@ class classifier(L.LightningModule):
         W: int = 128,
         name_class: dict | None = None,
         path_save_excel: str | None = None,
+        path_raw_matrix: str | None = None,
     ):
         super().__init__()
 
@@ -70,6 +71,7 @@ class classifier(L.LightningModule):
         self.name_class = name_class
         # self.save_hyperparameters(ignore=["encoder", "decoder", "loss_fn"])
         self.path_save_excel = path_save_excel
+        self.path_raw_matrix = path_raw_matrix
 
     def _forward(self, batch):
         ### Unpack the batch ###
@@ -213,6 +215,8 @@ class classifier(L.LightningModule):
                 metrics=metrics_dict,
                 path=self.path_save_excel,
             )
+        if self.path_raw_matrix is not None:
+            torch.save(metrics_dict["cm"].cpu(), self.path_raw_matrix)
 
     def predict_step(self, batch):
         y_logits = self._forward(batch)
