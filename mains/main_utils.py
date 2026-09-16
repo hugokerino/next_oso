@@ -70,6 +70,10 @@ def select_criterion(loss: str):
 
     if loss == "cross_entropy":
         criterion = torch.nn.CrossEntropyLoss(ignore_index=0)
+    elif loss == "cross_entropy_weighted":
+        criterion = torch.nn.CrossEntropyLoss(
+            ignore_index=0, weight=torch.load("data_functions/weights_loss.pt")
+        )
     elif loss == "weightedCE":
         criterion = metrics.WeightedCE()
     elif loss == "hard_and_softCE":

@@ -2,8 +2,8 @@
 
 #SBATCH -J main_lightning_kfold
 #SBATCH -A theia_oso
-#SBATCH -o script_logs/out_kfold%j_%a.out  # %a for array job index
-#SBATCH -e script_logs/err_kfold%j_%a.err
+#SBATCH -o script_logs/out_%a_kfold%j.out  # %a for array job index
+#SBATCH -e script_logs/err_%a_kfold%j.err
 #SBATCH --export=none
 
 #SBATCH -N 1
@@ -34,7 +34,7 @@ export PATH=$(dirname $(which pixi)):$PATH
 
 srun --export=ALL pixi run -e gpu python mains/main_kfold.py \
     --config_train configs/models/train_trex_kfold.yaml \
-    --config_model configs/models/LTAE.yaml \
+    --config_model configs/models/ALISE.yaml \
     --fold_index $SLURM_ARRAY_TASK_ID  # Pass the fold index from the array
 
 echo "End"

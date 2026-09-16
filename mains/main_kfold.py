@@ -96,7 +96,7 @@ def main(config):
     if config["test_model"]:
         tb_logger = None
         list_callback = None
-        limit_batches = 2
+        limit_batches = 1
 
     plugin = None
     if config["running_on_trex_gpu"]:
@@ -156,6 +156,7 @@ def main(config):
             .get("name_class")
             .values,
             path_save_excel=f"{log_fold}/metrics.xlsx",
+            path_raw_matrix=f"{log_fold}/raw_matrix.pt",
         )
 
     trainer.test(model=best_classifier, dataloaders=dl_test)
