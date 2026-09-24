@@ -326,7 +326,7 @@ OSO_COLORS = {
     24: (68, 121, 200),  # Serres
 }
 # Ajouter une couleur pour la classe 0 ('nan')
-OSO_COLORS[0] = (128, 128, 128)  # Gris pour 'nan'
+OSO_COLORS[0] = (255, 255, 255)  # Blanc pour 'nan'
 # Normaliser les couleurs (diviser par 255)
 normalized_colors = [
     (r / 255, g / 255, b / 255)
@@ -338,10 +338,12 @@ cmap = ListedColormap(normalized_colors)
 
 def count_label(dataset, normalized=False, plot=True):
     classes = np.zeros(25)
+
     names_class_english = pandas.read_csv(
         "/home/hkerino/Documents/nextoso-dataset/data/auxiliary/OSO/oso_classes_english.csv",
         dtype=str,
     )
+
     for i in range(len(dataset)):
         labels = dataset[i][1].flatten().numpy()
         if np.any(labels < 0):
@@ -409,6 +411,67 @@ def count_label(dataset, normalized=False, plot=True):
             )
         else:
             tick_labels = english_labels
+
+        ax.set_xticks(range(len(classes)))
+        ax.set_xticklabels(
+            tick_labels,
+            rotation=45,
+            ha="right",
+            rotation_mode="anchor",
+        )
+        ax.set_ylabel("Labels occurence")
+
+        # Afficher le chiffre brut au dessus de chaque barre
+        for bar, count in zip(bars, classes):
+            ax.text(
+                bar.get_x() + bar.get_width() / 2,
+                bar.get_height(),
+                f"{int(count):,}",
+                ha="center",
+                va="bottom",
+                fontsize=7,
+            )
+
+        plt.tight_layout()
+        plt.show()
+
+    return classes
+
+
+def count_label_easier(dataset, normalized=False, plot=True):
+    classes = np.zeros(25)
+
+    for i in range(len(dataset)):
+        labels = dataset[i][1].flatten().numpy()
+        if np.any(labels < 0):
+            print(f"Échantillon {i} : labels contiennent des valeurs négatives !")
+            print(f"Valeurs uniques : {np.unique(labels)}")
+            continue  # Exclure cet échantillon
+
+        counts = np.bincount(labels, minlength=25)
+        classes += counts
+
+    if normalized:
+        classes = classes / (np.sum(classes))
+
+    if plot:
+        fig, ax = plt.subplots(figsize=(12, 6))
+        ax.set_title("Labels repartition")
+
+        # Determine bar colors from cmap (fall back to sampling if needed)
+        try:
+            n = classes.shape[0]
+        except Exception:
+            n = 25
+
+        if hasattr(cmap, "colors") and len(cmap.colors) >= n:
+            bar_colors = list(cmap.colors)[:n]
+        else:
+            bar_colors = [cmap(i / (n - 1)) for i in range(n)]
+
+        bars = ax.bar(range(classes.shape[0]), classes, color=bar_colors)
+
+        tick_labels = names_class
 
         ax.set_xticks(range(len(classes)))
         ax.set_xticklabels(

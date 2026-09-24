@@ -19,6 +19,8 @@ def main(config, log_dir, save_preds_dir):
     ########################################
     # MODEL
     ########################################
+    print(f"FOLD {config['fold_index']}")
+
     print("\nLOADING MODEL ...")
     sys.stdout.flush()
 
@@ -34,15 +36,16 @@ def main(config, log_dir, save_preds_dir):
     ########################################
     print("\nLOADING DATA ...")
     sys.stdout.flush()
+    selected_fold = config["selected_fold"]
 
     _, _, dl_test = dataset.get_loaders(
         path_s2=config["path_s2"],
         path_mnt=config["path_mnt"],
         path_label=config["path_label"],
         path_oso_class=config["path_oso_classes"],
-        folds_train=config["folds_train"],
-        folds_val=config["folds_val"],
-        folds_test=config["folds_test"],
+        folds_train=selected_fold[0],
+        folds_val=selected_fold[1],
+        folds_test=selected_fold[2],
         batch_size=batch_size,
         num_worker=config["num_worker"],
         label_type=config["label_type"],
@@ -62,7 +65,9 @@ def main(config, log_dir, save_preds_dir):
     ########################################
     print("\nTESTING ...")
     sys.stdout.flush()
-    checkpoint = os.listdir(os.path.join(log_dir, "Checkpoints/"))[0]
+    checkpoint = os.listdir(
+        os.path.join(log_dir, f"fold_{config['fold_index'] + 1}Checkpoints/")
+    )[0]
     print(f"Loading checkpoint: {checkpoint}")
 
     best_classifier = lightning_module.classifier.load_from_checkpoint(
@@ -76,13 +81,10 @@ def main(config, log_dir, save_preds_dir):
     )
 
     best_classifier.eval()
-    # Save per-sample predictions
-    out_dir = os.path.join(save_preds_dir, f"preds_{config['model']}")
-    os.makedirs(out_dir, exist_ok=True)
-
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     best_classifier.to(device)
 
+    # Save per-sample predictions
     saved_count = 0
     skipped_count = 0
     with torch.no_grad():
@@ -96,9 +98,7 @@ def main(config, log_dir, save_preds_dir):
                 if sample_id is None:
                     continue
 
-                filename = os.path.join(
-                    out_dir, f"pred_{config['model']}_{sample_id}.pt"
-                )
+                filename = os.path.join(save_preds_dir, f"pred_{sample_id}.pt")
                 if os.path.exists(filename):
                     skipped_count += 1
                     continue
@@ -118,7 +118,7 @@ def main(config, log_dir, save_preds_dir):
                 torch.save({"probs": probs_tensor, "pred": pred_tensor}, filename)
                 saved_count += 1
 
-    print(f"Saved {saved_count} new per-sample predictions to {out_dir}")
+    print(f"Saved {saved_count} new per-sample predictions to {save_preds_dir}")
     if skipped_count:
         print(f"Skipped {skipped_count} existing files")
 
@@ -145,8 +145,20 @@ if __name__ == "__main__":
         required=True,
         help="Chemin du dossier pour sauvergarder les prédictions, Ex:/home/hkerino/Documents/nextoso-dataset/preds",
     )
+    parser.add_argument(
+        "--fold_index",
+        type=int,
+        required=True,
+        help="Index of the fold to run (0-based, e.g., 0 for first fold)",
+    )
+
     args = parser.parse_args()
 
     config = load_config(args.config_train, args.config_model)
+
+    config["path_dir_log"] = args.path_dir_log
+    config["selected_fold"] = config["folds"][args.fold_index]
+    config["fold_index"] = args.fold_index
+
     pprint.pprint(config)
     main(config, args.path_dir_log, args.path_save_preds)
