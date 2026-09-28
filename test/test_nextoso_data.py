@@ -33,48 +33,44 @@ def test_dataset_choose_folds():
 
 def test_dataset_norms():
     d1 = dataset.next_oso_Dataset(norm=True)
-    d2 = dataset.next_oso_Dataset(norm=False, norm_pretrained_alise=True)
-    d3 = dataset.next_oso_Dataset(norm=False, norm_pretrained_alise=False)
+    d2 = dataset.next_oso_Dataset(norm=False)
 
-    sits_norm, sits_alise_norm, sits_raw = (
+    sits_norm, sits_raw = (
         d1.__getitem__(500)[0][0],
         d2.__getitem__(500)[0][0],
-        d3.__getitem__(500)[0][0],
     )
     assert sits_norm.mean() < sits_raw.mean()
-    assert sits_alise_norm.mean() < sits_raw.mean()
 
 
-def test_dataset_exception_norms():
-    with pytest.raises(
-        AssertionError,
-        match="Cannot use both norm and norm_pretrained_alise",
-    ):
-        dataset.next_oso_Dataset(
-            norm=True,
-            norm_pretrained_alise=True,
-        )
+def test_get_item_error():
+    d = dataset.next_oso_Dataset()
+
+    # Test avec un str invalide
+    with pytest.raises(ValueError, match="not found in dataset"):
+        d.__getitem__("10000")
+
+    # Test avec un int invalide
+    with pytest.raises(ValueError, match="Index invalid"):
+        d.__getitem__(10000)
 
 
 def test_dataset_return_data():
     # Default return (datas, label) with datas = (sits, dates, None, None)
-    d = dataset.next_oso_Dataset()
+    d = dataset.next_oso_Dataset(use_mnt_data=False)
     assert (d.__getitem__(1)[0][0] is not None) and (d.__getitem__(1)[0][1] is not None)
     assert (d.__getitem__(1)[0][2] is None) and (d.__getitem__(1)[0][3] is None)
 
     d = dataset.next_oso_Dataset(return_id=True)
     assert len(d.__getitem__(100)) == 3, "should return (datas, label, id)"
 
-    d = dataset.next_oso_Dataset(
-        path_mnt="/home/hkerino/Documents/nextoso-dataset/data/10m/mnt"
-    )
+    d = dataset.next_oso_Dataset(use_mnt_data=True)
     assert d.__getitem__(1)[0][3] is not None
 
 
 def test_dataset_label_type():
     d_max_class = dataset.next_oso_Dataset(label_type="max_class")
     d_probas = dataset.next_oso_Dataset(label_type="probas")
-    d_v2 = dataset.next_oso_Dataset(label_type="v2")
+    d_v2 = dataset.next_oso_Dataset(label_type="oso_type")
 
     assert (d_max_class.__getitem__(1000)[1]).shape == (128, 128)
     assert (d_probas.__getitem__(1000)[1]).shape == (25, 128, 128)
@@ -137,10 +133,10 @@ def test_dataloader_folds_exception():
 @pytest.mark.parametrize(
     "path",
     [
-        "/home/hkerino/Documents/nextoso-dataset/data/10m/s2/2/fold_1/s2_0010.nc",
-        "/home/hkerino/Documents/nextoso-dataset/data/10m/s2/5/fold_3/s2_0035.nc",
-        "/home/hkerino/Documents/nextoso-dataset/data/10m/s2/8/fold_5/s2_0054.nc",
-        "/home/hkerino/Documents/nextoso-dataset/data/10m/s2/9/fold_2/s2_1262.nc",
+        "/home/hkerino/Documents/nextoso-dataset/data/10m/s2/s2_0010.nc",
+        "/home/hkerino/Documents/nextoso-dataset/data/10m/s2/s2_0035.nc",
+        "/home/hkerino/Documents/nextoso-dataset/data/10m/s2/s2_0054.nc",
+        "/home/hkerino/Documents/nextoso-dataset/data/10m/s2/s2_1262.nc",
     ],
 )
 def test_open_and_normalisation(path):
@@ -154,7 +150,7 @@ def test_open_and_normalisation(path):
 
     sits_tensor = torch.from_numpy(sits_array).float()
     normalisation = transfrom.load_transform_one_mod(
-        "/home/hkerino/Documents/nextoso-dataset/data/10m/s2/stats.csv"
+        "/home/hkerino/Documents/nextoso-dataset/data/10m/metadata/stats.csv"
     )
     sits_normed = normalisation.transform(sits_tensor)
 
