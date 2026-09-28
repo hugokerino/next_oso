@@ -60,7 +60,7 @@ def main(config):
         num_nodes=config["nodes"],
         strategy=config["strategy"],
         precision=get_precision(),
-        limit_test_batches=20,
+        limit_test_batches=1.0,
     )
 
     ########################################
@@ -87,6 +87,8 @@ def main(config):
         name_class=pandas.read_csv(config["path_oso_classes"]).get("name_class").values,
         path_raw_matrix=f"{config['path_dir_checkpoints']}/fold_{config['fold_index'] + 1}/raw_matrix.pt",
     )
+    
+    best_classifier.eval()
 
     trainer.test(model=best_classifier, dataloaders=dl_test)
 

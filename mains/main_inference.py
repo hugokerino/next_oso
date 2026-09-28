@@ -66,12 +66,12 @@ def main(config, log_dir, save_preds_dir):
     print("\nTESTING ...")
     sys.stdout.flush()
     checkpoint = os.listdir(
-        os.path.join(log_dir, f"fold_{config['fold_index'] + 1}Checkpoints/")
+        os.path.join(log_dir, f"fold_{config['fold_index'] + 1}/Checkpoints/")
     )[0]
     print(f"Loading checkpoint: {checkpoint}")
 
     best_classifier = lightning_module.classifier.load_from_checkpoint(
-        os.path.join(log_dir, "Checkpoints", checkpoint),
+        os.path.join(log_dir, f"fold_{config['fold_index']+1}/Checkpoints", checkpoint),
         weights_only=True,
         encoder=encoder,
         decoder=decoder,

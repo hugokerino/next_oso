@@ -30,7 +30,7 @@ echo "Launch python file"
 
 pixi run -e gpu python mains/main_inference.py \
     --config_train configs/models/train_trex.yaml \
-    --config_model configs/models/LTAE.yaml \
-    --path_dir_log /work/THEIA/CES/oso/hugok/next_oso/logs/light_training/LTAE_mlp_2026-09-04_kfold/fold_1 \
+    --config_model configs/models/ALISE.yaml \
+    --path_dir_log /work/THEIA/CES/oso/hugok/next_oso/logs/light_training/ALISE_mlp_2026-09-21_kfold/fold_1 \
     --path_save_preds /work/THEIA/CES/oso/hugok/predictions/preds_folder_5
 echo "End"

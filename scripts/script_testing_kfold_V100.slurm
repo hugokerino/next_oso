@@ -27,11 +27,13 @@ module purge
 module load pixi
 
 echo "Launch python file"
+export PYTORCH_ALLOC_CONF=expandable_segments:True
+export PATH=$(dirname $(which pixi)):$PATH
 
-pixi run -e gpu python mains/main_testing_kfold.py \
-    --config_train configs/models/train_trex.yaml \
+srun --export=ALL pixi run -e gpu python mains/main_testing_kfold.py \
+    --config_train configs/models/train_trex_kfold.yaml \
     --config_model configs/models/ALISE.yaml \
-    --path_dir_log /work/THEIA/CES/oso/hugok/next_oso/light_training/ALISE_kfold_spatial_07-17 \
+    --path_dir_checkpoints /work/THEIA/CES/oso/hugok/next_oso/logs/light_training/ALISE_2026-07-17_kfold \
     --fold_index $SLURM_ARRAY_TASK_ID
 
 echo "End"
