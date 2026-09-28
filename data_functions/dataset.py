@@ -6,21 +6,23 @@ import torch
 import torch.utils.data as tdata
 import xarray as xr
 import pandas
+from pathlib import Path
+
 from data_functions import collate, utils_data, transfrom
 
 
 class next_oso_Dataset(tdata.Dataset):
     def __init__(
         self,
-        path_data: str = "/home/hkerino/Documents/nextoso-dataset/data/10m",
-        folds=None,
+        path_data: Path = "/home/hkerino/Documents/nextoso-dataset/data/10m",
+        folds: list[int] | None = None,
         use_mnt_data: bool = True,
         norm: bool = True,
         remove_invalid_temp: bool = True,
         mask_needed: bool = False,  # if True return the mask of S2 validity
         mask_invalid: bool = True,  # if True put zeros in labels where S2 is invalid
         return_id: bool = False,
-        label_type: str = "max_class",
+        label_type: str = "max_class",  # choose btw 'max_class', 'oso_type', 'probas', 'v3'
         date_type: str = "relative",
         reference_date: str = "2019-12-31",
     ):
@@ -128,14 +130,14 @@ class next_oso_Dataset(tdata.Dataset):
                 )  # Replace -1 by 0
                 label = torch.from_numpy(label_numpy).long()  # h x w
 
-            if self.label_type == "oso_type":
+            elif self.label_type == "oso_type":
                 label_numpy = label_data["labels_no_overlap"].data  # NumPy
                 label_numpy = np.where(
                     label_numpy == -1, 0, label_numpy
                 )  # Replace -1 by 0
                 label = torch.from_numpy(label_numpy).long()  # h x w
 
-            if self.label_type == "probas":
+            elif self.label_type == "probas":
                 labels_probas = np.zeros((25, 128, 128))
                 for k, var in enumerate(self.name_labels):
                     if var in list(label_data.data_vars):
@@ -145,12 +147,15 @@ class next_oso_Dataset(tdata.Dataset):
                         )  # Replace -1 by 0
                 label = torch.from_numpy(labels_probas).float()  # c x h x w
 
-            if self.label_type == "erode_max_class":
+            elif self.label_type == "erode_max_class":
                 label_eroded = utils_data.erode_class_max(label_data, buff=-10).data
                 label_eroded = np.where(
                     label_eroded == -1, 0, label_eroded
                 )  # Replace -1 by 0
                 label = torch.from_numpy(label_eroded).long()  # h x w
+
+            else:
+                raise ValueError(f"{self.label_type}, Label type unknow")
 
             if self.mask_invalid:
                 mask_label = ~(
@@ -164,9 +169,9 @@ class next_oso_Dataset(tdata.Dataset):
         sample = (s2, date, mask, geo)
 
         if self.return_id:
-            return sample, label, self.ids[idx] if isinstance(idx, int) else idx
-
-        return sample, label
+            return sample, label, id
+        else:
+            return sample, label
 
 
 def get_loaders(

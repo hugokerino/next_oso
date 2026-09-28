@@ -29,7 +29,7 @@ module load pixi
 echo "Launch python file"
 
 pixi run -e gpu python mains/main_inference.py \
-    --config_train configs/models/train_trex_kfold.yaml \
+    --config_train configs/models/train_trex.yaml \
     --config_model configs/models/ALISE.yaml \
     --path_dir_log /work/THEIA/CES/oso/hugok/next_oso/logs/light_training/ALISE_mlp_2026-09-21_kfold \
     --path_save_preds /work/THEIA/CES/oso/hugok/predictions/ALISE_preds/v3 \

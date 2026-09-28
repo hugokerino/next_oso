@@ -34,7 +34,7 @@ task_id=${SLURM_ARRAY_TASK_ID:-0}
 
 
 pixi run -e gpu python mains/main_PCA_embedding_kfold.py \
-    --config "/work/THEIA/CES/oso/hugok/next_oso/configs/FM_models/train_trex_kfold.yaml" \
+    --config "/work/THEIA/CES/oso/hugok/next_oso/configs/FM_models/train_trex.yaml" \
     --n_component 128 \
     --fold_index 4
 

@@ -1,18 +1,23 @@
 # Paths
-path_s2: /work/THEIA/CES/oso/hugok/s2_data
-path_label: /work/THEIA/CES/oso/hugok/labels
-path_oso_classes: /work/THEIA/CES/oso/hugok/files_s2/oso_classes.csv
+path_data: /work/THEIA/CES/oso/hugok/nextoso-dataset
 path_logs: /work/THEIA/CES/oso/hugok/next_oso/logs/light_training
-path_mnt: /work/THEIA/CES/oso/hugok/mnt_data #if passed = used. Pass null to don't use spatial coords in training
 
 # Data
-num_worker: 4
 label_type: max_class
-num_class: 25
 folds_train: [1, 2, 3]
 folds_val: [4]
 folds_test: [5]
-sequence_packing: false
+
+folds :
+  - [[1,2,3], [4], [5]]
+  - [[2,3,4], [5], [1]]
+  - [[3,4,5], [1], [2]]
+  - [[4,5,1], [2], [3]]
+  - [[5,1,2], [3], [4]]
+
+num_worker: 4
+num_class: 25
+
 
 # Training
 decoder_type: mlp #choose among "mlp" or "cnn"

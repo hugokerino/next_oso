@@ -9,7 +9,6 @@ from lightning.pytorch.callbacks import (
 from lightning.pytorch.profilers import SimpleProfiler
 from lightning.pytorch.plugins.environments import SLURMEnvironment
 
-import pandas
 import signal
 import json
 import os
@@ -68,10 +67,7 @@ def main(config):
         num_worker=config["num_worker"],
         label_type=config["label_type"],
         mask_needed=config["mask_need"],
-        norm=True
-        if config["model"] in ["LTAE", "UTAE", "ALISE", "ALISE_encoding"]
-        else False,
-        norm_alise=True if config["model"] == "ALISE_pretrained" else False,
+        norm=True if config["model"] in ["LTAE", "UTAE", "ALISE"] else False,
         sequence_packing=config["sequence_packing"],
         remove_invalid_temp=True,
         shuffle=True,
@@ -152,7 +148,7 @@ def main(config):
         optimizer_scheduler=config["optimizer_scheduler"],
         lr=config["learning_rate"],
         max_epochs=config["epochs_max"],
-        name_class=pandas.read_csv(config["path_oso_classes"]).get("name_class").values,
+        name_class=dl_train.dataset.name_labels,
     )
     # Training
     trainer.fit(model=classifier, train_dataloaders=dl_train, val_dataloaders=dl_val)
@@ -172,9 +168,9 @@ def main(config):
             decoder=decoder,
             loss_fn=criterion,
             batch_size=config["batch_size"],
-            name_class=pandas.read_csv(config["path_oso_classes"])
-            .get("name_class")
-            .values,
+            name_class=dl_test.dataset.name_labels,
+            path_save_excel=f"{log_dir}/metrics.xlsx",
+            path_raw_matrix=f"{log_dir}/raw_matrix.pt",
         )
 
     trainer.test(model=best_classifier, dataloaders=dl_test)

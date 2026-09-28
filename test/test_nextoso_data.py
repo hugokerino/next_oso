@@ -66,15 +66,23 @@ def test_dataset_return_data():
     d = dataset.next_oso_Dataset(use_mnt_data=True)
     assert d.__getitem__(1)[0][3] is not None
 
+    d = dataset.next_oso_Dataset(use_mnt_data=True, mask_needed=True, return_id=True)
+    assert len(d.__getitem__(100)) == 3, "should return (datas, label, id)"
+    assert (d.__getitem__(1)[0][3] is not None) and (d.__getitem__(1)[0][2] is not None)
+
 
 def test_dataset_label_type():
     d_max_class = dataset.next_oso_Dataset(label_type="max_class")
     d_probas = dataset.next_oso_Dataset(label_type="probas")
     d_v2 = dataset.next_oso_Dataset(label_type="oso_type")
+    d_invalid_type = dataset.next_oso_Dataset(label_type="invalid")
 
     assert (d_max_class.__getitem__(1000)[1]).shape == (128, 128)
     assert (d_probas.__getitem__(1000)[1]).shape == (25, 128, 128)
     assert (d_v2.__getitem__(1000)[1]).shape == (128, 128)
+
+    with pytest.raises(ValueError, match="Label type unknow"):
+        d_invalid_type.__getitem__(1000)
 
 
 def test_dataset_date_type():

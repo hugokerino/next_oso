@@ -6,7 +6,6 @@ from lightning.pytorch.callbacks import (
     EarlyStopping,
 )
 from lightning.pytorch.plugins.environments import SLURMEnvironment
-import pandas
 
 import signal
 import json
@@ -49,6 +48,9 @@ def main(config):
 
     log_fold = os.path.join(log_dir, f"fold_{str(config['fold_index'] + 1)}")
 
+    ########################################
+    #  Build classifier and Load data
+    ########################################
     criterion = select_criterion(config["criterion"])
     encoder, decoder, batch_size = build_model(config)
     config["batch_size"] = (
@@ -58,12 +60,7 @@ def main(config):
     selected_fold = config["selected_fold"]
 
     dl_train, dl_val, dl_test = dataset.get_loaders(
-        path_s2=config["path_s2"],
-        path_mnt=config[
-            "path_mnt"
-        ],  # if not None, add spatial vars to the decoding part
-        path_label=config["path_label"],
-        path_oso_class=config["path_oso_classes"],
+        path_data=config["path_data"],
         folds_train=selected_fold[0],
         folds_val=selected_fold[1],
         folds_test=selected_fold[2],
@@ -71,11 +68,9 @@ def main(config):
         num_worker=config["num_worker"],
         label_type=config["label_type"],
         mask_needed=config["mask_need"],
-        norm=True
-        if config["model"] in ["LTAE", "UTAE", "ALISE", "ALISE_encoding"]
-        else False,
-        norm_alise=True if config["model"] == "ALISE_pretrained" else False,
+        norm=True if config["model"] in ["LTAE", "UTAE", "ALISE"] else False,
     )
+
     checkpoint_callback = ModelCheckpoint(
         dirpath=os.path.join(log_fold, "Checkpoints/"),
         save_weights_only=True,
@@ -127,6 +122,7 @@ def main(config):
         optimizer_scheduler=config["optimizer_scheduler"],
         loss_fn=criterion,
         lr=config["learning_rate"],
+        name_class=dl_train.dataset.name_labels,
     )
 
     ########################################
@@ -152,9 +148,7 @@ def main(config):
             decoder=decoder,
             loss_fn=criterion,
             batch_size=config["batch_size"],
-            name_class=pandas.read_csv(config["path_oso_classes"])
-            .get("name_class")
-            .values,
+            name_class=dl_test.dataset.name_labels,
             path_save_excel=f"{log_fold}/metrics.xlsx",
             path_raw_matrix=f"{log_fold}/raw_matrix.pt",
         )
@@ -165,7 +159,7 @@ def main(config):
     # SAVE CONFIG
     ########################################
     if not config["test_model"]:
-        with open(os.path.join(log_dir, "config_parameters.json"), "w") as c:
+        with open(os.path.join(log_fold, "config_parameters.json"), "w") as c:
             json.dump(config, c, indent=4)
 
 

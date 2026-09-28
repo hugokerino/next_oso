@@ -21,7 +21,7 @@ def build_model(config: dict):
     encoder: torch.nn.Module
     decoder: torch.nn.Module
 
-    if config["path_mnt"]:
+    if config["use_mnt_data"]:
         dec_cfg["layers"][0] += (
             4 * enc_cfg["temporal_projector"]["n_q"] if model_name == "ALISE" else 4
         )  # Ajouter 4 dimensions pour les coordonnées spatiales si utilisé seulement au decoding
