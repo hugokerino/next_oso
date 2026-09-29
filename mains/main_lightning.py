@@ -58,8 +58,7 @@ def main(config):
         path_mnt=config[
             "path_mnt"
         ],  # if not None, add spatial vars to the decoding part
-        path_label=config["path_label"],
-        path_oso_class=config["path_oso_classes"],
+        path_data=config["path_data"],
         folds_train=config["folds_train"],
         folds_val=config["folds_val"],
         folds_test=config["folds_test"],
@@ -68,9 +67,6 @@ def main(config):
         label_type=config["label_type"],
         mask_needed=config["mask_need"],
         norm=True if config["model"] in ["LTAE", "UTAE", "ALISE"] else False,
-        sequence_packing=config["sequence_packing"],
-        remove_invalid_temp=True,
-        shuffle=True,
     )
 
     ########################################
