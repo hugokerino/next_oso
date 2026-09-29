@@ -287,9 +287,9 @@ def geographical_information(
 
 is_cluster = "SLURM_JOB_ID" in os.environ
 path_to_oso_name = (
-    "/work/THEIA/CES/oso/hugok/files_s2/oso_classes.csv"
+    "/work/THEIA/CES/oso/hugok/nextoso-dataset/metadata/oso_classes.csv"
     if is_cluster
-    else "/home/hkerino/Documents/nextoso-dataset/data/auxiliary/OSO/oso_classes.csv"
+    else "/home/hkerino/Documents/nextoso-dataset/data/10m/metadata/oso_classes.csv"
 )
 names_class = (
     pandas.read_csv(path_to_oso_name).get("name_class").values
