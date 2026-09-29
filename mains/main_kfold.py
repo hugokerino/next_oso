@@ -61,6 +61,7 @@ def main(config):
 
     dl_train, dl_val, dl_test = dataset.get_loaders(
         path_data=config["path_data"],
+        use_mnt_data=config["use_mnt_data"],
         folds_train=selected_fold[0],
         folds_val=selected_fold[1],
         folds_test=selected_fold[2],
