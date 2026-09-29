@@ -54,11 +54,8 @@ def main(config):
     sys.stdout.flush()
 
     dl_train, dl_val, dl_test = dataset.get_loaders(
-        path_s2=config["path_s2"],
-        path_mnt=config[
-            "path_mnt"
-        ],  # if not None, add spatial vars to the decoding part
         path_data=config["path_data"],
+        use_mnt_data=config["use_mnt_data"],
         folds_train=config["folds_train"],
         folds_val=config["folds_val"],
         folds_test=config["folds_test"],
