@@ -13,7 +13,11 @@ from argparse import ArgumentParser
 from datetime import datetime
 import signal
 
-from Alise import decode_embedding, utils_ALISE, master_query_decoding
+from supervised_models.ALISE_frozen import (
+    decode_embedding,
+    utils_ALISE,
+    master_query_decoding,
+)
 from mains.main_utils import get_precision
 
 

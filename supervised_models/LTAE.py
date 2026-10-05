@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-from src.utils_model import PositionalEncoder, duplicate_to_img
+from supervised_models.utils_model import PositionalEncoder, duplicate_to_img
 
 
 # LTAE ENCODER MODEL

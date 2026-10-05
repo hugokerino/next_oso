@@ -26,7 +26,7 @@ def encode_series_malise_onnx(
     transform = load_transform_one_mod(args.path_csv_norm, mod=sat.lower()).transform
 
     ort_session = onnxruntime.InferenceSession(
-        args.path_malise_model,
+        args.path_malice_model,
         sess_opt,
         providers=["CPUExecutionProvider"],
     )
@@ -34,13 +34,9 @@ def encode_series_malise_onnx(
     if args.data == "next_oso":
         # DATA
         d = dataset.next_oso_Dataset(
-            path_s2=args.path_s2,
-            path_label=args.path_label,
-            path_oso_class=args.path_oso_classes,
-            path_mnt=None,
+            path_data=args.path_data,
             folds=[args.fold],
             norm=False,
-            norm_pretrained_alise=False,
             return_id=True,
         )
         nbr_sample = d.__len__()
@@ -112,29 +108,9 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--path_s2",
+        "--path_data",
         type=str,
-        default="/home/hkerino/Documents/nextoso-dataset/data/10m/s2",
-    )
-    parser.add_argument(
-        "--path_pastis",
-        type=str,
-        default="/home/hkerino/Documents/PASTIS",
-    )
-    parser.add_argument(
-        "--path_mnt",
-        type=str,
-        default=None,
-    )
-    parser.add_argument(
-        "--path_label",
-        type=str,
-        default="/home/hkerino/Documents/nextoso-dataset/data/10m/labels",
-    )
-    parser.add_argument(
-        "--path_oso_classes",
-        type=str,
-        default="/home/hkerino/Documents/nextoso-dataset/data/auxiliary/OSO/oso_classes.csv",
+        default="/home/hkerino/Documents/nextoso-dataset/data/10m/",
     )
 
     parser.add_argument(
@@ -149,7 +125,7 @@ if __name__ == "__main__":
         default="/home/hkerino/Documents/model_data/MALICE/norm_MALICE_s2.csv",
     )
     parser.add_argument(
-        "--path_malise_model",
+        "--path_malice_model",
         type=str,
         default="/home/hkerino/Documents/model_data/MALICE/malice_s2.onnx",
     )

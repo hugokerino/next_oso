@@ -9,12 +9,11 @@ from pathlib import Path
 from tqdm import tqdm
 
 
+from supervised_models import lightning_module
 from data_functions import dataset
-from src import lightning_module, metrics
 from mains.main_utils import load_config, build_model, select_criterion
 
 
-torch.serialization.add_safe_globals([metrics.FocalLoss])
 torch.set_float32_matmul_precision("high")
 
 

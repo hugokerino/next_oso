@@ -19,7 +19,7 @@ from torchmetrics.classification import (
 from einops import rearrange, repeat
 
 from src import metrics
-from src.utils_model import MLP_Decoder, CNN_Decoder
+from supervised_models.utils_model import MLP_Decoder, CNN_Decoder
 
 
 class classifier(L.LightningModule):

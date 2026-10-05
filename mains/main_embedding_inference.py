@@ -13,11 +13,9 @@ import lightning as L
 
 from embedding.dataset_embedding import embedding_datamodule
 from embedding.decode_lightning_module import DecodeEmbedding
-from src import metrics
 from mains.main_utils import build_decoder
 
 
-torch.serialization.add_safe_globals([metrics.FocalLoss])
 torch.set_float32_matmul_precision("high")
 
 

@@ -1,10 +1,9 @@
 import torch
 import torch.nn as nn
 import copy
-from Alise import temporal_proj
+from supervised_models.ALISE_blocks import temporal_proj
 
 
-# Classical position encoding
 # Classical position encoding
 class PositionalEncoder(nn.Module):
     def __init__(self, d, T=1000, repeat=None, offset=0):

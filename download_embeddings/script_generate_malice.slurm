@@ -12,12 +12,9 @@
 
 mkdir -p script_logs
 
-data='pastis'
-PATH_s2='/work/THEIA/CES/oso/hugok/s2_data/'
-PATH_pastis='/work/THEIA/CES/oso/hugok/pastis'
-PATH_label='/work/THEIA/CES/oso/hugok/labels'
-PATH_class_name='/work/THEIA/CES/oso/hugok/files_s2/oso_classes.csv'
-PATH_save_embedding='/work/THEIA/CES/oso/hugok/pastis/malice_data' #'/work/THEIA/CES/oso/hugok/malice/embeddings'
+data='next_oso'
+PATH_data='/work/THEIA/CES/oso/hugok/nextoso-dataset/data/10m' #'/work/THEIA/CES/oso/hugok/nextoso-dataset/data/10m'
+PATH_save_embedding= '/work/THEIA/CES/oso/hugok/malice/embeddings' #'/work/THEIA/CES/oso/hugok/pastis/malice_data'
 PATH_csv_norm='/work/THEIA/CES/oso/hugok/malice/norm_MALICE_s2.csv'
 PATH_model_onnx='/work/THEIA/CES/oso/hugok/malice/malice_s2.onnx'
 
@@ -33,13 +30,9 @@ echo "Launch python file"
 
 pixi run python src/MALICE.py \
     --data "$data" \
-    --path_s2 "$PATH_s2" \
-    --path_pastis "$PATH_pastis" \
-    --path_mnt "$PATH_mnt" \
-    --path_label "$PATH_label" \
-    --path_oso_classes "$PATH_class_name" \
+    --path_data "$PATH_data" \
     --path_saved_embeddings "$PATH_save_embedding" \
     --path_csv_norm "$PATH_csv_norm" \
-    --path_malise_model "$PATH_model_onnx" \
+    --path_malice_model "$PATH_model_onnx" \
     --fold ${SLURM_ARRAY_TASK_ID}
 echo "End"

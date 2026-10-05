@@ -1,8 +1,9 @@
 import yaml
 import torch
 import numpy as np
-from src import LTAE, UTAE, utils_model, metrics
-from Alise import ALISE, sse, transformer, temporal_proj
+from supervised_models import LTAE, UTAE, ALISE, utils_model
+from src import custom_loss_functions
+from supervised_models.ALISE_blocks import sse, transformer, temporal_proj
 
 
 def load_config(train_cfg_path: str, model_cfg_path: str) -> dict:
@@ -75,13 +76,15 @@ def select_criterion(loss: str):
             ignore_index=0, weight=torch.load("data_functions/weights_loss.pt")
         )
     elif loss == "weightedCE":
-        criterion = metrics.WeightedCE()
+        criterion = custom_loss_functions.WeightedCE()
     elif loss == "hard_and_softCE":
-        criterion = metrics.Hard_and_softCE()
+        criterion = custom_loss_functions.Hard_and_softCE()
     elif loss == "maskCE":
-        criterion = metrics.MaskCE(thresholds=np.load("data_functions/thresholds.npy"))
+        criterion = custom_loss_functions.MaskCE(
+            thresholds=np.load("data_functions/thresholds.npy")
+        )
     elif loss == "distillationLoss":
-        criterion = metrics.DistillationLoss()
+        criterion = custom_loss_functions.DistillationLoss()
     else:
         raise ValueError(f"Loss inconnu : {loss}")
 

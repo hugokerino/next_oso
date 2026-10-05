@@ -5,7 +5,6 @@ from lightning.pytorch.callbacks import (
     ModelCheckpoint,
     EarlyStopping,
 )
-from lightning.pytorch.profilers import SimpleProfiler
 from lightning.pytorch.plugins.environments import SLURMEnvironment
 
 import signal
@@ -17,10 +16,11 @@ from datetime import datetime
 import sys
 
 from pastis import pastis_dataset
-from src import lightning_module, metrics
+from src import custom_loss_functions
+from supervised_models import lightning_module
 from mains.main_utils import load_config, build_model, select_criterion, get_precision
 
-torch.serialization.add_safe_globals([metrics.FocalLoss])
+torch.serialization.add_safe_globals([custom_loss_functions.FocalLoss])
 torch.set_float32_matmul_precision("high")
 torch.backends.cuda.enable_flash_sdp(
     False
@@ -48,7 +48,6 @@ def main(config):
     log_fold = os.path.join(log_dir, f"fold_{str(config['fold_index'] + 1)}")
 
     criterion = select_criterion(config["criterion"])
-    config["path_mnt"] = None
     encoder, decoder, batch_size = build_model(config)
     config["batch_size"] = (
         batch_size  # Update batch size in config for data loading and lightning module
@@ -78,7 +77,6 @@ def main(config):
         log_fold, name="tensorboards", default_hp_metric=False
     )
     early_stop = EarlyStopping(monitor="val_fscore", mode="max", patience=20)
-    profiler = SimpleProfiler(log_fold)
 
     list_callback = [
         checkpoint_callback,
@@ -111,7 +109,6 @@ def main(config):
         limit_test_batches=limit_batches,
         precision=get_precision(),
         plugins=plugin,
-        profiler=profiler,
     )
 
     # Model
@@ -123,6 +120,7 @@ def main(config):
         loss_fn=criterion,
         lr=config["learning_rate"],
         num_classe=config["num_class"],
+        name_class=name_class,
     )
 
     ########################################
@@ -152,6 +150,7 @@ def main(config):
             num_classe=config["num_class"],
             name_class=name_class,
             path_save_excel=f"{log_fold}/metrics.xlsx",
+            path_save_raw_matrix=f"{log_fold}/raw_matrix.pt",
         )
 
     trainer.test(model=best_classifier, dataloaders=dl_test)

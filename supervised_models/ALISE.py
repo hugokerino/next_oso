@@ -2,7 +2,7 @@ from torch import nn, Tensor
 from einops import rearrange, repeat
 
 
-from Alise import sse, transformer, temporal_proj
+from supervised_models.ALISE_blocks import sse, transformer, temporal_proj
 
 
 class ALISE(nn.Module):

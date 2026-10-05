@@ -17,7 +17,7 @@ import yaml
 from embedding.decode_lightning_module import DecodeEmbedding
 from embedding.dataset_embedding_PCA import embedding_datamodule_pca
 from mains.main_utils import get_precision
-from src.utils_model import MLP_Decoder
+from supervised_models.utils_model import MLP_Decoder
 
 
 def main(config):
