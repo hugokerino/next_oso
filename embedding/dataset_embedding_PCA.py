@@ -44,16 +44,14 @@ class embedding_datamodule_pca(embedding_datamodule):
         elif self.model == "malice":
             pca, scaler = self.create_scaler_pca_incremental(
                 fold=kwargs["fold_train"], n_component=n_component
-            )
+            )  # incremental PCA for malice model due to large embedding size, cannot fit in memory
 
         self.data_train = embedding_dataset_pca(
             scaler=scaler,
             pca=pca,
-            data=self.data,
+            dataset=self.dataset,
             model=self.model,
-            path_embeddings=self.path_embeddings,
-            path_labels=self.path_labels,
-            path_mapping_folder=self.path_mapping_folder,
+            path_data=self.path_data,
             fold=self.fold_train,
             label_type=self.label_type,
             mask=self.mask,
@@ -63,11 +61,9 @@ class embedding_datamodule_pca(embedding_datamodule):
         self.data_val = embedding_dataset_pca(
             scaler=scaler,
             pca=pca,
-            data=self.data,
+            dataset=self.dataset,
             model=self.model,
-            path_embeddings=self.path_embeddings,
-            path_labels=self.path_labels,
-            path_mapping_folder=self.path_mapping_folder,
+            path_data=self.path_data,
             fold=self.fold_val,
             label_type=self.label_type,
             mask=self.mask,
@@ -77,13 +73,11 @@ class embedding_datamodule_pca(embedding_datamodule):
         self.data_test = embedding_dataset_pca(
             scaler=scaler,
             pca=pca,
-            data=self.data,
+            dataset=self.dataset,
             model=self.model,
-            path_embeddings=self.path_embeddings,
-            path_labels=self.path_labels,
-            path_mapping_folder=self.path_mapping_folder,
+            path_data=self.path_data,
             fold=self.fold_test,
-            label_type=self.label_type,
+            label_type=self.label_type_test,
             mask=self.mask,
             preload=self.preload,
             return_id=self.return_id,
@@ -93,11 +87,9 @@ class embedding_datamodule_pca(embedding_datamodule):
         print("Standard PCA")
         sys.stdout.flush()
         dataset = embedding_dataset(
-            data=self.data,
+            dataset=self.dataset,
             model=self.model,
-            path_embeddings=self.path_embeddings,
-            path_labels=self.path_labels,
-            path_mapping_folder=self.path_mapping_folder,
+            path_data=self.path_data,
             preload=False,
             fold=fold,
         )
@@ -132,11 +124,9 @@ class embedding_datamodule_pca(embedding_datamodule):
         print("Incremental PCA")
         sys.stdout.flush()
         dataset = embedding_dataset(
-            data=self.data,
+            dataset=self.dataset,
             model=self.model,
-            path_embeddings=self.path_embeddings,
-            path_labels=self.path_labels,
-            path_mapping_folder=self.path_mapping_folder,
+            path_data=self.path_data,
             preload=False,
             fold=fold,
         )

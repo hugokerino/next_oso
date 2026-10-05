@@ -37,11 +37,9 @@ def main(config):
     selected_fold = config["selected_fold"]
 
     datamodule_pca = embedding_datamodule_pca(
-        data=config["data"],
+        dataset=config["dataset"],
         model=model,
-        path_embeddings=config["path_embedding"],
-        path_labels=config["path_label"],
-        path_mapping_folder=config["path_mapping_folder"],
+        path_data=config["path_data"],
         fold_train=selected_fold[0],
         fold_val=selected_fold[1],
         fold_test=selected_fold[2],
@@ -57,9 +55,13 @@ def main(config):
     config["path_save_excel"] = f"{log_fold}/metrics.xlsx"
     layers = [config["n_component"], 64, 32, 25]
     decoder = MLP_Decoder(layers=layers, dropout=0.1)
-    classifier = DecodeEmbedding(decoder=decoder, config=config)
+    classifier = DecodeEmbedding(
+        decoder=decoder,
+        config=config,
+        names_class=datamodule_pca.data_train.name_labels,
+    )
 
-    limit_batches = 1.0
+    limit_batches = 1
     # training
     trainer = Trainer(
         accelerator="gpu" if torch.cuda.is_available() else "cpu",
