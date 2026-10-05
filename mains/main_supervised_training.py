@@ -4,22 +4,22 @@ from lightning.pytorch.loggers import TensorBoardLogger
 from lightning.pytorch.callbacks import (
     ModelCheckpoint,
     EarlyStopping,
-    DeviceStatsMonitor,
 )
-from lightning.pytorch.profilers import SimpleProfiler
 from lightning.pytorch.plugins.environments import SLURMEnvironment
 
 import signal
 import json
 import os
-import sys
 import pprint
 from argparse import ArgumentParser
 from datetime import datetime
+import sys
+
 
 from data_functions import dataset
 from src import lightning_module, metrics
 from mains.main_utils import load_config, build_model, select_criterion, get_precision
+
 
 torch.serialization.add_safe_globals([metrics.FocalLoss])
 torch.set_float32_matmul_precision("high")
@@ -35,84 +35,77 @@ def main(config):
     date = datetime.now().date().strftime("%Y-%m-%d")
 
     ########################################
-    # MODEL
+    #  PATH TO SAVE
     ########################################
-    print("\nLOADING MODEL ...")
+    log_dir = os.path.join(
+        config["path_logs"], f"{config['model']}_{config['decoder_type']}_{date}_kfold"
+    )
+
+    if config["logs"]:
+        os.makedirs(log_dir, exist_ok=True)
+        print("Logs will be stored in:", log_dir)
+
+    print(f"FOLD {config['fold_index']}")
     sys.stdout.flush()
 
-    # criterion = torch.nn.CrossEntropyLoss(ignore_index=0)
+    log_fold = os.path.join(log_dir, f"fold_{str(config['fold_index'] + 1)}")
+
+    ########################################
+    #  Build classifier and Load data
+    ########################################
     criterion = select_criterion(config["criterion"])
     encoder, decoder, batch_size = build_model(config)
     config["batch_size"] = (
         batch_size  # Update batch size in config for data loading and lightning module
     )
 
-    ########################################
-    # DATA
-    ########################################
-    print("\nLOADING DATA ...")
-    sys.stdout.flush()
+    # config["selected_fold"] holds the actual tuple/list of [train, val, test] for this job
+    selected_fold = config["selected_fold"]
 
+    # Load dataloaders
     dl_train, dl_val, dl_test = dataset.get_loaders(
         path_data=config["path_data"],
         use_mnt_data=config["use_mnt_data"],
-        folds_train=config["folds_train"],
-        folds_val=config["folds_val"],
-        folds_test=config["folds_test"],
+        folds_train=selected_fold[0],
+        folds_val=selected_fold[1],
+        folds_test=selected_fold[2],
         batch_size=config["batch_size"],
         num_worker=config["num_worker"],
         label_type=config["label_type"],
+        label_type_test=config["label_type_test"],
         mask_needed=config["mask_need"],
         norm=True if config["model"] in ["LTAE", "UTAE", "ALISE"] else False,
     )
 
-    ########################################
-    # TRAINING
-    ########################################
-    print("\nTRAINING ...")
-    sys.stdout.flush()
-
-    base_log_dir = os.path.join(
-        config["path_logs"], f"{config['model']}_{config['decoder_type']}_{date}"
-    )
-    log_dir = base_log_dir
-    counter = 1
-    while os.path.exists(log_dir):
-        log_dir = f"{base_log_dir}_{counter}"
-        counter += 1
-
-    if config["logs"]:
-        os.makedirs(log_dir, exist_ok=True)
-        print("Logs will be stored in:", log_dir)
-
+    # Callbacks and Logger
     checkpoint_callback = ModelCheckpoint(
-        dirpath=os.path.join(log_dir, "Checkpoints/"),
+        dirpath=os.path.join(log_fold, "Checkpoints/"),
         save_weights_only=True,
         monitor="val_fscore",
         mode="max",
         save_top_k=1,
     )
-    tb_logger = TensorBoardLogger(log_dir, name="tensorboards", default_hp_metric=False)
-    early_stop = EarlyStopping(monitor="val_fscore", mode="max", patience=30)
-    profiler = SimpleProfiler(dirpath=log_dir, filename="profiler")
+    early_stop = EarlyStopping(monitor="val_fscore", mode="max", patience=20)
 
     list_callback = [
         checkpoint_callback,
         early_stop,
-        DeviceStatsMonitor(cpu_stats=False),
     ]
-    limit_batches = 1.0
 
+    tb_logger = TensorBoardLogger(
+        log_fold, name="tensorboards", default_hp_metric=False
+    )
+    limit_batches = 1.0  # 1.0 means use all batches, 0.1 means use 10% of batches, etc.
     if config["test_model"]:
         tb_logger = None
         list_callback = None
-        profiler = None
-        limit_batches = 2
+        limit_batches = 1  # Only use 1 batch for testing pipeline
 
     plugin = None
     if config["running_on_trex_gpu"]:
-        plugin = [SLURMEnvironment(requeue_signal=signal.SIGHUP, auto_requeue=True)]
+        plugin = [SLURMEnvironment(requeue_signal=signal.SIGUSR1, auto_requeue=True)]
 
+    # Trainer
     trainer = L.Trainer(
         logger=tb_logger,
         accumulate_grad_batches=1,
@@ -123,7 +116,6 @@ def main(config):
         devices=config["devices"],
         num_nodes=config["nodes"],
         strategy=config["strategy"],
-        profiler=profiler,
         num_sanity_val_steps=limit_batches,
         limit_train_batches=limit_batches,
         limit_val_batches=limit_batches,
@@ -137,12 +129,19 @@ def main(config):
         encoder,
         decoder,
         batch_size=config["batch_size"],
-        loss_fn=criterion,
         optimizer_scheduler=config["optimizer_scheduler"],
+        loss_fn=criterion,
         lr=config["learning_rate"],
         max_epochs=config["epochs_max"],
         name_class=dl_train.dataset.name_labels,
     )
+
+    ########################################
+    # TRAINING
+    ########################################
+    print("\nTRAINING ...")
+    sys.stdout.flush()
+
     # Training
     trainer.fit(model=classifier, train_dataloaders=dl_train, val_dataloaders=dl_val)
 
@@ -151,7 +150,6 @@ def main(config):
     ########################################
     print("\nTESTING ...")
     sys.stdout.flush()
-
     best_classifier = classifier
     if not config["test_model"]:
         best_classifier = lightning_module.classifier.load_from_checkpoint(
@@ -162,8 +160,8 @@ def main(config):
             loss_fn=criterion,
             batch_size=config["batch_size"],
             name_class=dl_test.dataset.name_labels,
-            path_save_excel=f"{log_dir}/metrics.xlsx",
-            path_raw_matrix=f"{log_dir}/raw_matrix.pt",
+            path_save_excel=f"{log_fold}/metrics.xlsx",
+            path_raw_matrix=f"{log_fold}/raw_matrix.pt",
         )
 
     trainer.test(model=best_classifier, dataloaders=dl_test)
@@ -172,7 +170,7 @@ def main(config):
     # SAVE CONFIG
     ########################################
     if not config["test_model"]:
-        with open(os.path.join(log_dir, "config_parameters.json"), "w") as c:
+        with open(os.path.join(log_fold, "config_parameters.json"), "w") as c:
             json.dump(config, c, indent=4)
 
 
@@ -181,13 +179,31 @@ if __name__ == "__main__":
     L.seed_everything(42, workers=True)
     parser = ArgumentParser()
     parser.add_argument(
-        "--config_train", type=str, default="configs/models/train_local.yaml"
+        "--config_train",
+        type=str,
+        default="configs/models/config_local.yaml",
+        help="YAML config file for training settings",
+    )
+
+    parser.add_argument(
+        "--config_model",
+        type=str,
+        required=True,
+        help="YAML config file for model settings. Ex: configs/models/LTAE.yaml",
     )
     parser.add_argument(
-        "--config_model", type=str, required=True, help="Ex: configs/models/LTAE.yaml"
+        "--fold_index",
+        type=int,
+        required=True,
+        help="Index of the fold to run (0-based, e.g., 0 for first fold)",
     )
     args = parser.parse_args()
 
     config = load_config(args.config_train, args.config_model)
+
+    config["selected_fold"] = config["folds"][args.fold_index]
+    config["fold_index"] = args.fold_index
+
     pprint.pprint(config)
+
     main(config)

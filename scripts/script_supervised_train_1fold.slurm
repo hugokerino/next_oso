@@ -1,9 +1,9 @@
 #!/bin/bash
 
-#SBATCH -J main_lightning
+#SBATCH -J main_supervised_training_1fold
 #SBATCH -A theia_oso
-#SBATCH -o script_logs/out_main%j.out
-#SBATCH -e script_logs/err_main%j.err
+#SBATCH -o script_logs/out_train%j.out
+#SBATCH -e script_logs/err_train%j.err
 #SBATCH --export=none
 
 #SBATCH -N 1
@@ -27,15 +27,17 @@ echo -e "\nRépertoire courant : $(pwd)"
 echo "Load pixi envs"
 module purge
 module load pixi
-#module load cuda/11.7
 
 echo "Launch python file"
 
 export PYTORCH_ALLOC_CONF=expandable_segments:True
 export PATH=$(dirname $(which pixi)):$PATH
 
-srun --export=ALL pixi run -e gpu python mains/main_lightning.py \
-    --config_train configs/models/train_trex.yaml \
-    --config_model configs/models/ALISE.yaml
+$FOLD_INDEX = 0  # For single fold training, we can set the fold index to 0
+
+srun --export=ALL pixi run -e gpu python mains/main_supervised_training.py \
+    --config_train configs/models/model_config_trex.yaml \
+    --config_model configs/models/ALISE.yaml \
+    --fold_index $FOLD_INDEX  # Pass the fold to train on
 
 echo "End"

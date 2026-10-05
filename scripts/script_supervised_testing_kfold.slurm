@@ -30,8 +30,8 @@ echo "Launch python file"
 export PYTORCH_ALLOC_CONF=expandable_segments:True
 export PATH=$(dirname $(which pixi)):$PATH
 
-srun --export=ALL pixi run -e gpu python mains/main_testing_kfold.py \
-    --config_train configs/models/train_trex_kfold.yaml \
+srun --export=ALL pixi run -e gpu python mains/main_supervised_testing.py \
+    --config_train configs/models/model_trex.yaml \
     --config_model configs/models/ALISE.yaml \
     --path_dir_checkpoints /work/THEIA/CES/oso/hugok/next_oso/logs/light_training/ALISE_2026-07-17_kfold \
     --fold_index $SLURM_ARRAY_TASK_ID

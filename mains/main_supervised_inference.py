@@ -1,11 +1,14 @@
 import torch
 import lightning as L
 
-import pandas
 import os
 import sys
 import pprint
 from argparse import ArgumentParser
+from pathlib import Path
+from tqdm import tqdm
+
+
 from data_functions import dataset
 from src import lightning_module, metrics
 from mains.main_utils import load_config, build_model, select_criterion
@@ -38,25 +41,20 @@ def main(config, log_dir, save_preds_dir):
     sys.stdout.flush()
     selected_fold = config["selected_fold"]
 
+    # Load dataloaders
     _, _, dl_test = dataset.get_loaders(
-        path_s2=config["path_s2"],
-        path_mnt=config["path_mnt"],
-        path_label=config["path_label"],
-        path_oso_class=config["path_oso_classes"],
+        path_data=config["path_data"],
+        use_mnt_data=config["use_mnt_data"],
         folds_train=selected_fold[0],
         folds_val=selected_fold[1],
         folds_test=selected_fold[2],
-        batch_size=batch_size,
+        batch_size=config["batch_size"],
         num_worker=config["num_worker"],
         label_type=config["label_type"],
+        label_type_test=config["label_type_test"],
         mask_needed=config["mask_need"],
-        norm=True
-        if config["model"] in ["LTAE", "UTAE", "ALISE", "ALISE_encoding"]
-        else False,
-        norm_alise=True if config["model"] == "ALISE_pretrained" else False,
-        sequence_packing=config["sequence_packing"],
-        remove_invalid_temp=True,
-        shuffle=True,
+        norm=True if config["model"] in ["LTAE", "UTAE", "ALISE"] else False,
+        shuffle=False,
         pass_id=True,
     )
 
@@ -64,20 +62,25 @@ def main(config, log_dir, save_preds_dir):
     # INFERENCE
     ########################################
     print("\nTESTING ...")
-    sys.stdout.flush()
-    checkpoint = os.listdir(
-        os.path.join(log_dir, f"fold_{config['fold_index'] + 1}/Checkpoints/")
-    )[0]
+    checkpoint_dir = (
+        Path(config["path_dir_logs"])
+        / f"fold_{config['fold_index'] + 1}"
+        / "Checkpoints"
+    )
+    checkpoint = next(checkpoint_dir.glob("*.ckpt"))
     print(f"Loading checkpoint: {checkpoint}")
+    sys.stdout.flush()
 
     best_classifier = lightning_module.classifier.load_from_checkpoint(
-        os.path.join(log_dir, f"fold_{config['fold_index']+1}/Checkpoints", checkpoint),
+        os.path.join(
+            log_dir, f"fold_{config['fold_index'] + 1}/Checkpoints", checkpoint
+        ),
         weights_only=True,
         encoder=encoder,
         decoder=decoder,
         loss_fn=criterion,
         batch_size=batch_size,
-        name_class=pandas.read_csv(config["path_oso_classes"]).get("name_class").values,
+        name_class=dl_test.dataset.name_labels,
     )
 
     best_classifier.eval()
@@ -88,7 +91,7 @@ def main(config, log_dir, save_preds_dir):
     saved_count = 0
     skipped_count = 0
     with torch.no_grad():
-        for batch_idx, (inputs, _, ids) in enumerate(dl_test):
+        for batch_idx, (inputs, _, ids) in tqdm(enumerate(dl_test)):
             # inputs: tuple of tensors (s2, dates, [mask], [geo]) with batch dim first
             inputs = tuple(t.to(device) for t in inputs)
 
@@ -128,13 +131,13 @@ if __name__ == "__main__":
     L.seed_everything(42, workers=True)
     parser = ArgumentParser()
     parser.add_argument(
-        "--config_train", type=str, default="configs/models/train_local.yaml"
+        "--config_train", type=str, default="configs/models/config_local.yaml"
     )
     parser.add_argument(
         "--config_model", type=str, required=True, help="Ex: configs/models/UTAE.yaml"
     )
     parser.add_argument(
-        "--path_dir_log",
+        "--path_dir_logs",
         type=str,
         required=True,
         help="Chemin du dossier de logs, Ex:/home/hkerino/Documents/next_oso/logs/light_training/LTAE_2026-06-01",
@@ -156,9 +159,9 @@ if __name__ == "__main__":
 
     config = load_config(args.config_train, args.config_model)
 
-    config["path_dir_log"] = args.path_dir_log
+    config["path_dir_logs"] = args.path_dir_logs
     config["selected_fold"] = config["folds"][args.fold_index]
     config["fold_index"] = args.fold_index
 
     pprint.pprint(config)
-    main(config, args.path_dir_log, args.path_save_preds)
+    main(config, args.path_dir_logs, args.path_save_preds)
