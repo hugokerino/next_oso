@@ -36,8 +36,8 @@ task_id=${SLURM_ARRAY_TASK_ID:-0}
 
 pixi run -e gpu python mains/main_embedding_inference.py \
     --config "/work/THEIA/CES/oso/hugok/next_oso/configs/FM_models/config_trex.yaml" \
-    --fold_index $SLURM_ARRAY_TASK_ID  # Pass the fold index from the array \
     --path_dir_logs /work/THEIA/CES/oso/hugok/next_oso/logs/alpha-earth/mlp_2026-09-08_kfold \
-    --path_save_preds /work/THEIA/CES/oso/hugok/predictions/preds_folder_5
+    --path_save_preds /work/THEIA/CES/oso/hugok/predictions/preds_folder_5 \
+    --fold_index $SLURM_ARRAY_TASK_ID  # Pass the fold index from the array
 
 echo "End"
