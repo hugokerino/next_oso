@@ -15,7 +15,6 @@
 #SBATCH --partition=gpu_std
 #SBATCH --qos=gpu_all
 #SBATCH --time=01:00:00             # Walltime
-#SBATCH --array=0-4  # 5 folds (indices 0-4), but SLURM will run up to 2 in parallel based on available GPUs
 
 mkdir -p script_logs
 

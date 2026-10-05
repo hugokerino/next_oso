@@ -10,7 +10,6 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=6
 #SBATCH --mem-per-cpu=14G
-#SBATCH --array=0-4  # 5 folds (indices 0-4), but SLURM will run up to 2 in parallel based on available GPUs
 
 #SBATCH --gres=gpu:1
 #SBATCH --partition=gpu_std
