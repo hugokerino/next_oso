@@ -1,0 +1,27 @@
+# Data & model
+dataset : next_oso
+model : alpha-earth
+
+# Paths
+path_data : /work/THEIA/CES/oso/hugok/nextoso-dataset #/work/THEIA/CES/oso/hugok/pastis
+path_logs : /work/THEIA/CES/oso/hugok/next_oso/logs # /work/THEIA/CES/oso/hugok/next_oso/pastis/logs
+
+# Data settings
+label_type : max_class
+label_type_test : max_class
+preload_data : true
+num_worker: 4
+
+# Folds for kfold
+folds :
+  - [[1,2,3], [4], [5]]
+  - [[2,3,4], [5], [1]]
+  - [[3,4,5], [1], [2]]
+  - [[4,5,1], [2], [3]]
+  - [[5,1,2], [3], [4]]
+
+# Training arguments
+decoder_type : mlp # mlp or cnn
+batch_size : 8
+lr : 0.001
+max_epochs : 300

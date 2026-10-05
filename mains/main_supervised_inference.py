@@ -61,7 +61,7 @@ def main(config, log_dir, save_preds_dir):
     ########################################
     # INFERENCE
     ########################################
-    print("\nTESTING ...")
+    print("\nINFERENCE ...")
     checkpoint_dir = (
         Path(config["path_dir_logs"])
         / f"fold_{config['fold_index'] + 1}"
@@ -72,9 +72,7 @@ def main(config, log_dir, save_preds_dir):
     sys.stdout.flush()
 
     best_classifier = lightning_module.classifier.load_from_checkpoint(
-        os.path.join(
-            log_dir, f"fold_{config['fold_index'] + 1}/Checkpoints", checkpoint
-        ),
+        checkpoint,
         weights_only=True,
         encoder=encoder,
         decoder=decoder,
@@ -91,7 +89,7 @@ def main(config, log_dir, save_preds_dir):
     saved_count = 0
     skipped_count = 0
     with torch.no_grad():
-        for batch_idx, (inputs, _, ids) in tqdm(enumerate(dl_test)):
+        for batch_idx, (inputs, _, ids) in tqdm(enumerate(dl_test), total=len(dl_test)):
             # inputs: tuple of tensors (s2, dates, [mask], [geo]) with batch dim first
             inputs = tuple(t.to(device) for t in inputs)
 

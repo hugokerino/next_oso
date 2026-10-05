@@ -81,8 +81,8 @@ def main(config):
         loss_fn=criterion,
         batch_size=batch_size,
         name_class=dl_test.dataset.name_labels,
-        path_save_excel=f"{config['path_dir_logs']}/fold_{config['fold_index'] + 1}/metrics_1.xlsx",
-        path_raw_matrix=f"{config['path_dir_logs']}/fold_{config['fold_index'] + 1}/raw_matrix_1.pt",
+        path_save_excel=f"{config['path_dir_logs']}/fold_{config['fold_index'] + 1}/metrics_testing.xlsx",
+        path_raw_matrix=f"{config['path_dir_logs']}/fold_{config['fold_index'] + 1}/raw_matrix_testing.pt",
     )
 
     best_classifier.eval()

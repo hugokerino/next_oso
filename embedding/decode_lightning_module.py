@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import lightning as L
-
 from torchmetrics.classification import (
     MulticlassAccuracy,
     MulticlassConfusionMatrix,
@@ -9,26 +8,30 @@ from torchmetrics.classification import (
     MulticlassJaccardIndex,
     MulticlassCohenKappa,
 )
-
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-
 from einops import rearrange
-import pandas
-import json
+import numpy as np
+
 
 from src import metrics
 from src.utils_model import MLP_Decoder, CNN_Decoder
 
 
 class DecodeEmbedding(L.LightningModule):
-    def __init__(self, decoder: nn.Module, config: dict):
+    def __init__(
+        self,
+        decoder: nn.Module,
+        config: dict,
+        names_class: dict | np.ndarray | None = None,
+    ):
         super().__init__()
         self.decoder: nn.Module = decoder
-        self.num_class: int = 25 if config.get("data") == "next_oso" else 19
+        self.names_class = names_class
+        self.num_class: int = 25 if config.get("dataset") == "next_oso" else 19
         self.lr: float = config.get("lr")
         self.max_epochs: int = config.get("max_epochs")
-        self.path_name_class: str = config.get("path_name_class")
         self.path_save_excel: None | str = config.get("path_save_excel")
+        self.path_raw_matrix: None | str = config.get("path_save_raw_matrix")
 
         self.loss_fn = (
             torch.nn.CrossEntropyLoss(ignore_index=0)
@@ -139,23 +142,6 @@ class DecodeEmbedding(L.LightningModule):
         y_preds = torch.cat(self.y_pred_test, dim=0)
         y_trues = torch.cat(self.y_true_test, dim=0)
 
-        if self.path_name_class is not None:
-            if str(self.path_name_class).endswith(".csv"):
-                name_class = (
-                    pandas.read_csv(self.path_name_class).get("name_class").values
-                )
-            elif str(self.path_name_class).endswith(".json"):
-                try:
-                    with open(self.path_name_class, "r") as f:
-                        name_class = json.load(f)
-                except Exception as exc:
-                    print(
-                        f"Error loading JSON name_class from {self.path_name_class}: {exc}"
-                    )
-                    name_class = None
-            else:
-                name_class = None
-
         metrics_dict = metrics.compute_metrics(
             y_preds=y_preds,
             y_trues=y_trues,
@@ -165,7 +151,7 @@ class DecodeEmbedding(L.LightningModule):
             miou_metric=self.miou_metric,
             kappa_metric=self.kappa,
             num_class=self.num_class,
-            names_class=name_class,
+            names_class=self.names_class,
         )
 
         md_global, md_class = metrics.metrics_to_markdown(metrics_dict)
@@ -192,6 +178,9 @@ class DecodeEmbedding(L.LightningModule):
                 metrics=metrics_dict,
                 path=self.path_save_excel,
             )
+
+        if self.path_raw_matrix is not None:
+            torch.save(metrics_dict["cm"].cpu(), self.path_raw_matrix)
 
     def predict_step(self, batch):
         y_logits = self(batch[0])

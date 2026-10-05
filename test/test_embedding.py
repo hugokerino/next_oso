@@ -1,17 +1,15 @@
 import torch
-
+import pytest
 from embedding import dataset_embedding, decode_lightning_module
 from src.utils_model import MLP_Decoder, CNN_Decoder
 
 
 def test_embedding():
-    model = "malice"  # alpha-eath, tessera, malice
+    model = "alpha-earth"  # alpha-earth, tessera, malice
     datamodule = dataset_embedding.embedding_datamodule(
-        data="next_oso",
+        dataset="next_oso",
+        path_data="/home/hkerino/Documents/nextoso-dataset/data/10m",
         model=model,
-        path_embeddings="/home/hkerino/Documents/model_data/MALICE",  # "/home/hkerino/Documents/nextoso-dataset",
-        path_labels="/home/hkerino/Documents/nextoso-dataset/data/10m/labels",
-        path_mapping_folder="/home/hkerino/Documents/nextoso-dataset/data/10m/s2",
         fold_train=[1],
         fold_val=[2],
         fold_test=[3],
@@ -76,13 +74,11 @@ def test_embedding_pastis():
         "path_save_excel": None,
     }
 
-    model = "alpha-earth"  # alpha-eath, tessera, malice
+    model = "alpha-earth"  # alpha-earth, tessera, malice
     datamodule = dataset_embedding.embedding_datamodule(
-        data="pastis",
+        dataset="pastis",
         model=model,
-        path_embeddings="/home/hkerino/Documents/PASTIS",  # "/home/hkerino/Documents/nextoso-dataset",
-        path_labels="/home/hkerino/Documents/PASTIS/ANNOTATIONS",
-        path_mapping_folder="/home/hkerino/Documents/PASTIS",
+        path_data="/home/hkerino/Documents/PASTIS",
         fold_train=[1],
         fold_val=[2],
         fold_test=[3],

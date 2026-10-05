@@ -28,7 +28,7 @@ module load pixi
 
 echo "Launch python file"
 
-$FOLD_INDEX = 0  # For single fold inference, we can set the fold index to 0
+FOLD_INDEX=0  # For single fold inference, we can set the fold index to 0
 
 pixi run -e gpu python mains/main_supervised_inference.py \
     --config_train configs/models/config_trex.yaml \

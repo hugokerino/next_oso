@@ -1,5 +1,6 @@
 import os
 import json
+from pathlib import Path
 
 import torch
 import torch.utils.data as tdata
@@ -14,58 +15,60 @@ import geopandas as gdp
 class embedding_dataset(tdata.Dataset):
     def __init__(
         self,
-        data: str = "next_oso",  # pastis
+        dataset: str = "next_oso",  # pastis
+        path_data: Path = "/home/hkerino/Documents/nextoso-dataset/data/10m",
         model: str = "alpha-earth",  # "tessera", "malice"
-        path_embeddings: str = "/home/hkerino/Documents/nextoso-dataset",
-        path_labels: str = "/home/hkerino/Documents/nextoso-dataset/data/10m/labels",
-        path_mapping_folder: str = "/home/hkerino/Documents/nextoso-dataset/data/10m/s2",
         fold: None | list[int] = None,
         label_type: None | str = "max_class",
-        mask: bool = "False",  # Detect invalid pixel in embedding and put those pixel at 0 for label to not take them into account in training
+        mask: bool = True,  # If set to True, detect invalid pixel in embedding data and put those pixel at 0 for label to not take them into account in training
         preload: bool = False,
         return_id: bool = False,  # cannot be True if preload = True
     ):
-        self.data = data
+        self.dataset = dataset
+        self.path_data = path_data
         self.model = model
-        self.path_embeddings = os.path.join(path_embeddings, f"{model}_data")
-        self.path_labels = path_labels
         self.label_type = label_type
         self.mask = mask
         self.preload = preload
         self.return_id = return_id
 
-        if label_type == "probas":
-            path_oso_class = (
-                "/work/THEIA/CES/oso/hugok/files_s2/oso_classes.csv"
-                if torch.cuda.is_available()
-                else "/home/hkerino/Documents/nextoso-dataset/data/auxiliary/OSO/oso_classes.csv"
-            )
-            self.name_labels = pandas.read_csv(path_oso_class).get("name_class").values
+        if self.dataset == "next_oso":
+            with open(f"{self.path_data}/metadata/mapping.json") as f:
+                mapping = json.load(f)
 
-        if self.data == "next_oso":
-            maps_id_to_fold = json.load(
-                open(os.path.join(path_mapping_folder, "file_mapping.json"), "r")
+            self.name_labels = (
+                pandas.read_csv(f"{self.path_data}/metadata/oso_classes.csv")
+                .get("name_class")
+                .values
             )
-        if self.data == "pastis":
-            meta = gdp.read_file(os.path.join(path_mapping_folder, "metadata.geojson"))
-            maps_id_to_fold = {
+
+        if self.dataset == "pastis":
+            meta = gdp.read_file(f"{self.path_data}/metadata.geojson")
+            mapping = {
                 str(id_patch): {"fold": fold}
                 for id_patch, fold in zip(meta["ID_PATCH"], meta["Fold"])
             }
+            self.name_labels = json.load(
+                open(f"{self.path_data}/label_names_reduced.json")
+            )
 
         if fold is not None:
-            all_embedding_files = sorted(os.listdir(self.path_embeddings))
+            all_embedding_files = sorted(
+                os.listdir(f"{self.path_data}/embeddings_data/{self.model}_data")
+            )
             self.embedding_files = [
                 f
                 for f in all_embedding_files
                 if (f.endswith(".npy") or f.endswith(".pt"))
-                and maps_id_to_fold[f"{f.split('_')[1].split('.')[0]}"]["fold"] in fold
+                and mapping[f"{f.split('_')[1].split('.')[0]}"]["fold"] in fold
             ]
         else:
             self.embedding_files = sorted(
                 [
                     f
-                    for f in os.listdir(self.path_embeddings)
+                    for f in os.listdir(
+                        f"{self.path_data}/embeddings_data/{self.model}_data"
+                    )
                     if f.endswith(".npy") or f.endswith(".pt")
                 ]
             )
@@ -87,22 +90,28 @@ class embedding_dataset(tdata.Dataset):
         """Chargement d'un sample depuis le disque."""
         # Embedding
         if filename.endswith(".npy"):
-            embedding_npy = np.load(os.path.join(self.path_embeddings, filename))
+            embedding_npy = np.load(
+                f"{self.path_data}/embeddings_data/{self.model}_data/{filename}"
+            )
             # ensure float32 to avoid dtype mismatch (numpy defaults to float64)
             if embedding_npy.dtype != np.float32:
                 embedding_npy = embedding_npy.astype(np.float32)
             embedding = torch.from_numpy(embedding_npy)
 
         elif filename.endswith(".pt"):
-            embedding = torch.load(os.path.join(self.path_embeddings, filename))
+            embedding = torch.load(
+                os.path.join(
+                    self.path_data, f"embeddings_data/{self.model}_data/{filename}"
+                )
+            )
             # ensure float32
             if torch.is_tensor(embedding) and embedding.dtype != torch.float32:
                 embedding = embedding.float()
 
         # Label
         id = filename.split("_")[1].split(".")[0]
-        if self.data == "next_oso":
-            to_open_label = os.path.join(self.path_labels, f"label_{id}.nc")
+        if self.dataset == "next_oso":
+            to_open_label = f"{self.path_data}/labels/label_{id}.nc"
 
             with xr.open_dataset(to_open_label) as label_data:
                 if self.label_type == "max_class":
@@ -121,8 +130,8 @@ class embedding_dataset(tdata.Dataset):
                             )
                     label = torch.from_numpy(labels_probas).float()
 
-        if self.data == "pastis":
-            to_open_label = os.path.join(self.path_labels, f"TARGET_{id}.npy")
+        if self.dataset == "pastis":
+            to_open_label = f"{self.path_data}/ANNOTATIONS/TARGET_{id}.npy"
             label_numpy = np.load(to_open_label)[0].astype(int)
             label_numpy[label_numpy == 19] = 0  # merge Background & Void label
             label = torch.from_numpy(label_numpy).long()
@@ -162,11 +171,9 @@ class embedding_dataset(tdata.Dataset):
 class embedding_datamodule(LightningDataModule):
     def __init__(
         self,
-        data: str = "next_oso",  # "pastis"
+        dataset: str = "next_oso",  # "pastis"
         model: str = "alpha-earth",
-        path_embeddings: str = "/home/hkerino/Documents/nextoso-dataset",
-        path_labels: str = "/home/hkerino/Documents/nextoso-dataset/data/10m/labels",
-        path_mapping_folder: str = "/home/hkerino/Documents/nextoso-dataset/data/10m/s2",
+        path_data: str = "/home/hkerino/Documents/nextoso-dataset/data/10m",
         preload: bool = False,
         fold_train=None | list[int],
         fold_val=None | list[int],
@@ -174,15 +181,14 @@ class embedding_datamodule(LightningDataModule):
         batch_size: int = 32,
         num_workers: int = 4,
         label_type: None | str = "max_class",
+        label_type_test: None | str = "max_class",
         mask: bool = "False",
         return_id: bool = False,
     ):
         super().__init__()
-        self.data = data
+        self.dataset = dataset
+        self.path_data = path_data
         self.model = model
-        self.path_embeddings = path_embeddings
-        self.path_labels = path_labels
-        self.path_mapping_folder = path_mapping_folder
         self.preload = preload
         self.fold_train = fold_train
         self.fold_val = fold_val
@@ -190,6 +196,7 @@ class embedding_datamodule(LightningDataModule):
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.label_type = label_type
+        self.label_type_test = label_type_test
         self.mask = mask
         self.return_id = return_id
 
@@ -205,11 +212,9 @@ class embedding_datamodule(LightningDataModule):
             raise ValueError("Folds cannot be empty.")
 
         self.data_train = embedding_dataset(
-            data=data,
+            dataset=dataset,
+            path_data=path_data,
             model=model,
-            path_embeddings=path_embeddings,
-            path_labels=path_labels,
-            path_mapping_folder=path_mapping_folder,
             fold=fold_train,
             preload=preload,
             label_type=label_type,
@@ -217,11 +222,9 @@ class embedding_datamodule(LightningDataModule):
             return_id=return_id,
         )
         self.data_val = embedding_dataset(
-            data=data,
+            dataset=dataset,
+            path_data=path_data,
             model=model,
-            path_embeddings=path_embeddings,
-            path_labels=path_labels,
-            path_mapping_folder=path_mapping_folder,
             fold=fold_val,
             preload=preload,
             label_type=label_type,
@@ -229,14 +232,12 @@ class embedding_datamodule(LightningDataModule):
             return_id=return_id,
         )
         self.data_test = embedding_dataset(
-            data=data,
+            dataset=dataset,
+            path_data=path_data,
             model=model,
-            path_embeddings=path_embeddings,
-            path_labels=path_labels,
-            path_mapping_folder=path_mapping_folder,
             fold=fold_test,
             preload=preload,
-            label_type=label_type,
+            label_type=label_type_test,
             mask=mask,
             return_id=return_id,
         )

@@ -1,16 +1,20 @@
-import torch
-
-import lightning as L
-
 import os
+from pathlib import Path
 import sys
 import pprint
 from argparse import ArgumentParser
+from tqdm import tqdm
+import yaml
+
+
+import torch
+import lightning as L
+
 
 from embedding.dataset_embedding import embedding_datamodule
 from embedding.decode_lightning_module import DecodeEmbedding
 from src import metrics
-from mains.main_utils import load_config, build_decoder
+from mains.main_utils import build_decoder
 
 
 torch.serialization.add_safe_globals([metrics.FocalLoss])
@@ -26,36 +30,35 @@ def main(config, log_dir, save_preds_dir):
 
     model = config["model"]
     # Data
+    selected_fold = config["selected_fold"]
     datamodule = embedding_datamodule(
-        data=config["data"],
+        dataset=config["dataset"],
         model=model,
-        path_embeddings=config["path_embedding"],
-        path_labels=config["path_label"],
-        path_mapping_folder=config["path_mapping_folder"],
-        fold_train=config["folds_train"],
-        fold_val=config["folds_val"],
-        fold_test=config["folds_test"],
+        path_data=config["path_data"],
+        fold_train=selected_fold[0],
+        fold_val=selected_fold[1],
+        fold_test=selected_fold[2],
         batch_size=config["batch_size"],
         num_workers=config["num_worker"],
         preload=config["preload_data"],
         label_type=config["label_type"],
+        label_type_test=config["label_type_test"],
         mask=True,
         return_id=True,
     )
-    # Model
-    config["path_save_excel"] = f"{log_dir}/metrics.xlsx"
-    decoder = build_decoder(model, config["decoder_type"], config["data"], dropout=0.1)
-
     ########################################
     # INFERENCE
     ########################################
-
-    print("\nTESTING ...")
-    sys.stdout.flush()
-    checkpoint = os.listdir(os.path.join(log_dir, "Checkpoints/"))[0]
+    print("\nINFERENCE ...")
+    # Model
+    decoder = build_decoder(model, config["decoder_type"], config["dataset"], dropout=0)
+    checkpoint_dir = Path(log_dir) / f"fold_{config['fold_index'] + 1}" / "Checkpoints"
+    checkpoint = next(checkpoint_dir.glob("*.ckpt"))
     print(f"Loading checkpoint: {checkpoint}")
+    sys.stdout.flush()
+
     best_classifier = DecodeEmbedding.load_from_checkpoint(
-        os.path.join(log_dir, "Checkpoints", checkpoint), decoder=decoder, config=config
+        checkpoint, decoder=decoder, config=config
     )
 
     best_classifier.eval()
@@ -69,7 +72,10 @@ def main(config, log_dir, save_preds_dir):
     saved_count = 0
     skipped_count = 0
     with torch.no_grad():
-        for batch_idx, (embeddings, _, ids) in enumerate(datamodule.test_dataloader()):
+        for batch_idx, (embeddings, _, ids) in tqdm(
+            enumerate(datamodule.test_dataloader()),
+            total=len(datamodule.test_dataloader()),
+        ):
             # inputs: tuple of tensors (s2, dates, [mask], [geo]) with batch dim first
             embeddings = embeddings.to(device)
             batch_size = embeddings.shape[0]
@@ -108,21 +114,22 @@ if __name__ == "__main__":
     print("\nPARSE ARGUMENTS ...")
     L.seed_everything(42, workers=True)
     parser = ArgumentParser()
+
     parser.add_argument(
-        "--config_train", type=str, default="configs/FM_models/train_local.yaml"
+        "--config", type=str, default="configs/FM_models/config_local.yaml"
     )
+
     parser.add_argument(
-        "--config_model",
-        type=str,
-        required=True,
-        help="Ex: configs/FM_models/alpha-earth.yaml",
+        "--fold_index", type=int, required=True, help="Index of the fold to train on"
     )
+
     parser.add_argument(
-        "--path_dir_log",
+        "--path_dir_logs",
         type=str,
         required=True,
         help="Chemin du dossier de logs, Ex:/home/hkerino/Documents/next_oso/logs/alpha-earth/2026-07-22_mlp_kfold",
     )
+
     parser.add_argument(
         "--path_save_preds",
         type=str,
@@ -131,6 +138,13 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    config = load_config(args.config_train, args.config_model)
+    # Open YAML file
+    with open(args.config, "r") as f:
+        cfg = yaml.safe_load(f)
+    config = {**cfg}
+
+    config["selected_fold"] = config["folds"][args.fold_index]
+    config["fold_index"] = args.fold_index
+
     pprint.pprint(config)
-    main(config, args.path_dir_log, args.path_save_preds)
+    main(config, args.path_dir_logs, args.path_save_preds)

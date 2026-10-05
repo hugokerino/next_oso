@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH -J malice
+#SBATCH -J embedding_training_1fold
 #SBATCH -A theia_oso
 #SBATCH -o script_logs/out_emb%j.out
 #SBATCH -e script_logs/err_emb%j.err
@@ -30,18 +30,10 @@ module load pixi
 
 echo "Launch python file"
 
-pixi run -e gpu python mains/main_embedding.py \
-    --model "malice" \
-    --time_feature \
-    --path_embedding "/work/THEIA/CES/oso/hugok/malice" \
-    --path_label "/work/THEIA/CES/oso/hugok/labels" \
-    --path_mapping_folder "/work/THEIA/CES/oso/hugok/s2_data" \
-    --path_logs "/work/THEIA/CES/oso/hugok/next_oso/logs/malice" \
-    --path_name_class "/work/THEIA/CES/oso/hugok/files_s2/oso_classes.csv" \
-    --no-preload_data \
-    --batch_size 8 \
-    --num_worker 6 \
-    --max_epochs 1000 \
-    --label_type "max_class"
+FOLD_INDEX=0
+
+pixi run -e gpu python mains/main_embedding_training.py \
+    --config "/work/THEIA/CES/oso/hugok/next_oso/configs/FM_models/config_trex.yaml" \
+    --fold_index $FOLD_INDEX   # Pass the fold index from the array
 
 echo "End"

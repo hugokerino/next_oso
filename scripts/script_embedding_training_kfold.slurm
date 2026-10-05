@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH -J emb_kfold
+#SBATCH -J emb_training_kfold
 #SBATCH -A theia_oso
 #SBATCH -o script_logs/out_embk%j.out
 #SBATCH -e script_logs/err_embk%j.err
@@ -34,8 +34,8 @@ echo "Launch python file"
 task_id=${SLURM_ARRAY_TASK_ID:-0}
 
 
-pixi run -e gpu python mains/main_embedding_kfold.py \
-    --config "/work/THEIA/CES/oso/hugok/next_oso/configs/FM_models/train_trex_kfold.yaml" \
+pixi run -e gpu python mains/main_embedding_training.py \
+    --config "/work/THEIA/CES/oso/hugok/next_oso/configs/FM_models/config_trex.yaml" \
     --fold_index $SLURM_ARRAY_TASK_ID  # Pass the fold index from the array
 
 echo "End"
