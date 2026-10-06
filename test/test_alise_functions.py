@@ -1,5 +1,5 @@
 import pytest
-from Alise import sse, transformer, temporal_proj
+from supervised_models.ALISE_blocks import sse, transformer, temporal_proj
 import torch
 from einops import repeat
 import random

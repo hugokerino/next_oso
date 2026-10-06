@@ -2,7 +2,7 @@ import pytest
 import torch
 from torch.nn import CrossEntropyLoss
 
-from src.metrics import (
+from src.custom_loss_functions import (
     FocalLoss,
     WeightedCE,
     Hard_and_softCE,

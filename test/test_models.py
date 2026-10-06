@@ -1,8 +1,8 @@
 import pytest
 import torch
 
-from src import LTAE, UTAE
-from Alise import ALISE, sse, transformer, temporal_proj
+from supervised_models import LTAE, UTAE, ALISE
+from supervised_models.ALISE_blocks import sse, transformer, temporal_proj
 
 
 @pytest.fixture

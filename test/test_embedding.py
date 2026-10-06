@@ -1,7 +1,7 @@
 import torch
 import pytest
 from embedding import dataset_embedding, decode_lightning_module
-from src.utils_model import MLP_Decoder, CNN_Decoder
+from supervised_models.utils_model import MLP_Decoder, CNN_Decoder
 
 
 def test_embedding():

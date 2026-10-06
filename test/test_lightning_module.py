@@ -4,8 +4,8 @@ import torch
 from einops import rearrange
 import yaml
 
-from src import lightning_module, LTAE, UTAE, utils_model
-from Alise import ALISE, sse, transformer, temporal_proj
+from supervised_models import lightning_module, LTAE, UTAE, ALISE, utils_model
+from supervised_models.ALISE_blocks import sse, transformer, temporal_proj
 
 
 def run_lightning_steps(model, batch):

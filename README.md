@@ -1,90 +1,117 @@
-# next_oso
+## Next-OSO classification by Deep Learning models
 
-
-
-## Getting started
-
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
-
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-* [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
-
-```
-cd existing_repo
-git remote add origin https://src.koda.cnrs.fr/kerinohugo/next_oso.git
-git branch -M main
-git push -uf origin main
-```
-
-## Integrate with your tools
-
-* [Set up project integrations](https://src.koda.cnrs.fr/kerinohugo/next_oso/-/settings/integrations)
-
-## Collaborate with your team
-
-* [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
-
-## Test and Deploy
-
-Use the built-in continuous integration in GitLab.
-
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
-
-***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
+**Delivery Date :**  November 20th, 2026
 
 ## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+This repository contains codes to train and evaluate Deep Learning (DL) models as well as Foundation model's embeddings on the Next-OSO dataset. Next-OSO project aims to enhance the current Land Cover classification OSO produces every year by the CESBIO laboratory.
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+## Tree
+```
+.
+├── analyse_results        # Python scripts and notebook to analyse results
+├── configs                # YAML config files for models' parameter and train configuration
+├── data_functions         # Functions and objects reltive to Next-OSO Dataset
+├── download_embeddings    # Functions to download (Alpha-Earth, Tessera) or generate (MALICE) embeddings
+├── embedding              # Functions and objects reltive to embedding data
+├── mains                  # Python Lightning scripts to train, test and infers for DL models (on next-OSO) and for embeddings (on Next-OSO and PASTIS)
+├── old                    # Old training process PyTorch
+├── pastis                 # Functions, scripts and objects reltive to PASTIS dataset
+├── pixi.lock              # Pixi environment
+├── pixi.toml              # Pixi environment
+├── pyproject.toml         # Pixi environment
+├── RandomForest           # Functions, scripts and objects reltive to recreate OSO pipeline
+├── README.md
+├── scripts                # SLURM scripts
+├── src                    # Functions for metrics evaluation and loss functions
+├── supervised_models      # Encoders architectures
+├── test                   # Pytests
+├── overview.ipynb         # Notebook for getting started
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+```
+## Environment
+This project uses Pixi as package and environment manager.
+
+**Installation**
+
+Clone the repository and install the project environment:
+
+git clone https://src.koda.cnrs.fr/kerinohugo/next_oso.git
+
+cd next_oso
+
+pixi install
+
+
+**Environments**
+
+Several environments are available depending on the intended use of the project.
+
+All environments share the common project dependencies, while adding dependencies specific to their respective workflows.
+
+| Environment | Purpose |
+|-------------|---------|
+| `cpu` | Run the project with CPU PyTorch |
+| `gpu` | Run the project with GPU PyTorch |
+| `dev` | Development, testing and linting |
+| `download` | Download AlphaEarth and GeoTessera embeddings |
+| `default` | Default environment, equivalent to `cpu` |
+
+Command line to use a specific environment : pixi run -e &lt;env&gt; &lt;command&gt;
+
+
+The dependencies are specified in pixi.toml, while pixi.lock records the exact dependency versions used to ensure reproducibility.
+
 
 ## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+**Examples**
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+* Training ALISE architecure on a GPU on first fold :
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+```bash
+pixi run -e gpu python mains/main_supervised_training.py \
+    --config_train configs/models/config_trex.yaml \
+    --config_model configs/models/ALISE.yaml \
+    --fold_index 0
+```
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+* Kfold training of a supervised model on SLURM environement :
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+```bash
+sbatch scripts/script_supervised_train_kfold.slurm
+```
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+During training, a log directory is created with the following structure :
 
-## License
-For open source projects, say how it is licensed.
+```
+.
+├── config_parameters.json     # Store all parameters used for training
+├── fold_1
+│   ├── Checkpoints            # Contains best model in .ckpt format
+│   ├── metrics.xlsx           # Evaluation metrics
+│   ├── raw_matrix.pt          # Confusion matrix. no-normalize
+│   └── tensorboards           # store tensorboards tracking training and model evaluation metrics
+├── fold_2
+...
+└── fold_5
+    ├── Checkpoints
+    ├── metrics.xlsx
+    ├── raw_matrix.pt
+    └── tensorboards
+```
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+To compute mean metric accross 5 folds :
+
+```bash
+pixi run python src/summarize_kfold.py \
+    --root_dir path_to_log_directory \
+    --output_file name_of_the_xlsx_file \
+```
+
+* Test an embedding model already train on last folds :
+```bash
+pixi run python mains/main_embedding_testing.py \
+    --config configs/FM_models/config_trex.yaml \
+    --path_dir_logs path_to_directory_containing_models_log_and_checkpoints \
+    --fold_index 4
+```

@@ -33,7 +33,7 @@ export PYTORCH_ALLOC_CONF=expandable_segments:True
 export PATH=$(dirname $(which pixi)):$PATH
 
 srun --export=ALL pixi run -e gpu python mains/main_supervised_training.py \
-    --config_train configs/models/train_trex.yaml \
+    --config_train configs/models/config_trex.yaml \
     --config_model configs/models/ALISE.yaml \
     --fold_index $SLURM_ARRAY_TASK_ID  # Pass the fold index from the array
 
