@@ -56,8 +56,11 @@ All environments share the common project dependencies, while adding dependencie
 | `download` | Download AlphaEarth and GeoTessera embeddings |
 | `default` | Default environment, equivalent to `cpu` |
 
-Command line to use a specific environment : pixi run -e &lt;env&gt; &lt;command&gt;
+Command line to use a specific environment :
 
+```bash
+pixi run -e <env> <command>
+```
 
 The dependencies are specified in pixi.toml, while pixi.lock records the exact dependency versions used to ensure reproducibility.
 
