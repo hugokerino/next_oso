@@ -1073,3 +1073,56 @@ def plot_label_probability(id: str, save=False):
             f"/home/hkerino/Documents/Resultats_nextoso/preds_folder_5_accuracy/protéagineux/{id}_labels.png"
         )
         plt.close(fig)
+
+
+def plot_s2_and_mask(s2, dates, masks, start_timestep):
+    length = 5
+    if start_timestep + length > s2.shape[1]:
+        length = s2.shape[1] - start_timestep
+
+    fig, ax = plt.subplots(2, length, figsize=(16, 8))
+
+    for t in range(length):
+        # Affichage de l'image RGB
+        ax[0, t].imshow(to_RGB(s2[:, start_timestep + t, :, :], norm=True))
+        if isinstance(dates[start_timestep + t], np.datetime64):
+            ax[0, t].set_title(f"DATE = {dates[start_timestep + t]}")
+        if isinstance(dates[start_timestep + t], torch.Tensor):
+            ax[0, t].set_title(f"DATE = {dates[start_timestep + t].numpy()}")
+        ax[0, t].axis("off")
+
+        # Affichage du masque
+        if masks is not None:
+            ax[1, t].set_title("s2 mask")
+            ax[1, t].imshow(
+                masks[start_timestep + t, :, :], cmap="Greys", vmin=0, vmax=1
+            )
+        else:
+            ax[1, t].text(0.5, 0.5, "No mask", ha="center", va="center", fontsize=12)
+        ax[1, t].axis("off")
+
+    fig.tight_layout()
+
+    return
+
+
+def plot_geodatas(s2, geodatas, s2_timestep=0):
+    fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(12, 8), layout="constrained")
+
+    elev = geodatas[2, :, :]
+    slope = geodatas[3, :, :]
+
+    ax[0].imshow(to_RGB(s2[:, s2_timestep, :, :], norm=True))
+    ax[0].set_title("Image Sentinel-2")
+    ax[0].axis("off")
+    im1 = ax[1].imshow(elev)
+    ax[1].set_title("MNT - Elevation Normalized")
+    ax[1].axis("off")
+    fig.colorbar(im1, ax=ax[1], shrink=0.7)
+
+    im2 = ax[2].imshow(slope)
+    ax[2].set_title("MNT - Slope Normalized")
+    ax[2].axis("off")
+    fig.colorbar(im2, ax=ax[2], shrink=0.7)
+
+    plt.show()
