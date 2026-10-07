@@ -9202,7 +9202,7 @@ packages:
 - pypi: ./
   name: next-oso
   version: 0.1.0
-  sha256: 5ec9f13e3b0b7b55adfb27177d36f4a366eeae250fe47785d5103a3e20454434
+  sha256: 56fbcd3121407ed6b2b732253f8ae3978822e8800372c72d9ad560d0bf8a50c1
 - conda: https://conda.anaconda.org/conda-forge/linux-64/nlohmann_json-3.12.0-h54a6638_1.conda
   sha256: fd2cbd8dfc006c72f45843672664a8e4b99b2f8137654eaae8c3d46dca776f63
   md5: 16c2a0e9c4a166e53632cfca4f68d020

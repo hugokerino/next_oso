@@ -30,7 +30,7 @@ def test_embedding():
         print(f"{model} not recognized")
 
     config = {
-        "data": "next_oso",
+        "dataset": "next_oso",
         "lr": 1e-3,
         "max_epochs": 2,
         "path_name_class": "/home/hkerino/Documents/nextoso-dataset/data/auxiliary/OSO/oso_classes.csv",
@@ -66,7 +66,7 @@ def test_embedding():
 
 def test_embedding_pastis():
     config = {
-        "data": "pastis",
+        "dataset": "pastis",
         "lr": 1e-3,
         "max_epochs": 2,
         "path_name_class": "/home/hkerino/Documents/PASTIS/label_names_reduced.json",

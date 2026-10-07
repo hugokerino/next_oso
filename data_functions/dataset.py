@@ -158,13 +158,13 @@ class next_oso_Dataset(tdata.Dataset):
                 raise ValueError(f"{self.label_type}, Label type unknow")
 
             if self.mask_invalid:
-                mask_label = ~(
-                    torch.from_numpy(s2_data["S2_mask"].to_numpy()) == 0
-                ).all(dim=0)  # everywhere s2 mask is invalid for all timestamp
+                mask_label = torch.from_numpy(
+                    (s2_array == 0).all(axis=(0, 1))
+                ).bool()  # everywhere no data in s2
                 if self.label_type == "probas":
-                    label[:, ~mask_label] = 0
+                    label[:, mask_label] = 0
                 else:
-                    label[~mask_label] = 0
+                    label[mask_label] = 0
 
         sample = (s2, date, mask, geo)
 
