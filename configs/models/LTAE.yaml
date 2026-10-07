@@ -12,4 +12,4 @@ encoder:
 
 decoder:
   layers: [128, 64, 25]
-  dropout: 0.2
+  dropout: 0.1

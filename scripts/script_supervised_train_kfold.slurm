@@ -34,7 +34,7 @@ export PATH=$(dirname $(which pixi)):$PATH
 
 srun --export=ALL pixi run -e gpu python mains/main_supervised_training.py \
     --config_train configs/models/config_trex.yaml \
-    --config_model configs/models/ALISE.yaml \
+    --config_model configs/models/LTAE.yaml \
     --fold_index $SLURM_ARRAY_TASK_ID  # Pass the fold index from the array
 
 echo "End"

@@ -21,4 +21,4 @@ encoder:
 
 decoder:
   layers: [32, 25]
-  dropout: 0.2
+  dropout: 0.1
