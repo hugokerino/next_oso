@@ -25,9 +25,7 @@ def main(config):
     model = config["model"]
     path_logs = os.path.join(config["path_logs"], model)
     date = datetime.now().date().strftime("%Y-%m-%d")
-    base_log_dir = os.path.join(
-        path_logs, f"pca_{config['n_component']}_{date}_{config['decoder_type']}"
-    )
+    base_log_dir = os.path.join(path_logs, f"pca_{config['n_component']}_{date}")
     os.makedirs(base_log_dir, exist_ok=True)
 
     log_fold = os.path.join(base_log_dir, f"fold_{config['fold_index'] + 1}")

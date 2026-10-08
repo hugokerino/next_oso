@@ -38,9 +38,7 @@ def main(config):
     ########################################
     #  PATH TO SAVE
     ########################################
-    log_dir = os.path.join(
-        config["path_logs"], f"{config['model']}_{config['decoder_type']}_{date}"
-    )
+    log_dir = os.path.join(config["path_logs"], f"{config['model']}_{date}")
 
     if config["logs"]:
         os.makedirs(log_dir, exist_ok=True)
