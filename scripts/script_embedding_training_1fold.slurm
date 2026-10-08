@@ -33,7 +33,7 @@ echo "Launch python file"
 FOLD_INDEX=0
 
 pixi run -e gpu python mains/main_embedding_training.py \
-    --config "/work/THEIA/CES/oso/hugok/next_oso/configs/FM_models/config_trex.yaml" \
+    --config "/work/THEIA/CES/oso/hugok/next_oso/configs/embeddings/config_trex.yaml" \
     --fold_index $FOLD_INDEX   # Pass the fold index from the array
 
 echo "End"

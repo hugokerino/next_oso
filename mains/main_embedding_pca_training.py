@@ -26,7 +26,7 @@ def main(config):
     path_logs = os.path.join(config["path_logs"], model)
     date = datetime.now().date().strftime("%Y-%m-%d")
     base_log_dir = os.path.join(
-        path_logs, f"pca_{config['n_component']}_{date}_{config['decoder_type']}_kfold"
+        path_logs, f"pca_{config['n_component']}_{date}_{config['decoder_type']}"
     )
     os.makedirs(base_log_dir, exist_ok=True)
 

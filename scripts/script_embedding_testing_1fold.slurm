@@ -33,7 +33,7 @@ echo "Launch python file"
 FOLD_INDEX=0
 
 pixi run -e gpu python mains/main_embedding_testing.py \
-    --config /work/THEIA/CES/oso/hugok/next_oso/configs/FM_models/config_trex.yaml \
+    --config /work/THEIA/CES/oso/hugok/next_oso/configs/embeddings/config_trex.yaml \
     --path_dir_logs /work/THEIA/CES/oso/hugok/next_oso/logs/alpha-earth/mlp_2026-09-08_kfold \
     --fold_index $FOLD_INDEX  # Pass the fold index from the array
 

@@ -36,10 +36,8 @@ echo "Redirecting stdout -> ${OUT_FILE}  stderr -> ${ERR_FILE}"
 # Replace SLURM's static -o/-e logs for per-task logs using shell redirection
 exec 1>"${OUT_FILE}" 2>"${ERR_FILE}"
 
-pixi run python pastis/main_pastis_RF_kfold.py \
-    --path_pastis /work/THEIA/CES/oso/hugok/pastis \
-    --path_logs /pastis/logs/RF \
-    --config_folds configs/fold.yaml \
+pixi run python pastis/main_RF_training_pastis.py \
+    --config_train configs/RF_config.yaml \
     --fold_index ${FOLD} \
     --tile ${TILE}
 

@@ -36,8 +36,8 @@ export PATH=$(dirname $(which pixi)):$PATH
 FOLD_INDEX=0  # For single fold training, we can set the fold index to 0
 
 srun --export=ALL pixi run -e gpu python mains/main_supervised_training.py \
-    --config_train configs/models/config_trex.yaml \
-    --config_model configs/models/ALISE.yaml \
+    --config_train configs/supervised_models/config_trex.yaml \
+    --config_model configs/supervised_models/ALISE.yaml \
     --fold_index $FOLD_INDEX  # Pass the fold to train on
 
 echo "End"

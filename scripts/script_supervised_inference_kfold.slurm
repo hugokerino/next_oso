@@ -2,8 +2,8 @@
 
 #SBATCH -J testing_supervised_kfold
 #SBATCH -A theia_oso
-#SBATCH -o script_logs/out_inference_kfoldV100%j.out
-#SBATCH -e script_logs/err_inference_kfoldV100%j.err
+#SBATCH -o script_logs/out_%a_inference_kfoldV100%j.out
+#SBATCH -e script_logs/err_%a_inference_kfoldV100%j.err
 #SBATCH --export=none
 
 #SBATCH -N 1
@@ -29,8 +29,8 @@ module load pixi
 echo "Launch python file"
 
 pixi run -e gpu python mains/main_supervised_inference.py \
-    --config_train configs/models/config_trex.yaml \
-    --config_model configs/models/ALISE.yaml \
+    --config_train configs/supervised_models/config_trex.yaml \
+    --config_model configs/supervised_models/ALISE.yaml \
     --path_dir_logs /work/THEIA/CES/oso/hugok/next_oso/logs/light_training/ALISE_mlp_2026-09-21_kfold \
     --path_save_preds /work/THEIA/CES/oso/hugok/predictions/ALISE_preds/v3 \
     --fold_index $SLURM_ARRAY_TASK_ID

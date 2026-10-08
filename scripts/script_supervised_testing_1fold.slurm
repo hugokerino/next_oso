@@ -32,8 +32,8 @@ export PATH=$(dirname $(which pixi)):$PATH
 FOLD_INDEX=0  # For single fold training, we can set the fold index to 0
 
 srun --export=ALL pixi run -e gpu python mains/main_supervised_testing.py \
-    --config_train configs/models/config_trex.yaml \
-    --config_model configs/models/ALISE.yaml \
+    --config_train configs/supervised_models/config_trex.yaml \
+    --config_model configs/supervised_models/ALISE.yaml \
     --path_dir_checkpoints /work/THEIA/CES/oso/hugok/next_oso/logs/light_training/ALISE_2026-07-17_kfold \
     --fold_index $FOLD_INDEX
 

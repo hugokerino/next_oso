@@ -2,8 +2,8 @@
 
 #SBATCH -J main_pastis_kfold
 #SBATCH -A theia_oso
-#SBATCH -o script_logs/pastis_kfold%j_%a.out  # %a for array job index
-#SBATCH -e script_logs/pastis_kfold%j_%a.err
+#SBATCH -o script_logs/pastis_kfold_%a_%j.out  # %a for array job index
+#SBATCH -e script_logs/pastis_kfold_%a_%j.err
 #SBATCH --export=none
 
 #SBATCH -N 1
@@ -32,8 +32,8 @@ echo "Launch python file for fold $SLURM_ARRAY_TASK_ID"
 export PYTORCH_ALLOC_CONF=expandable_segments:True
 export PATH=$(dirname $(which pixi)):$PATH
 
-srun --export=ALL pixi run -e gpu python pastis/main_pastis_kfold.py \
-    --config_train pastis/configs/config_train_kfold.yaml \
+srun --export=ALL pixi run -e gpu python pastis/main_supervised_training_pastis.py \
+    --config_train pastis/configs/supervised_config.yaml \
     --config_model pastis/configs/LTAE.yaml \
     --fold_index $SLURM_ARRAY_TASK_ID  # Pass the fold index from the array
 

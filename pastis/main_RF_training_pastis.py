@@ -1,22 +1,15 @@
 import os
-import pandas as pd
+from argparse import ArgumentParser
+import pprint
+import yaml
+import sys
+from datetime import datetime
+
 import numpy as np
+from sklearn.ensemble import RandomForestClassifier
+import pandas as pd
 from pandas.core.indexes.datetimes import DatetimeIndex
 import geopandas as gpd
-from time import perf_counter
-from functools import wraps
-
-
-def timer(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        t0 = perf_counter()
-        out = func(*args, **kwargs)
-        dt = perf_counter() - t0
-        print(f"{func.__name__:25s}: {dt:.3f}s")
-        return out
-
-    return wrapper
 
 
 def create_RF_spectral_indices_PASTIS(s2: np.ndarray) -> np.ndarray:
@@ -43,7 +36,6 @@ def create_RF_spectral_indices_PASTIS(s2: np.ndarray) -> np.ndarray:
     )
 
 
-@timer
 def interpolate_PASTIS(s2: np.ndarray, grid: DatetimeIndex, dates: list) -> np.ndarray:
     dates = pd.to_datetime(dates, format="%Y%m%d")
 
@@ -65,8 +57,6 @@ def interpolate_PASTIS(s2: np.ndarray, grid: DatetimeIndex, dates: list) -> np.n
 
     # Keep only requested dates
     df = df.loc[grid]
-
-    return df.to_numpy().reshape(len(grid), C, H, W)
 
 
 def interpolate_PASTIS_numpy(
@@ -161,3 +151,99 @@ def create_RF_dataset_PASTIS(
     Y = Label.reshape(-1)  # (bhw)
 
     return (X, Y, ids)
+
+
+def main(config):
+    date = datetime.now().date().strftime("%Y-%m-%d")
+
+    # Time
+    T0 = "2018-09-01"
+    T_fin = "2019-11-01"
+    grid = pd.date_range(start=T0, end=T_fin, freq="10D")
+
+    # Datasets
+    print("\nLOADING DATA ...")
+
+    selected_fold = config["selected_fold"]
+
+    sys.stdout.flush()
+    (X_train, Y_train, _) = create_RF_dataset_PASTIS(
+        path_folder=config["path_data"],
+        folders=selected_fold[0],
+        tile=config["tile"],
+        grid_time=grid,
+    )
+
+    (X_test, Y_test, ids_test) = create_RF_dataset_PASTIS(
+        path_folder=config["path_data"],
+        folders=selected_fold[2],
+        tile=config["tile"],
+        grid_time=grid,
+    )
+
+    # Classifier
+    RF_classifier = RandomForestClassifier(
+        min_samples_split=25,
+        n_jobs=-1,
+        verbose=1,
+        random_state=42,
+    )
+
+    # Training
+    print("\nTRAINING ...")
+    sys.stdout.flush()
+    RF_classifier.fit(X_train, Y_train)
+
+    # Testing
+    print("\nPREDICTING ...")
+    sys.stdout.flush()
+    Y_pred = RF_classifier.predict(X_test)
+
+    # Save preds
+    path_to_save = os.path.join(
+        config["path_logs"],
+        date,
+        f"fold_{str(config['fold_index'] + 1)}",
+        f"tile_{str(config['tile'] + 1)}",
+    )
+
+    os.makedirs(path_to_save, exist_ok=True)
+
+    np.save(f"{path_to_save}/y_pred", Y_pred.reshape(-1, 128, 128))
+    np.save(f"{path_to_save}/y_true", Y_test.reshape(-1, 128, 128))
+
+
+if __name__ == "__main__":
+    print("\nPARSE ARGUMENTS ... ")
+    parser = ArgumentParser()
+
+    parser = ArgumentParser()
+    parser.add_argument(
+        "--config_train", type=str, default="pastis/configs/RF_config.yaml"
+    )
+
+    parser.add_argument(
+        "--fold_index",
+        type=int,
+        required=True,
+        help="Index of the fold to run (0-based, e.g., 0 for first fold)",
+    )
+    parser.add_argument(
+        "--tile",
+        type=int,
+        required=True,
+        help="Tile index (0-based, e.g., 0 for first tile)",
+    )
+
+    args = parser.parse_args()
+    # Open YAML file
+    with open(args.config, "r") as f:
+        train_cfg = yaml.safe_load(f)
+    config = {**train_cfg}
+
+    config["selected_fold"] = config["folds"][args.fold_index]
+    config["fold_index"] = args.fold_index
+    config["tile"] = args.tile
+
+    pprint.pprint(config)
+    main(config)

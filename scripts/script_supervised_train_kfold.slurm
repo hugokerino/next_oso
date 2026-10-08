@@ -27,14 +27,32 @@ echo "Load pixi envs"
 module purge
 module load pixi
 
-echo "Launch python file for fold $SLURM_ARRAY_TASK_ID"
+
+# Launch date
+DATE_FILE="/tmp/slurm_job_${SLURM_JOB_ID}_launch_date.txt"
+
+# Si le fichier n'existe pas, c'est le premier lancement → stocker la date
+if [ ! -f "$DATE_FILE" ]; then
+    LAUNCH_DATE=$(date +"%Y-%m-%d")
+    echo "$LAUNCH_DATE" > "$DATE_FILE"
+else
+    # Sinon, requeue lire la date stockée
+    LAUNCH_DATE=$(cat "$DATE_FILE")
+fi
+
+export LAUNCH_DATE
 
 export PYTORCH_ALLOC_CONF=expandable_segments:True
 export PATH=$(dirname $(which pixi)):$PATH
 
+
+echo "Launch python file for fold $SLURM_ARRAY_TASK_ID"
+
 srun --export=ALL pixi run -e gpu python mains/main_supervised_training.py \
-    --config_train configs/models/config_trex.yaml \
-    --config_model configs/models/LTAE.yaml \
+    --config_train configs/supervised_models/config_trex.yaml \
+    --config_model configs/supervised_models/LTAE.yaml \
     --fold_index $SLURM_ARRAY_TASK_ID  # Pass the fold index from the array
 
 echo "End"
+
+trap "rm -f $DATE_FILE" EXIT

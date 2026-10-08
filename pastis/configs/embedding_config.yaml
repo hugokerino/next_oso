@@ -1,10 +1,10 @@
 # Data & model
-dataset : next_oso
+dataset : pastis
 model : alpha-earth
 
 # Paths
-path_data : /work/THEIA/CES/oso/hugok/nextoso-dataset #/work/THEIA/CES/oso/hugok/pastis
-path_logs : /work/THEIA/CES/oso/hugok/next_oso/logs # /work/THEIA/CES/oso/hugok/next_oso/pastis/logs
+path_data : /work/THEIA/CES/oso/hugok/pastis
+path_logs : /work/THEIA/CES/oso/hugok/next_oso/pastis/logs
 
 # Data settings
 label_type : max_class

@@ -33,13 +33,13 @@ torch.backends.cuda.enable_mem_efficient_sdp(
 
 
 def main(config):
-    date = datetime.now().date().strftime("%Y-%m-%d")
+    date = os.getenv("LAUNCH_DATE", datetime.now().date().strftime("%Y-%m-%d"))
 
     ########################################
     #  PATH TO SAVE
     ########################################
     log_dir = os.path.join(
-        config["path_logs"], f"{config['model']}_{config['decoder_type']}_{date}_kfold"
+        config["path_logs"], f"{config['model']}_{config['decoder_type']}_{date}"
     )
 
     if config["logs"]:

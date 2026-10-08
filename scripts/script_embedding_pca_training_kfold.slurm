@@ -2,8 +2,8 @@
 
 #SBATCH -J emb_pca_kfold
 #SBATCH -A theia_oso
-#SBATCH -o script_logs/out_pca_embk%j.out
-#SBATCH -e script_logs/err_pca_embk%j.err
+#SBATCH -o script_logs/out_%a_pca_embk%j.out
+#SBATCH -e script_logs/err_%a_pca_embk%j.err
 #SBATCH --export=none
 
 #SBATCH -N 1
@@ -31,11 +31,9 @@ module load pixi
 
 echo "Launch python file"
 
-task_id=${SLURM_ARRAY_TASK_ID:-0}
-
 
 pixi run -e gpu python mains/main_embedding_pca_training.py \
-    --config "/work/THEIA/CES/oso/hugok/next_oso/configs/FM_models/config_trex.yaml" \
+    --config "/work/THEIA/CES/oso/hugok/next_oso/configs/embeddings/config_trex.yaml" \
     --n_component 128 \
     --fold_index $SLURM_ARRAY_TASK_ID  # Pass the fold index from the array
 

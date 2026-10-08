@@ -30,11 +30,9 @@ module load pixi
 
 echo "Launch python file"
 
-task_id=${SLURM_ARRAY_TASK_ID:-0}
-
 
 pixi run -e gpu python mains/main_embedding_pca_training.py \
-    --config "/work/THEIA/CES/oso/hugok/next_oso/configs/FM_models/config_trex.yaml" \
+    --config "/work/THEIA/CES/oso/hugok/next_oso/configs/embeddings/config_trex.yaml" \
     --n_component 128 \
     --fold_index 4
 

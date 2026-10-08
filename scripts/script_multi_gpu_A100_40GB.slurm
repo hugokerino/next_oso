@@ -40,7 +40,7 @@ export PATH=$(dirname $(which pixi)):$PATH
 echo "Launch python file"
 
 srun --export=ALL --ntasks-per-node=2 --cpus-per-task=16 pixi run -e gpu python mains/main_lightning.py \
-    --config_train configs/models/train_trex.yaml \
+    --config_train configs/models/config_trex.yaml \
     --config_model configs/models/UTAE.yaml
 
 stop_monitoring.sh --name $MODELNAME

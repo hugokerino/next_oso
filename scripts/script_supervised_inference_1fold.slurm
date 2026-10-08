@@ -31,8 +31,8 @@ echo "Launch python file"
 FOLD_INDEX=0  # For single fold inference, we can set the fold index to 0
 
 pixi run -e gpu python mains/main_supervised_inference.py \
-    --config_train configs/models/config_trex.yaml \
-    --config_model configs/models/ALISE.yaml \
+    --config_train configs/supervised_models/config_trex.yaml \
+    --config_model configs/supervised_models/ALISE.yaml \
     --path_dir_logs /work/THEIA/CES/oso/hugok/next_oso/logs/light_training/ALISE_mlp_2026-09-21_kfold \
     --path_save_preds /work/THEIA/CES/oso/hugok/predictions/preds_folder_5 \
     --fold_index $FOLD_INDEX

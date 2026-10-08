@@ -31,12 +31,12 @@ torch.backends.cuda.enable_mem_efficient_sdp(
 
 
 def main(config):
-    date = datetime.now().date().strftime("%Y-%m-%d")
-
     ########################################
     #  PATH TO SAVE
     ########################################
-    log_dir = os.path.join(config["path_logs"], f"{config['model']}_{date}_kfold")
+    date = datetime.now().date().strftime("%Y-%m-%d")
+
+    log_dir = os.path.join(config["path_logs"], f"{config['model']}_{date}")
 
     if config["logs"]:
         os.makedirs(log_dir, exist_ok=True)
@@ -47,11 +47,16 @@ def main(config):
 
     log_fold = os.path.join(log_dir, f"fold_{str(config['fold_index'] + 1)}")
 
+    ########################################
+    #  Build classifier and Load data
+    ########################################
+
     criterion = select_criterion(config["criterion"])
     encoder, decoder, batch_size = build_model(config)
     config["batch_size"] = (
         batch_size  # Update batch size in config for data loading and lightning module
     )
+
     # config["selected_fold"] holds the actual tuple/list of [train, val, test] for this job
     selected_fold = config["selected_fold"]
     dl_train, dl_val, dl_test = pastis_dataset.get_loaders_pastis(
@@ -166,6 +171,7 @@ def main(config):
 if __name__ == "__main__":
     print("\nPARSE ARGUMENTS ...")
     L.seed_everything(42, workers=True)
+
     parser = ArgumentParser()
     parser.add_argument(
         "--config_train", type=str, default="pastis/configs/config_train_kfold.yaml"

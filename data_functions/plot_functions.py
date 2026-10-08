@@ -15,12 +15,10 @@ import matplotlib.gridspec as gridspec
 
 from data_functions.utils_data import to_RGB
 
-is_cluster = "SLURM_JOB_ID" in os.environ
 path_to_oso_name = (
-    "/work/THEIA/CES/oso/hugok/nextoso-dataset/metadata/oso_classes.csv"
-    if is_cluster
-    else "/home/hkerino/Documents/nextoso-dataset/data/10m/metadata/oso_classes.csv"
+    "/home/hkerino/Documents/nextoso-dataset/data/10m/metadata/oso_classes.csv"
 )
+
 names_class = (
     pandas.read_csv(path_to_oso_name).get("name_class").values
 )  # Doit contenir 25 entrées (0 à 24)
@@ -1030,32 +1028,34 @@ def plot_pred_and_label(y_true, y_pred, rgb_img, y_entropie, class_idx, idx_to_p
     plt.show()
 
 
-def plot_label_probability(id: str, save=False):
-    label = xr.open_dataset(
-        f"/home/hkerino/Documents/nextoso-dataset/data/10m/labels/label_{id}.nc"
-    )
-    class_var = [c for c in label.data_vars if c in names_class]
-    nb_class = len(class_var)
+def plot_label_probability(label: torch.Tensor):
+    dims = []
+
+    for class_var in range(len(names_class)):
+        if (label[class_var] != 0).any():
+            dims.append(class_var)
+
+    nb_class = len(dims)
 
     rows = nb_class // 4
     reste = nb_class % 4
     if reste != 0:
         rows = rows + 1
+
     fig, axes = plt.subplots(rows, 4, figsize=(18, 12))
-    fig.suptitle(f"ID : {id}")
+
     for c in range(4):
         for r in range(rows):
             axes[r, c].axis("off")
 
-    for k, classs in enumerate(class_var):
+    for k, classs in enumerate(dims):
         im0 = axes.flatten()[k].imshow(
-            label[classs].data,
+            label[classs],
             cmap="viridis",
             vmin=0,
             vmax=1,
         )
-        axes.flatten()[k].set_title(classs)
-
+        axes.flatten()[k].set_title(names_class[classs])
     cbar = fig.colorbar(
         im0,
         ax=axes,
@@ -1065,14 +1065,7 @@ def plot_label_probability(id: str, save=False):
         aspect=40,
         ticks=np.linspace(0, 1, 6),
     )
-
     cbar.set_label("Label Probability")
-
-    if save:
-        plt.savefig(
-            f"/home/hkerino/Documents/Resultats_nextoso/preds_folder_5_accuracy/protéagineux/{id}_labels.png"
-        )
-        plt.close(fig)
 
 
 def plot_s2_and_mask(s2, dates, masks, start_timestep):
