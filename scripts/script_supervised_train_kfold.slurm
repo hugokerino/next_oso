@@ -29,7 +29,7 @@ module load pixi
 
 
 # Launch date
-DATE_FILE="/tmp/slurm_job_${SLURM_JOB_ID}_launch_date.txt"
+DATE_FILE="${SLURM_SUBMIT_DIR}/slurm_job_${SLURM_JOB_ID}_launch_date.txt"
 
 # Si le fichier n'existe pas, c'est le premier lancement → stocker la date
 if [ ! -f "$DATE_FILE" ]; then
@@ -55,4 +55,4 @@ srun --export=ALL pixi run -e gpu python mains/main_supervised_training.py \
 
 echo "End"
 
-trap "rm -f $DATE_FILE" EXIT
+trap 'rm -f "$DATE_FILE"' EXIT

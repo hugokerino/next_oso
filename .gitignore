@@ -23,6 +23,9 @@ script_logs/
 output_monitoring/
 lightning_logs/
 
+#tmp files
+slurm_job_*
+
 #Notebook use for quick test
 test.ipynb
 analyse_results/*.ipynb
