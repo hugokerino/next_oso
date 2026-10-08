@@ -132,7 +132,7 @@ def main(config):
         loss_fn=criterion,
         lr=config["learning_rate"],
         max_epochs=config["epochs_max"],
-        name_class=dl_train.dataset.name_labels,
+        names_class=dl_train.dataset.name_labels,
     )
 
     ########################################
@@ -158,7 +158,7 @@ def main(config):
             decoder=decoder,
             loss_fn=criterion,
             batch_size=config["batch_size"],
-            name_class=dl_test.dataset.name_labels,
+            names_class=dl_test.dataset.name_labels,
             path_save_excel=f"{log_fold}/metrics.xlsx",
             path_raw_matrix=f"{log_fold}/raw_matrix.pt",
         )
@@ -180,7 +180,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--config_train",
         type=str,
-        default="configs/models/config_local.yaml",
+        default="configs/supervised_models/config_local.yaml",
         help="YAML config file for training settings",
     )
 
@@ -188,7 +188,7 @@ if __name__ == "__main__":
         "--config_model",
         type=str,
         required=True,
-        help="YAML config file for model settings. Ex: configs/models/LTAE.yaml",
+        help="YAML config file for model settings. Ex: configs/supervised_models/LTAE.yaml",
     )
     parser.add_argument(
         "--fold_index",

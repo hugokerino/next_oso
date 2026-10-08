@@ -1,5 +1,4 @@
 import torch
-import pytest
 from embedding import dataset_embedding, decode_lightning_module
 from supervised_models.utils_model import MLP_Decoder, CNN_Decoder
 
@@ -48,15 +47,15 @@ def test_embedding():
     # Training step
     train_loader = datamodule.train_dataloader()
     batch = next(iter(train_loader))
-    loss_MLP = classifier_MLP.training_step(batch, batch_idx=0)
-    loss_CNN = classifier_CNN.training_step(batch, batch_idx=0)
+    loss_MLP = classifier_MLP.training_step(batch)
+    loss_CNN = classifier_CNN.training_step(batch)
     assert isinstance(loss_MLP, torch.Tensor)
     assert isinstance(loss_CNN, torch.Tensor)
 
     # Validation step
     val_batch = next(iter(datamodule.val_dataloader()))
-    classifier_MLP.validation_step(val_batch, batch_idx=0)
-    classifier_CNN.validation_step(val_batch, batch_idx=0)
+    classifier_MLP.validation_step(val_batch)
+    classifier_CNN.validation_step(val_batch)
 
     # Test step
     test_batch = next(iter(datamodule.test_dataloader()))
@@ -109,15 +108,15 @@ def test_embedding_pastis():
     batch = next(iter(train_loader))
 
     # Training step
-    loss_MLP = classifier_MLP.training_step(batch, batch_idx=0)
-    loss_CNN = classifier_CNN.training_step(batch, batch_idx=0)
+    loss_MLP = classifier_MLP.training_step(batch)
+    loss_CNN = classifier_CNN.training_step(batch)
     assert isinstance(loss_MLP, torch.Tensor)
     assert isinstance(loss_CNN, torch.Tensor)
 
     # Validation step
     val_batch = next(iter(datamodule.val_dataloader()))
-    classifier_MLP.validation_step(val_batch, batch_idx=0)
-    classifier_CNN.validation_step(val_batch, batch_idx=0)
+    classifier_MLP.validation_step(val_batch)
+    classifier_CNN.validation_step(val_batch)
 
     # Test step
     test_batch = next(iter(datamodule.test_dataloader()))

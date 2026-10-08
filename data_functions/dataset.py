@@ -24,8 +24,49 @@ class next_oso_Dataset(tdata.Dataset):
         return_id: bool = False,
         label_type: str = "max_class",  # choose btw 'max_class', 'oso_type', 'probas', 'v3'
         date_type: str = "relative",
-        reference_date: str = "2019-12-31",
+        reference_date: str | None = "2019-12-31",
     ):
+        """PyTorch Dataset for the Next-OSO dataset.
+
+        Parameters
+        ----------
+        path_data : Path
+            Path to the directory containing the Next-OSO data. Must contains labels/ metadata/ mnt/ s2/
+
+        folds : list[int] | None
+            Dataset folds to load. If None, all available folds are used.
+
+        use_mnt_data : bool
+            Whether to include the MNT (digital elevation model) and coordonates data.
+
+        norm : bool
+            Whether to normalize the input s2 data.
+
+        remove_invalid_temp : bool
+            Some s2 timesteps have complete invalid observation, if True those timesteps are removed from the input data.
+
+        mask_needed : bool
+            Whether to return the Sentinel-2 validity mask. 1 = "Invalid", 0 = "Valid"
+
+        mask_invalid : bool
+            Some patches have part where s2 data is always black. Those are not flagged by the s2 validity mask.
+            If True, puts labels 0 on those zones thus not taken into account for train and evaluation.
+
+        return_id : bool
+            Whether to return the sample identifier together with the data and labels.
+
+        label_type : str
+            Type of label returned by the dataset. Supported values are:
+            ``"max_class"``, ``"oso_type"``, ``"probas"``, and ``"v3"``.
+
+        date_type : str
+            Representation used for dates. Supported values are:
+            ``"relative"``, ``"raw"``
+
+        reference_date : str
+            Reference date used when ``date_type="relative"``.
+        """
+
         super(next_oso_Dataset, self).__init__()
         self.path_data = path_data
         self.folds = folds

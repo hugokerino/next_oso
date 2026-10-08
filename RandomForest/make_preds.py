@@ -9,8 +9,7 @@ from RandomForest import dataset_RF
 PATH_TO_RF_PREDICTIONS = (
     "/home/hkerino/Documents/Resultats_nextoso/rf_prediction/2026-03-23"
 )
-PATH_TO_DATA_s2 = "/home/hkerino/Documents/nextoso-dataset/data/10m/s2"
-PATH_TO_DATA_label = "/home/hkerino/Documents/nextoso-dataset/data/10m/labels"
+PATH_TO_DATA = "/home/hkerino/Documents/nextoso-dataset/data/10m"
 PATH_TO_SAVE = "/home/hkerino/Documents/nextoso-dataset/preds/preds_RF"
 
 # Lists to store preds per ecozone
@@ -32,8 +31,7 @@ for z, preds_zone in enumerate(sorted(os.listdir(PATH_TO_RF_PREDICTIONS))):
             )
         )
         Y_true, ids = dataset_RF.create_dataset(
-            path_s2=PATH_TO_DATA_s2,
-            path_label=PATH_TO_DATA_label,
+            path_data=PATH_TO_DATA,
             zone=z + 1,
             folders=[5],
             grid_time=grid,

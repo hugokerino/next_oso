@@ -15,7 +15,7 @@ from argparse import ArgumentParser
 from datetime import datetime
 import sys
 
-from pastis import pastis_dataset
+from pastis import dataset_PASTIS
 from src import custom_loss_functions
 from supervised_models import lightning_module
 from mains.main_utils import load_config, build_model, select_criterion, get_precision
@@ -59,7 +59,7 @@ def main(config):
 
     # config["selected_fold"] holds the actual tuple/list of [train, val, test] for this job
     selected_fold = config["selected_fold"]
-    dl_train, dl_val, dl_test = pastis_dataset.get_loaders_pastis(
+    dl_train, dl_val, dl_test = dataset_PASTIS.get_loaders_pastis(
         path_pastis=config["path_pastis"],
         batch_size=config["batch_size"],
         num_worker=config["num_worker"],
@@ -125,7 +125,7 @@ def main(config):
         loss_fn=criterion,
         lr=config["learning_rate"],
         num_classe=config["num_class"],
-        name_class=name_class,
+        names_class=name_class,
     )
 
     ########################################

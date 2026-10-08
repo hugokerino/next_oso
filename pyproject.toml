@@ -18,6 +18,7 @@ include = [
     "pastis*",
     "mains*",
     "test*",
+    "templates*",
 ]
 
 [tool.ruff]

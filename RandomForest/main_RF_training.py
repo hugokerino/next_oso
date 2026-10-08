@@ -26,16 +26,14 @@ def main(config):
     print("\nLOADING DATA ...")
     sys.stdout.flush()
     (X_train, Y_train) = dataset_RF.create_dataset(
-        path_s2=config["path_s2"],
-        path_label=config["path_label"],
+        path_date=config["path_data"],
         zone=config["zone_eco"] + 1,
         folders=selected_fold[0],
         grid_time=grid,
     )
 
     (X_test, Y_test) = dataset_RF.create_dataset(
-        path_s2=config["path_s2"],
-        path_label=config["path_label"],
+        path_data=config["path_data"],
         zone=config["zone_eco"] + 1,
         folders=selected_fold[2],
         grid_time=grid,
@@ -43,16 +41,17 @@ def main(config):
 
     # Classifier
     RF_classifier = RandomForestClassifier(
-         min_samples_split=25,
-         n_jobs=-1,
-         verbose=1,
-         random_state=42,
-     )
+        min_samples_split=25,
+        n_jobs=-1,
+        verbose=1,
+        random_state=42,
+    )
 
     # Training
     print("\nTRAINING ...")
     sys.stdout.flush()
-    RF_classifier.fit(X_train, Y_train)
+    sample_weights = np.where(Y_train == 0, 0.0, 1.0)  # to ignore pixel with label = 0
+    RF_classifier.fit(X_train, Y_train, sample_weight=sample_weights)
 
     # Testing
     print("\nPREDICTING ...")
@@ -80,7 +79,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--config_train",
         type=str,
-        default="/home/hkerino/Documents/next_oso/RandomForest/config_RF_kfold.yaml",
+        default="/home/hkerino/Documents/next_oso/RandomForest/config_RF.yaml",
     )
     parser.add_argument(
         "--fold_index",

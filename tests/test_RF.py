@@ -13,6 +13,7 @@ def reduced_grid():
     return pandas.date_range(start=T0, end=T_fin, freq="100D")
 
 
+@pytest.mark.slow
 def test_dataset_default():
     (X_1, Y_1) = dataset_RF.create_dataset()
 
@@ -76,10 +77,9 @@ def test_dataset_label_type(reduced_grid):
         label_type="max_class",
     )
     (X_2, Y_2) = dataset_RF.create_dataset(
-        path_label="/home/hkerino/Documents/nextoso-dataset/data/10m/labels_v2",
         folders=[1],
         grid_time=reduced_grid,
-        label_type="v2",
+        label_type="oso_type",
     )
     (X_3, Y_3) = dataset_RF.create_dataset(
         folders=[1], grid_time=reduced_grid, label_type="erode_max_class"

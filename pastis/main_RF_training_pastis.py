@@ -192,7 +192,8 @@ def main(config):
     # Training
     print("\nTRAINING ...")
     sys.stdout.flush()
-    RF_classifier.fit(X_train, Y_train)
+    sample_weights = np.where(Y_train == 0, 0.0, 1.0)  # to ignore pixel with label = 0
+    RF_classifier.fit(X_train, Y_train, sample_weight=sample_weights)
 
     # Testing
     print("\nPREDICTING ...")

@@ -14,54 +14,7 @@ import matplotlib.dates as mdates
 import matplotlib.gridspec as gridspec
 
 from data_functions.utils_data import to_RGB
-
-path_to_oso_name = (
-    "/home/hkerino/Documents/nextoso-dataset/data/10m/metadata/oso_classes.csv"
-)
-
-names_class = (
-    pandas.read_csv(path_to_oso_name).get("name_class").values
-)  # Doit contenir 25 entrées (0 à 24)
-num_class = len(names_class)
-
-
-# Colormap personnalisée (25 couleurs, dont gris pour 'nan')
-# Définition des couleurs personnalisées (RVB 0-255)
-OSO_COLORS = {
-    1: (255, 0, 255),  # Urbain dense
-    2: (255, 85, 255),  # Urbain diffus
-    3: (255, 170, 255),  # Zones industrielles et commerciales
-    4: (0, 255, 255),  # Routes
-    5: (255, 255, 0),  # Colza
-    6: (208, 255, 0),  # Céréales à paille
-    7: (161, 214, 0),  # Protéagineux
-    8: (255, 170, 68),  # Soja
-    9: (214, 214, 0),  # Tournesol
-    10: (255, 85, 0),  # Maïs
-    11: (197, 255, 255),  # Riz
-    12: (170, 170, 97),  # Tubercules / Racines
-    13: (170, 170, 0),  # Prairies
-    14: (170, 170, 255),  # Vergers
-    15: (85, 0, 0),  # Vignes
-    16: (0, 156, 0),  # Forêts de feuillus
-    17: (0, 50, 0),  # Forêts de conifères
-    18: (170, 255, 0),  # Pelouse
-    19: (85, 170, 127),  # Landes
-    20: (255, 0, 0),  # Surfaces minérales
-    21: (255, 184, 2),  # Plages et Dunes
-    22: (190, 190, 190),  # Glaciers et neiges éternelles
-    23: (0, 0, 255),  # Eau
-    24: (68, 121, 200),  # Serres
-}
-# Ajouter une couleur pour la classe 0 ('nan')
-OSO_COLORS[0] = (255, 255, 255)  # Blanc pour 'nan'
-# Normaliser les couleurs (diviser par 255)
-normalized_colors = [
-    (r / 255, g / 255, b / 255)
-    for r, g, b in [OSO_COLORS[i] for i in sorted(OSO_COLORS.keys())]
-]
-
-cmap = ListedColormap(normalized_colors)
+from templates.constants import names_class, cmap_oso
 
 
 def count_label(dataset, normalized=False, plot=True):
@@ -95,10 +48,10 @@ def count_label(dataset, normalized=False, plot=True):
         except Exception:
             n = 25
 
-        if hasattr(cmap, "colors") and len(cmap.colors) >= n:
-            bar_colors = list(cmap.colors)[:n]
+        if hasattr(cmap_oso, "colors") and len(cmap_oso.colors) >= n:
+            bar_colors = list(cmap_oso.colors)[:n]
         else:
-            bar_colors = [cmap(i / (n - 1)) for i in range(n)]
+            bar_colors = [cmap_oso(i / (n - 1)) for i in range(n)]
 
         bars = ax.bar(range(classes.shape[0]), classes, color=bar_colors)
 
@@ -186,16 +139,16 @@ def count_label_easier(dataset, normalized=False, plot=True):
         fig, ax = plt.subplots(figsize=(12, 6))
         ax.set_title("Labels repartition")
 
-        # Determine bar colors from cmap (fall back to sampling if needed)
+        # Determine bar colors from cmap_oso (fall back to sampling if needed)
         try:
             n = classes.shape[0]
         except Exception:
             n = 25
 
-        if hasattr(cmap, "colors") and len(cmap.colors) >= n:
-            bar_colors = list(cmap.colors)[:n]
+        if hasattr(cmap_oso, "colors") and len(cmap_oso.colors) >= n:
+            bar_colors = list(cmap_oso.colors)[:n]
         else:
-            bar_colors = [cmap(i / (n - 1)) for i in range(n)]
+            bar_colors = [cmap_oso(i / (n - 1)) for i in range(n)]
 
         bars = ax.bar(range(classes.shape[0]), classes, color=bar_colors)
 
@@ -398,7 +351,7 @@ def plot_label(patch: xr.Dataset | np.ndarray):
 
     fig, ax = plt.subplots(1, figsize=(12, 8))
 
-    im = ax.imshow(label, cmap=cmap, vmin=0, vmax=24)
+    im = ax.imshow(label, cmap=cmap_oso, vmin=0, vmax=24)
     cbar = fig.colorbar(im, ax=ax, ticks=np.arange(0, 25))
     cbar.ax.set_yticklabels([names_class[i] for i in range(25)])
     ax.axis("off")
@@ -415,7 +368,7 @@ def plot_label_and_entropy(id: int, label: str):
 
     # Labels
     ax[0].set_title("Labels")
-    im = ax[0].imshow(label, cmap=cmap, vmin=0, vmax=24)
+    im = ax[0].imshow(label, cmap=cmap_oso, vmin=0, vmax=24)
     cbar = fig.colorbar(im, ax=ax[0], ticks=np.arange(25))
     cbar.ax.set_yticklabels([names_class[i] for i in range(25)])
     ax[0].axis("off")
@@ -470,7 +423,7 @@ def plot_label_and_entropy2(id: int, s2_rgb: str, label: str):
     # ====================================================
     # Labels
     # ====================================================
-    im = ax[1].imshow(label, cmap=cmap, vmin=0, vmax=24)
+    im = ax[1].imshow(label, cmap=cmap_oso, vmin=0, vmax=24)
     ax[1].set_title("Labels")
     ax[1].axis("off")
 
@@ -522,7 +475,7 @@ def plot_nextoso(dataset, idx=0, first_date=0, lenght=5):
     fig2, ax2 = plt.subplots(figsize=(8, 8))
 
     # Affichage de la carte des labels
-    im = ax2.imshow(y, cmap=cmap, vmin=0, vmax=24)
+    im = ax2.imshow(y, cmap=cmap_oso, vmin=0, vmax=24)
 
     # Ajout de la colorbar
     cbar = fig2.colorbar(im, ax=ax2, ticks=np.arange(0, 25))
@@ -567,18 +520,18 @@ def plot_preds_labels_and_img(
         ax[i][0].imshow(imgs_batch[i])
         ax[i][0].axis("off")
 
-        ax[i][1].imshow(labels_batch[i], cmap=cmap, vmin=0, vmax=24)
+        ax[i][1].imshow(labels_batch[i], cmap=cmap_oso, vmin=0, vmax=24)
         ax[i][1].axis("off")
 
         ax[i][2].imshow(
-            preds_RF[batch_index * batch_size + i], cmap=cmap, vmin=0, vmax=24
+            preds_RF[batch_index * batch_size + i], cmap=cmap_oso, vmin=0, vmax=24
         )
         ax[i][2].axis("off")
 
-        ax[i][3].imshow(pred_model1_batch[i], cmap=cmap, vmin=0, vmax=24)
+        ax[i][3].imshow(pred_model1_batch[i], cmap=cmap_oso, vmin=0, vmax=24)
         ax[i][3].axis("off")
 
-        im = ax[i][4].imshow(pred_model2_batch[i], cmap=cmap, vmin=0, vmax=24)
+        im = ax[i][4].imshow(pred_model2_batch[i], cmap=cmap_oso, vmin=0, vmax=24)
         ax[i][4].axis("off")
 
     # Créer un axe dédié pour la colorbar (colonne 5)
@@ -794,7 +747,7 @@ def plot_nan(patch):
 
     fig, ax = plt.subplots(1, 2, figsize=(12, 8))
 
-    ax[0].imshow(label, cmap=cmap, vmin=0, vmax=24)
+    ax[0].imshow(label, cmap=cmap_oso, vmin=0, vmax=24)
     ax[0].axis("off")
 
     patch_binary = (label != -1).astype(int)
@@ -988,19 +941,19 @@ def plot_pred_and_label(y_true, y_pred, rgb_img, y_entropie, class_idx, idx_to_p
     # cbar entropy — uniquement sur la ligne 2
     cbar_entropy_ax = fig.add_subplot(gs[2, 2])
 
-    ax00.imshow(label, cmap=cmap, vmin=0, vmax=24)
+    ax00.imshow(label, cmap=cmap_oso, vmin=0, vmax=24)
     ax00.set_title("Labels")
     ax00.axis("off")
 
-    ax01.imshow(pred, cmap=cmap, vmin=0, vmax=24)
+    ax01.imshow(pred, cmap=cmap_oso, vmin=0, vmax=24)
     ax01.set_title("Predictions")
     ax01.axis("off")
 
-    ax10.imshow(label_class_only, cmap=cmap, vmin=0, vmax=24)
+    ax10.imshow(label_class_only, cmap=cmap_oso, vmin=0, vmax=24)
     ax10.set_title(f"Pixels vrais '{names_class[class_idx]}'")
     ax10.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
 
-    im = ax11.imshow(pred_on_errors, cmap=cmap, vmin=0, vmax=24)
+    im = ax11.imshow(pred_on_errors, cmap=cmap_oso, vmin=0, vmax=24)
     ax11.set_title(
         f"Classe majoritairement prédite : '{names_class[class_maj_pred_on_error]}'"
     )

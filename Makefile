@@ -7,6 +7,6 @@ mypy:
 	pixi run -e dev mypy .
 
 test:
-	pixi run -e dev pytest test/
+	pixi run -e dev pytest tests/
 
 ci: ruff mypy test

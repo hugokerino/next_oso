@@ -1,9 +1,9 @@
 import torch
-from pastis import pastis_dataset
+from pastis import dataset_PASTIS
 
 
 def test_dataset_default():
-    p = pastis_dataset.PASTIS_Dataset()
+    p = dataset_PASTIS.PASTIS_Dataset()
     sample = p.__getitem__(0)
 
     assert isinstance(sample, tuple)
@@ -14,15 +14,15 @@ def test_dataset_default():
 
 
 def test_folds():
-    p1 = pastis_dataset.PASTIS_Dataset(folds=None)
-    p2 = pastis_dataset.PASTIS_Dataset(folds=[3, 4])
+    p1 = dataset_PASTIS.PASTIS_Dataset(folds=None)
+    p2 = dataset_PASTIS.PASTIS_Dataset(folds=[3, 4])
 
     assert p1.__len__() > p2.__len__()
 
 
 def test_norm():
-    p1 = pastis_dataset.PASTIS_Dataset(norm=True)
-    p2 = pastis_dataset.PASTIS_Dataset(norm=False)
+    p1 = dataset_PASTIS.PASTIS_Dataset(norm=True)
+    p2 = dataset_PASTIS.PASTIS_Dataset(norm=False)
 
     s2_normed = p1.__getitem__(1000)[0][0]["S2"]
     s2_raw = p2.__getitem__(1000)[0][0]["S2"]

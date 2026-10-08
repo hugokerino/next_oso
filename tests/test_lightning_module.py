@@ -1,7 +1,6 @@
 import pytest
 
 import torch
-from einops import rearrange
 import yaml
 
 from supervised_models import lightning_module, LTAE, UTAE, ALISE, utils_model
@@ -71,13 +70,13 @@ def get_models(ltae_config, utae_config, alise_config, decoder_type="cnn"):
 
 
 ltae_config = yaml.safe_load(
-    open("/home/hkerino/Documents/next_oso/configs/models/LTAE.yaml", "r")
+    open("/home/hkerino/Documents/next_oso/configs/supervised_models/LTAE.yaml", "r")
 )
 utae_config = yaml.safe_load(
-    open("/home/hkerino/Documents/next_oso/configs/models/UTAE.yaml", "r")
+    open("/home/hkerino/Documents/next_oso/configs/supervised_models/UTAE.yaml", "r")
 )
 alise_config = yaml.safe_load(
-    open("/home/hkerino/Documents/next_oso/configs/models/ALISE.yaml", "r")
+    open("/home/hkerino/Documents/next_oso/configs/supervised_models/ALISE.yaml", "r")
 )
 
 

@@ -1,10 +1,8 @@
 # Paths
-path_s2: /work/THEIA/CES/oso/hugok/s2_data
-path_label: /work/THEIA/CES/oso/hugok/labels_v2
+path_data: /work/THEIA/CES/oso/hugok/nextoso-dataset
 path_logs: /work/THEIA/CES/oso/hugok/next_oso/logs/RF
 
-#path_s2: /home/hkerino/Documents/nextoso-dataset/data/10m/s2
-#path_label: /home/hkerino/Documents/nextoso-dataset/data/10m/labels
+#path_data: /home/hkerino/Documents/nextoso-dataset/data/10m
 #path_logs: /home/hkerino/Documents/next_oso/logs/RF
 
 folds :
