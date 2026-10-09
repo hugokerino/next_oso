@@ -36,8 +36,8 @@ echo "Redirecting stdout -> ${OUT_FILE}  stderr -> ${ERR_FILE}"
 # Replace SLURM's static -o/-e logs for per-task logs using shell redirection
 exec 1>"${OUT_FILE}" 2>"${ERR_FILE}"
 
-pixi run --frozen python RandomForest/main_RF_kfold.py \
-    --config_train RandomForest/config_RF_kfold.yaml \
+pixi run python RandomForest/main_RF_kfold.py \
+    --config_train RandomForest/config_RF.yaml \
     --fold_index ${FOLD} \
     --eco_zone ${ZONE}
 
