@@ -22,11 +22,21 @@ def summarize_kfold_metrics(root_dir, output_file="metrics_summary.xlsx"):
     class_metrics = []
 
     for fold_dir in sorted(root_dir.glob("fold_*")):
-        file = fold_dir / "metrics.xlsx"
+        # Cherche tous les fichiers commençant par "metrics" et finissant par ".xlsx"
+        metrics_files = list(fold_dir.glob("metrics*.xlsx"))
 
-        if not file.exists():
-            print(f"Missing {file}")
-            continue
+        if not metrics_files:
+            raise FileNotFoundError(
+                f"Aucun fichier metrics*.xlsx trouvé dans {fold_dir}"
+            )
+        elif len(metrics_files) > 1:
+            raise ValueError(
+                f"Plusieurs fichiers metrics*.xlsx trouvés dans {fold_dir}: {metrics_files}"
+            )
+
+        # On prend le premier (et unique) fichier trouvé
+        file = metrics_files[0]
+        print(f"Fichier trouvé: {file}")
 
         ##########################
         # Global metrics
