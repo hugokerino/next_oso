@@ -6,8 +6,8 @@
 #SBATCH -n 32
 #SBATCH -t 10:00:00
 #SBATCH -A theia_oso
-#SBATCH -o script_logs/out_rf_kfold_%j.out
-#SBATCH -e script_logs/err_rf_kfold_%j.err
+#SBATCH -o /dev/null
+#SBATCH -e /dev/null
 #SBATCH --export=none
 
 # Map SLURM_ARRAY_TASK_ID (0-44) -> 5 folds x 9 zones
@@ -34,9 +34,10 @@ ERR_FILE="${LOG_DIR}/err_rf_kfold_fold${FOLD}_zone${ZONE}.err"
 
 echo "Redirecting stdout -> ${OUT_FILE}  stderr -> ${ERR_FILE}"
 # Replace SLURM's static -o/-e logs for per-task logs using shell redirection
-exec 1>"${OUT_FILE}" 2>"${ERR_FILE}"
+exec > >(tee -a "$OUT_FILE")
+exec 2> >(tee -a "$ERR_FILE")
 
-pixi run python RandomForest/main_RF_kfold.py \
+pixi run python RandomForest/main_RF_training.py \
     --config_train RandomForest/config_RF.yaml \
     --fold_index ${FOLD} \
     --eco_zone ${ZONE}
