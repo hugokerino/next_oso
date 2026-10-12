@@ -56,7 +56,7 @@ def main(config):
     config["path_save_raw_matrix"] = f"{log_fold}/raw_matrix.pt"
 
     decoder = build_decoder(
-        model, config["decoder_type"], config["dataset"], dropout=0.1
+        model, config["decoder_type"], config["dataset"], config["dropout"]
     )
     classifier = decode_lightning_module.DecodeEmbedding(
         decoder=decoder, names_class=datamodule.data_train.name_labels, config=config

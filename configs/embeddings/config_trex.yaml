@@ -25,3 +25,4 @@ decoder_type : mlp # mlp or cnn
 batch_size : 8
 lr : 0.001
 max_epochs : 300
+dropout : 0.1

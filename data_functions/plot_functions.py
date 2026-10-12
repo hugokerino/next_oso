@@ -1072,3 +1072,17 @@ def plot_geodatas(s2, geodatas, s2_timestep=0):
     fig.colorbar(im2, ax=ax[2], shrink=0.7)
 
     plt.show()
+
+
+def plot_preds_and_labels(labels, preds):
+    b_sz = labels.shape[0]
+    fig, ax = plt.subplots(nrows=2, ncols=b_sz, figsize=(20, 8))
+
+    for b in range(b_sz):
+        ax[0, b].imshow(preds[b].argmax(dim=0), cmap=cmap_oso, vmin=0, vmax=24)
+        ax[0, b].set_title(f"Pred {b}")
+        ax[0, b].axis("off")
+
+        ax[1, b].imshow(labels[b], cmap=cmap_oso, vmin=0, vmax=24)
+        ax[1, b].set_title(f"Label {b}")
+        ax[1, b].axis("off")

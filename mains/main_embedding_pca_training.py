@@ -52,7 +52,7 @@ def main(config):
     # Decoder
     config["path_save_excel"] = f"{log_fold}/metrics.xlsx"
     layers = [config["n_component"], 64, 32, 25]
-    decoder = MLP_Decoder(layers=layers, dropout=0.1)
+    decoder = MLP_Decoder(layers=layers, dropout=config["dropout"])
     classifier = DecodeEmbedding(
         decoder=decoder,
         config=config,

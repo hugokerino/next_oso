@@ -22,6 +22,7 @@ folds :
 
 # Training arguments
 decoder_type : mlp # mlp or cnn
-batch_size : 8
+batch_size : 4
 lr : 0.001
 max_epochs : 1
+dropout : 0.1

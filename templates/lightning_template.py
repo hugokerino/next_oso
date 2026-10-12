@@ -25,9 +25,9 @@ from src import metrics
 class BaseLightningModule(L.LightningModule):
     def __init__(
         self,
-        num_class: int,
-        lr: float,
-        max_epochs: int,
+        num_class: int = 25,
+        lr: float = 0.001,
+        max_epochs: int = 100,
         loss_fn: nn.Module | None = None,
         path_save_excel: str | None = None,
         path_raw_matrix: str | None = None,

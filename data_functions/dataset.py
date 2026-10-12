@@ -227,7 +227,7 @@ def get_loaders(
     label_type: str = "max_class",
     label_type_test: str = "max_class",
     norm: bool = True,
-    mask_needed: bool = True,
+    mask_needed: bool = False,
     remove_invalid_temp: bool = True,
     shuffle: bool = True,
     pass_id: bool = False,
