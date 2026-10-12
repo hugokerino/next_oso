@@ -11,26 +11,31 @@ from tqdm import tqdm
 import pandas
 import geopandas as gdp
 
+from templates.dataset_template import BaseDataset
 
-class embedding_dataset(tdata.Dataset):
+
+class embedding_dataset(BaseDataset):
     def __init__(
         self,
         dataset: str = "next_oso",  # pastis
-        path_data: Path = "/home/hkerino/Documents/nextoso-dataset/data/10m",
+        path_data: Path = Path("/home/hkerino/Documents/nextoso-dataset/data/10m"),
         model: str = "alpha-earth",  # "tessera", "malice"
-        fold: None | list[int] = None,
-        label_type: None | str = "max_class",
+        folds: list[int] | None = None,
+        label_type: str | None = "max_class",
         mask: bool = True,  # If set to True, detect invalid pixel in embedding data and put those pixel at 0 for label to not take them into account in training
         preload: bool = False,
         return_id: bool = False,  # cannot be True if preload = True
     ):
+        super().__init__(
+            path_data=path_data,
+            folds=folds,
+            label_type=label_type,
+            return_id=return_id,
+        )
         self.dataset = dataset
-        self.path_data = path_data
         self.model = model
-        self.label_type = label_type
         self.mask = mask
         self.preload = preload
-        self.return_id = return_id
 
         if self.dataset == "next_oso":
             with open(f"{self.path_data}/metadata/mapping.json") as f:
@@ -52,7 +57,7 @@ class embedding_dataset(tdata.Dataset):
                 open(f"{self.path_data}/label_names_reduced.json")
             )
 
-        if fold is not None:
+        if self.folds is not None:
             all_embedding_files = sorted(
                 os.listdir(f"{self.path_data}/embeddings_data/{self.model}_data")
             )
@@ -60,7 +65,7 @@ class embedding_dataset(tdata.Dataset):
                 f
                 for f in all_embedding_files
                 if (f.endswith(".npy") or f.endswith(".pt"))
-                and mapping[f"{f.split('_')[1].split('.')[0]}"]["fold"] in fold
+                and mapping[f"{f.split('_')[1].split('.')[0]}"]["fold"] in self.folds
             ]
         else:
             self.embedding_files = sorted(
@@ -119,6 +124,13 @@ class embedding_dataset(tdata.Dataset):
                     label_numpy = np.where(label_numpy == -1, 0, label_numpy)
                     label = torch.from_numpy(label_numpy).long()
 
+                elif self.label_type == "oso_type":
+                    label_numpy = label_data["labels_no_overlap"].data  # NumPy
+                    label_numpy = np.where(
+                        label_numpy == -1, 0, label_numpy
+                    )  # Replace -1 by 0
+                    label = torch.from_numpy(label_numpy).long()  # h x w
+
                 elif self.label_type == "probas":
                     # use float32 for probabilistic labels to match model dtype expectations
                     labels_probas = np.zeros((25, 128, 128), dtype=np.float32)
@@ -129,6 +141,8 @@ class embedding_dataset(tdata.Dataset):
                                 labels_probas[k, :, :] == -1, 0, labels_probas[k, :, :]
                             )
                     label = torch.from_numpy(labels_probas).float()
+                else:
+                    raise ValueError(f"{self.label_type}, Label type unknow")
 
         if self.dataset == "pastis":
             to_open_label = f"{self.path_data}/ANNOTATIONS/TARGET_{id}.npy"
@@ -173,7 +187,7 @@ class embedding_datamodule(LightningDataModule):
         self,
         dataset: str = "next_oso",  # "pastis"
         model: str = "alpha-earth",
-        path_data: str = "/home/hkerino/Documents/nextoso-dataset/data/10m",
+        path_data: Path = Path("/home/hkerino/Documents/nextoso-dataset/data/10m"),
         preload: bool = False,
         fold_train=None | list[int],
         fold_val=None | list[int],
@@ -215,7 +229,7 @@ class embedding_datamodule(LightningDataModule):
             dataset=dataset,
             path_data=path_data,
             model=model,
-            fold=fold_train,
+            folds=fold_train,
             preload=preload,
             label_type=label_type,
             mask=mask,
@@ -225,7 +239,7 @@ class embedding_datamodule(LightningDataModule):
             dataset=dataset,
             path_data=path_data,
             model=model,
-            fold=fold_val,
+            folds=fold_val,
             preload=preload,
             label_type=label_type,
             mask=mask,
@@ -235,7 +249,7 @@ class embedding_datamodule(LightningDataModule):
             dataset=dataset,
             path_data=path_data,
             model=model,
-            fold=fold_test,
+            folds=fold_test,
             preload=preload,
             label_type=label_type_test,
             mask=mask,

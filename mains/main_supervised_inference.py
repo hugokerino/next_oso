@@ -70,7 +70,7 @@ def main(config, log_dir, save_preds_dir):
     print(f"Loading checkpoint: {checkpoint}")
     sys.stdout.flush()
 
-    best_classifier = lightning_module.classifier.load_from_checkpoint(
+    best_classifier = lightning_module.Classifier.load_from_checkpoint(
         checkpoint,
         weights_only=True,
         encoder=encoder,

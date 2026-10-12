@@ -39,11 +39,11 @@ class embedding_datamodule_pca(embedding_datamodule):
         # Create and store scaler and pca transform for each fold
         if self.model in ["alpha-earth", "tessera"]:
             pca, scaler = self.create_scaler_pca(
-                fold=kwargs["fold_train"], n_component=n_component
+                folds=kwargs["fold_train"], n_component=n_component
             )
         elif self.model == "malice":
             pca, scaler = self.create_scaler_pca_incremental(
-                fold=kwargs["fold_train"], n_component=n_component
+                folds=kwargs["fold_train"], n_component=n_component
             )  # incremental PCA for malice model due to large embedding size, cannot fit in memory
 
         self.data_train = embedding_dataset_pca(
@@ -52,7 +52,7 @@ class embedding_datamodule_pca(embedding_datamodule):
             dataset=self.dataset,
             model=self.model,
             path_data=self.path_data,
-            fold=self.fold_train,
+            folds=self.fold_train,
             label_type=self.label_type,
             mask=self.mask,
             preload=self.preload,
@@ -64,7 +64,7 @@ class embedding_datamodule_pca(embedding_datamodule):
             dataset=self.dataset,
             model=self.model,
             path_data=self.path_data,
-            fold=self.fold_val,
+            folds=self.fold_val,
             label_type=self.label_type,
             mask=self.mask,
             preload=self.preload,
@@ -76,14 +76,14 @@ class embedding_datamodule_pca(embedding_datamodule):
             dataset=self.dataset,
             model=self.model,
             path_data=self.path_data,
-            fold=self.fold_test,
+            folds=self.fold_test,
             label_type=self.label_type_test,
             mask=self.mask,
             preload=self.preload,
             return_id=self.return_id,
         )
 
-    def create_scaler_pca(self, fold: list[int], n_component: int = 10):
+    def create_scaler_pca(self, folds: list[int], n_component: int = 10):
         print("Standard PCA")
         sys.stdout.flush()
         dataset = embedding_dataset(
@@ -91,7 +91,7 @@ class embedding_datamodule_pca(embedding_datamodule):
             model=self.model,
             path_data=self.path_data,
             preload=False,
-            fold=fold,
+            folds=folds,
         )
         emb = dataset.__getitem__(0)[0]
 
@@ -120,7 +120,7 @@ class embedding_datamodule_pca(embedding_datamodule):
 
         return pca, scaler
 
-    def create_scaler_pca_incremental(self, fold: list[int], n_component: int = 10):
+    def create_scaler_pca_incremental(self, folds: list[int], n_component: int = 10):
         print("Incremental PCA")
         sys.stdout.flush()
         dataset = embedding_dataset(
@@ -128,7 +128,7 @@ class embedding_datamodule_pca(embedding_datamodule):
             model=self.model,
             path_data=self.path_data,
             preload=False,
-            fold=fold,
+            folds=folds,
         )
         emb = dataset.__getitem__(0)[0]
 

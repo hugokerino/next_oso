@@ -106,7 +106,7 @@ def test_default_lightning_module(name, encoder, decoder, dummy_batch):
     H = s2.shape[3]
     W = s2.shape[4]
 
-    model = lightning_module.classifier(
+    model = lightning_module.Classifier(
         encoder=encoder,
         decoder=decoder,
         batch_size=batch_size,
@@ -147,7 +147,7 @@ def test_lightning_module_mnt(name, encoder, decoder, dummy_batch):
     W = s2.shape[4]
 
     # Simulating mnt data
-    model_geo = lightning_module.classifier(
+    model_geo = lightning_module.Classifier(
         encoder=encoder,
         decoder=decoder,
         batch_size=batch_size,

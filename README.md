@@ -1,4 +1,4 @@
-## Next-OSO classification by Deep Learning models
+## Next-OSO classification by Deep Learning approaches
 
 **Delivery Date :**  November 20th, 2026
 
@@ -140,13 +140,13 @@ or equivalent
 make test
 ```
 
-To run all tests ones taking to long (recommended):
+To run all tests without ones taking too long (recommended):
 
 ```bash
 pixi run -e dev pytest -m "not slow"
 ```
 
-To run only one test:
+To run only one selected test:
 
 ```bash
 pixi run -e dev pytest tests/test_<test_name>.py

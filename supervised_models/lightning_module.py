@@ -7,7 +7,7 @@ from supervised_models.utils_model import MLP_Decoder, CNN_Decoder
 from templates.lightning_template import BaseLightningModule
 
 
-class classifier(BaseLightningModule):
+class Classifier(BaseLightningModule):
     def __init__(
         self,
         encoder: nn.Module,

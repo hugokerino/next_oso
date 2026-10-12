@@ -15,9 +15,10 @@ names_class = (
 num_class = len(names_class)
 
 
-# Colormap personnalisée (25 couleurs, dont gris pour 'nan')
+# Colormap personnalisée
 # Définition des couleurs personnalisées (RVB 0-255)
 OSO_COLORS = {
+    0: (255, 255, 255),  # Blanc pour 'nan'
     1: (255, 0, 255),  # Urbain dense
     2: (255, 85, 255),  # Urbain diffus
     3: (255, 170, 255),  # Zones industrielles et commerciales
@@ -43,8 +44,7 @@ OSO_COLORS = {
     23: (0, 0, 255),  # Eau
     24: (68, 121, 200),  # Serres
 }
-# Ajouter une couleur pour la classe 0 ('nan')
-OSO_COLORS[0] = (255, 255, 255)  # Blanc pour 'nan'
+
 # Normaliser les couleurs (diviser par 255)
 normalized_colors = [
     (r / 255, g / 255, b / 255)

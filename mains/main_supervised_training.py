@@ -124,7 +124,7 @@ def main(config):
     )
 
     # Model
-    classifier = lightning_module.classifier(
+    classifier = lightning_module.Classifier(
         encoder,
         decoder,
         batch_size=config["batch_size"],
@@ -151,7 +151,7 @@ def main(config):
     sys.stdout.flush()
     best_classifier = classifier
     if not config["test_model"]:
-        best_classifier = lightning_module.classifier.load_from_checkpoint(
+        best_classifier = lightning_module.Classifier.load_from_checkpoint(
             checkpoint_callback.best_model_path,
             weights_only=True,
             encoder=encoder,

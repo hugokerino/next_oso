@@ -3,18 +3,18 @@ from functools import partial
 
 import numpy as np
 import torch
-import torch.utils.data as tdata
 import xarray as xr
 import pandas
 from pathlib import Path
 
 from data_functions import collate, utils_data, transfrom
+from templates.dataset_template import BaseDataset
 
 
-class next_oso_Dataset(tdata.Dataset):
+class next_oso_Dataset(BaseDataset):
     def __init__(
         self,
-        path_data: Path = "/home/hkerino/Documents/nextoso-dataset/data/10m",
+        path_data: Path = Path("/home/hkerino/Documents/nextoso-dataset/data/10m"),
         folds: list[int] | None = None,
         use_mnt_data: bool = True,
         norm: bool = True,
@@ -67,16 +67,17 @@ class next_oso_Dataset(tdata.Dataset):
             Reference date used when ``date_type="relative"``.
         """
 
-        super(next_oso_Dataset, self).__init__()
-        self.path_data = path_data
-        self.folds = folds
+        super().__init__(
+            path_data=path_data,
+            folds=folds,
+            label_type=label_type,
+            return_id=return_id,
+        )
         self.norm = norm
         self.remove_invalid_temp = remove_invalid_temp
         self.mask_needed = mask_needed
         self.mask_invalid = mask_invalid
-        self.return_id = return_id
         self.use_mnt_data = use_mnt_data
-        self.label_type = label_type
         self.reference_date = np.datetime64(reference_date)
         self.date_type = date_type
         self.ids: list[str] = []
@@ -256,9 +257,6 @@ def get_loaders(
         )
 
     all_folds = folds_train + folds_val + folds_test
-
-    if not all(1 <= fold <= 5 for fold in all_folds):
-        raise ValueError(f"Fold values must be between 1 and 5. Got {all_folds}")
 
     if len(set(all_folds)) != len(all_folds):
         raise ValueError("Folds_train, folds_val and folds_test must be disjoint.")
