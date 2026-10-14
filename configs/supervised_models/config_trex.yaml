@@ -3,8 +3,8 @@ path_data: /work/THEIA/CES/oso/hugok/nextoso-dataset
 path_logs: /work/THEIA/CES/oso/hugok/next_oso/logs/light_training
 
 # Data
-label_type: max_class
-label_type_test : max_class
+label_type: oso_type
+label_type_test : oso_type
 use_mnt_data: True
 
 folds :

@@ -26,7 +26,7 @@ def main(config):
     print("\nLOADING DATA ...")
     sys.stdout.flush()
     (X_train, Y_train) = dataset_RF.create_dataset(
-        path_date=config["path_data"],
+        path_data=config["path_data"],
         zone=config["zone_eco"] + 1,
         folders=selected_fold[0],
         grid_time=grid,
