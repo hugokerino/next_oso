@@ -7,13 +7,15 @@ from lightning.pytorch.callbacks import (
 from lightning.pytorch.plugins.environments import SLURMEnvironment
 from lightning.pytorch.loggers import TensorBoardLogger
 import torch
+
+import json
 import os
+import yaml
 import pprint
 from argparse import ArgumentParser
 from datetime import datetime
 import signal
 
-import yaml
 
 from embedding import dataset_embedding, decode_lightning_module
 from mains.main_utils import get_precision, build_decoder
@@ -26,7 +28,7 @@ def main(config):
     model = config["model"]
     path_logs = os.path.join(config["path_logs"], model)
     date = datetime.now().date().strftime("%Y-%m-%d")
-    base_log_dir = os.path.join(path_logs, date)
+    base_log_dir = os.path.join(path_logs, f"{model}_{date}")
     os.makedirs(base_log_dir, exist_ok=True)
 
     log_fold = os.path.join(base_log_dir, f"fold_{config['fold_index'] + 1}")
@@ -96,6 +98,13 @@ def main(config):
         model, config["decoder_type"], config["dataset"], dropout=0
     )
     trainer.test(classifier, datamodule=datamodule, ckpt_path="best")
+
+    ########################################
+    # SAVE CONFIG
+    ########################################
+    if not config["test_model"]:
+        with open(os.path.join(log_fold, "config_parameters.json"), "w") as c:
+            json.dump(config, c, indent=4)
 
 
 if __name__ == "__main__":
