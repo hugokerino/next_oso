@@ -29,6 +29,7 @@ class Classifier(BaseLightningModule):
             lr=lr,
             max_epochs=max_epochs,
             loss_fn=loss_fn,
+            optimizer_scheduler=optimizer_scheduler,
             path_save_excel=path_save_excel,
             path_raw_matrix=path_raw_matrix,
             names_class=names_class,
@@ -39,7 +40,6 @@ class Classifier(BaseLightningModule):
 
         self.encoder = encoder
         self.decoder = decoder
-        self.optimizer_scheduler = optimizer_scheduler
 
     def _forward(self, batch):
         ### Unpack the batch ###

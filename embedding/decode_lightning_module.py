@@ -18,6 +18,7 @@ class DecodeEmbedding(BaseLightningModule):
         num_class = 25 if dataset == "next_oso" else 19
         lr = config.get("lr", 1e-3)
         max_epochs = config.get("max_epochs", 100)
+        optimizer_scheduler = config.get("optimizer_scheduler", "sequential")
         path_save_excel = config.get("path_save_excel")
         path_raw_matrix = config.get("path_save_raw_matrix")
         loss_fn = (
@@ -32,6 +33,7 @@ class DecodeEmbedding(BaseLightningModule):
             lr=lr,
             max_epochs=max_epochs,
             loss_fn=loss_fn,
+            optimizer_scheduler=optimizer_scheduler,
             path_save_excel=path_save_excel,
             path_raw_matrix=path_raw_matrix,
             names_class=names_class,

@@ -8,7 +8,7 @@ from templates.constants import cmap_oso
 from embedding.dataset_embedding import embedding_dataset
 
 
-def plot_embedding(
+def plot_embeddings(
     ID: str,
     alpha_earth_dataset: embedding_dataset,
     tessera_dataset: embedding_dataset,
@@ -91,5 +91,68 @@ def plot_embedding(
 
     plt.tight_layout()
     plt.show()
+
+    return
+
+
+def plot_embedding(
+    ID: str,
+    emb_data: embedding_dataset,
+    path_data: str,
+    figsize=(15, 8),
+):
+    dataset = emb_data.dataset
+    model = emb_data.model
+
+    ENCODER_DIM = {
+        "alpha-earth": 64,
+        "tessera": 128,
+        "malice": 640,
+    }
+
+    emb = emb_data.__getitem__(ID)[0]
+    label = emb_data.__getitem__(ID)[1]
+
+    if emb.dim() > 3:  # For malice
+        emb = rearrange(emb, "t c h w -> (t c) h w")
+
+    emb = emb.reshape(ENCODER_DIM[model], -1).T
+    pca = PCA(n_components=3)
+    rgb = pca.fit_transform(emb)
+    rgb = rgb.reshape(128, 128, 3)
+    img_emb = (rgb - rgb.min()) / (rgb.max() - rgb.min())
+
+    # S2 image
+    if dataset == "next_oso":
+        with rasterio.open(f"{path_data}/plots/S2_one_timestep/s2_{ID}.tif") as src:
+            b1 = src.read(1)
+            b2 = src.read(2)
+            b3 = src.read(3)
+        img_s2 = np.dstack((b1, b2, b3))
+        vmin, vmax = 0, 24
+        cmap = cmap_oso
+
+    elif dataset == "pastis":
+        s2 = np.load(f"{path_data}/DATA_S2/S2_{ID}.npy")
+        t = 1
+        s2_rgb = s2[t, [2, 1, 0], :, :].transpose(1, 2, 0)  # (H, W, 3)
+        img_s2 = np.clip(s2_rgb / 3000, 0, 1)
+        vmin, vmax = 0, 18
+        cmap = "tab20"
+
+    # plot
+    fig, axs = plt.subplots(1, 3, figsize=figsize)
+
+    axs[0].imshow(label, cmap=cmap, vmin=vmin, vmax=vmax)
+    axs[0].set_title("Label")
+    axs[0].axis("off")
+
+    axs[1].imshow(img_s2)
+    axs[1].set_title("S2 Image")
+    axs[1].axis("off")
+
+    axs[2].imshow(img_emb)
+    axs[2].set_title(f"{model} PCA")
+    axs[2].axis("off")
 
     return

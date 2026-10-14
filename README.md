@@ -30,6 +30,7 @@ This repository contains codes to train and evaluate Deep Learning (DL) models a
 ├── scripts                # SLURM scripts
 ├── src                    # Functions for metrics evaluation and loss functions
 ├── supervised_models      # Encoders architectures
+├── templates              # Base class and constants
 ├── test                   # Pytests
 ├── overview.ipynb         # Notebook for getting started
 

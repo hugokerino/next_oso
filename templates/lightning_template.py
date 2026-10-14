@@ -29,6 +29,7 @@ class BaseLightningModule(L.LightningModule):
         lr: float = 0.001,
         max_epochs: int = 100,
         loss_fn: nn.Module | None = None,
+        optimizer_scheduler: str = "sequential",
         path_save_excel: str | None = None,
         path_raw_matrix: str | None = None,
         names_class: dict | np.ndarray | None = None,
@@ -42,6 +43,7 @@ class BaseLightningModule(L.LightningModule):
         self.num_class = num_class
         self.lr = lr
         self.max_epochs = max_epochs
+        self.optimizer_scheduler = optimizer_scheduler
         self.names_class = names_class
         self.batch_size = batch_size
         self.H = H
