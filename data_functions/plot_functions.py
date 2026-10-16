@@ -1,9 +1,12 @@
 import os
+import json
 from collections import defaultdict
+from pathlib import Path
 
 import numpy as np
 import xarray as xr
 import pandas
+import geopandas as gpd
 import rasterio
 import torch
 from torch.utils.data import DataLoader
@@ -12,9 +15,15 @@ from matplotlib import pyplot as plt
 from matplotlib.colors import ListedColormap
 import matplotlib.dates as mdates
 import matplotlib.gridspec as gridspec
+import seaborn as sns
 
 from data_functions.utils_data import to_RGB
-from templates.constants import names_class, cmap_oso
+from templates.constants import (
+    names_class,
+    cmap_oso,
+    custom_colors,
+    eco_zone_titles_english,
+)
 
 
 def count_label(dataset, normalized=False, plot=True):
@@ -1061,18 +1070,108 @@ def plot_geodatas(s2, geodatas, s2_timestep=0):
     ax[0].imshow(to_RGB(s2[:, s2_timestep, :, :], norm=True))
     ax[0].set_title("Image Sentinel-2")
     ax[0].axis("off")
-    im1 = ax[1].imshow(elev)
-    ax[1].set_title("MNT - Elevation Normalized")
+    im1 = ax[1].imshow(elev, cmap="GnBu")
+    ax[1].set_title("DEM - Elevation Normalized")
     ax[1].axis("off")
-    fig.colorbar(im1, ax=ax[1], shrink=0.7)
+    fig.colorbar(im1, ax=ax[1], shrink=0.45)
 
-    im2 = ax[2].imshow(slope)
-    ax[2].set_title("MNT - Slope Normalized")
+    im2 = ax[2].imshow(slope, cmap="Oranges")
+    ax[2].set_title("DEM - Slope Normalized")
     ax[2].axis("off")
-    fig.colorbar(im2, ax=ax[2], shrink=0.7)
+    fig.colorbar(im2, ax=ax[2], shrink=0.45)
 
     plt.show()
 
 
-def plot_eco_zone_repartition():
+def plot_eco_zone_repartition(path_data):
+    path_data = Path(path_data)
+
+    extent = gpd.read_file(path_data / "../aoi/nextoso_extent.gpkg")
+    ecozone = gpd.read_file(
+        path_data / "../auxiliary/ecosystems/ecosystems_shp/regions_ecocli_france.shp"
+    )
+    regions = gpd.read_file(
+        path_data
+        / "../auxiliary/administrative_boundaries/dep_France_admin_express_2025.gpkg"
+    )
+
+    fig, ax = plt.subplots(figsize=(12, 10))
+
+    ecozone.plot(
+        ax=ax,
+        column="region",
+        cmap=plt.cm.colors.ListedColormap(
+            [custom_colors[i] for i in sorted(custom_colors.keys())]
+        ),
+        edgecolor="black",
+        linewidth=0.5,
+        alpha=1,
+    )
+
+    extent.plot(ax=ax, color="black", edgecolor="black", linewidth=2, alpha=1)
+    regions.plot(ax=ax, facecolor="none", edgecolor="gray", linewidth=0.5, alpha=0.9)
+
+    eco_handles = [
+        plt.Rectangle((0, 0), 1, 1, fc=custom_colors[i], edgecolor="black")
+        for i in sorted(custom_colors.keys())
+    ]
+    eco_labels = [eco_zone_titles_english[i] for i in sorted(custom_colors.keys())]
+
+    plt.legend(
+        handles=eco_handles,
+        labels=eco_labels,
+        loc="center right",
+        bbox_to_anchor=(0.05, 0.5),
+        fontsize=14,
+    )
+    ax.axis("off")
+
+    plt.tight_layout()
+    plt.show()
+
     return
+
+
+def plot_eco_zone_by_folds(path_data):
+    path_data = Path(path_data)
+
+    with open(path_data / "metadata/mapping.json", "r") as f:
+        data = json.load(f)
+    df = pandas.DataFrame.from_dict(data, orient="index")
+    df = df.reset_index().rename(columns={"index": "patch_id"})
+    cross_tab = pandas.crosstab(df["ecozone"], df["fold"])
+
+    # 4. Tracer l'histogramme empilé (chaque barre = écozone, divisée en 5 folds)
+    plt.figure(figsize=(12, 8))
+
+    # Créer le graphique empilé
+    bottom = None
+    colors = sns.color_palette("deep", 5)  # 5 couleurs pour les 5 folds
+
+    for fold in range(1, 6):
+        # Extraire les valeurs pour ce fold
+        values = cross_tab[fold]
+
+        # Tracer les barres pour ce fold
+        plt.bar(
+            eco_zone_titles_english.values(),  # Écozones en abscisse
+            values,
+            bottom=bottom,  # Empiler sur les folds précédents
+            label=f"Fold {fold}",
+            color=colors[fold - 1],
+            width=0.8,
+        )
+
+        # Mettre à jour le bottom pour le prochain fold
+        if bottom is None:
+            bottom = values
+        else:
+            bottom += values
+
+    # Personnaliser le graphique
+    plt.ylabel("Patch number", fontsize=12)
+    plt.xticks(ha="right", rotation=45)  # Incliner les étiquettes
+    plt.legend(loc="upper right")
+    plt.tight_layout()
+    plt.grid(axis="y", linestyle="--", alpha=0.5)  # Grille horizontale
+    plt.show()

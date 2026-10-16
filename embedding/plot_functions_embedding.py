@@ -14,6 +14,7 @@ def plot_embeddings(
     tessera_dataset: embedding_dataset,
     malice_dataset: embedding_dataset,
     path_data: str,
+    plot_label: bool,
     figsize=(20, 5),
 ):
     dataset = alpha_earth_dataset.dataset
@@ -45,9 +46,6 @@ def plot_embeddings(
     rgb_malice = rgb_malice.reshape(128, 128, 3)
     img_malice = (rgb_malice - rgb_malice.min()) / (rgb_malice.max() - rgb_malice.min())
 
-    # Label
-    label = alpha_earth_dataset.__getitem__(ID)[1]
-
     # S2 image
     if dataset == "next_oso":
         with rasterio.open(f"{path_data}/plots/S2_one_timestep/s2_{ID}.tif") as src:
@@ -67,27 +65,31 @@ def plot_embeddings(
         cmap = "tab20"
 
     # plot
-    fig, axs = plt.subplots(1, 5, figsize=figsize)
+    n_col = 5 if plot_label else 4
+    fig, axs = plt.subplots(1, n_col, figsize=figsize)
 
-    axs[0].imshow(label, cmap=cmap, vmin=vmin, vmax=vmax)
-    axs[0].set_title("Label")
+    axs[0].imshow(img_s2)
+    axs[0].set_title("Image Sentinel-2")
     axs[0].axis("off")
 
-    axs[1].imshow(img_s2)
-    axs[1].set_title("S2 Image")
+    axs[1].imshow(img_alpha_earth)
+    axs[1].set_title("Alpha Earth PCA")
     axs[1].axis("off")
 
-    axs[2].imshow(img_alpha_earth)
-    axs[2].set_title("Alpha Earth PCA")
+    axs[2].imshow(img_tessera)
+    axs[2].set_title("Tessera PCA")
     axs[2].axis("off")
 
-    axs[3].imshow(img_tessera)
-    axs[3].set_title("Tessera PCA")
+    axs[3].imshow(img_malice)
+    axs[3].set_title("Malice PCA")
     axs[3].axis("off")
 
-    axs[4].imshow(img_malice)
-    axs[4].set_title("Malice PCA")
-    axs[4].axis("off")
+    if plot_label:
+        # Label
+        label = alpha_earth_dataset.__getitem__(ID)[1]
+        axs[4].imshow(label, cmap=cmap, vmin=vmin, vmax=vmax)
+        axs[4].set_title("Label")
+        axs[4].axis("off")
 
     plt.tight_layout()
     plt.show()

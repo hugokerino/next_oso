@@ -52,3 +52,39 @@ normalized_colors = [
 ]
 
 cmap_oso = ListedColormap(normalized_colors)
+
+eco_zone_titles = {
+    1: "montagne",
+    2: "semi-continental",  # "semi-continental marges montagnardes"
+    3: "océanique dégradé",  # "océanique dégradé des plaines du Centre et du Nord"
+    4: "océanique altéré",
+    5: "océanique franc",
+    6: "méditerranéen altéré",
+    7: "Bassin du Sud-Ouest",
+    8: "méditerranéen franc",
+    9: "corse",
+}
+
+eco_zone_titles_english = {
+    1: "Mountain",
+    2: "Semi-continental",  # "semi-continental mountain margins"
+    3: "Degraded oceanic",  # "degraded oceanic of the Central and Northern plains"
+    4: "Altered oceanic",
+    5: "Pure oceanic",
+    6: "Altered mediterranean",
+    7: "South-West Basin",
+    8: "Pure mediterranean",
+    9: "Corsica",
+}
+
+custom_colors = {
+    1: "#0E1A89",  # montagne
+    2: "#2F74B5",  # semi-continental
+    3: "#85C6EA",  # océanique dégradé
+    4: "#10E361",  # océanique altéré
+    5: "#065918",  # océanique franc
+    6: "#F0E359",  # méditerranéen altéré
+    7: "#BE821B",  # Bassin du Sud-Ouest"
+    8: "#C41919",  # méditerranéen franc
+    9: "#FF00FF",  # Corse
+}
