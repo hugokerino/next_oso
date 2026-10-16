@@ -1,6 +1,6 @@
 # Data & model
 dataset : next_oso
-model : alpha-earth
+model : malice
 
 # Paths
 path_data : /work/THEIA/CES/oso/hugok/nextoso-dataset
@@ -9,7 +9,7 @@ path_logs : /work/THEIA/CES/oso/hugok/next_oso/logs
 # Data settings
 label_type : max_class
 label_type_test : max_class
-preload_data : true
+preload_data : false
 num_worker: 4
 
 # Folds for kfold
@@ -23,7 +23,8 @@ folds :
 # Training arguments
 decoder_type : mlp # mlp or cnn
 optimizer_scheduler : reduce_on_plateau
-batch_size : 8
+batch_size : 64
 lr : 0.001
-max_epochs : 300
+max_epochs : 1000
 dropout : 0.1
+test_model : false

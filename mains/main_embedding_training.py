@@ -64,7 +64,7 @@ def main(config):
         decoder=decoder, names_class=datamodule.data_train.name_labels, config=config
     )
 
-    limit_batch = 10  # Change here for testing purposes, e.g., 0.1 for 10% of the data, 1.0 for all data
+    limit_batch = 1.0  # Change here for testing purposes, e.g., 0.1 for 10% of the data, 1.0 for all data
 
     # training
     trainer = Trainer(
