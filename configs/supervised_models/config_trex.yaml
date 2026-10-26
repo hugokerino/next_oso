@@ -6,17 +6,14 @@ path_logs: /work/THEIA/CES/oso/hugok/next_oso/logs/light_training
 label_type: oso_type
 label_type_test : oso_type
 use_mnt_data: True
-
+num_worker: 4
+num_class: 25
 folds :
   - [[1,2,3], [4], [5]]
   - [[2,3,4], [5], [1]]
   - [[3,4,5], [1], [2]]
   - [[4,5,1], [2], [3]]
   - [[5,1,2], [3], [4]]
-
-num_worker: 4
-num_class: 25
-
 
 # Training
 decoder_type: mlp #choose among "mlp" or "cnn"

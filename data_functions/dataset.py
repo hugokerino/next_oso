@@ -22,7 +22,7 @@ class next_oso_Dataset(BaseDataset):
         mask_needed: bool = False,  # if True return the mask of S2 validity
         mask_invalid: bool = True,  # if True put zeros in labels where S2 is invalid
         return_id: bool = False,
-        label_type: str = "max_class",  # choose btw 'max_class', 'oso_type', 'probas', 'v3'
+        label_type: str = "max_class",  # choose btw 'max_class', 'oso_type', 'probas', 'extended'
         date_type: str = "relative",
         reference_date: str | None = "2019-12-31",
     ):
@@ -57,7 +57,7 @@ class next_oso_Dataset(BaseDataset):
 
         label_type : str
             Type of label returned by the dataset. Supported values are:
-            ``"max_class"``, ``"oso_type"``, ``"probas"``, and ``"v3"``.
+            ``"max_class"``, ``"oso_type"``, ``"probas"``, and ``"extended"``.
 
         date_type : str
             Representation used for dates. Supported values are:
@@ -81,8 +81,11 @@ class next_oso_Dataset(BaseDataset):
         self.reference_date = np.datetime64(reference_date)
         self.date_type = date_type
         self.ids: list[str] = []
+        file_class_name = (
+            "oso_classes_extended" if self.label_type == "extended" else "oso_classes"
+        )
         self.name_labels = (
-            pandas.read_csv(f"{self.path_data}/metadata/oso_classes.csv")
+            pandas.read_csv(f"{self.path_data}/metadata/{file_class_name}.csv")
             .get("name_class")
             .values
         )
@@ -164,8 +167,13 @@ class next_oso_Dataset(BaseDataset):
             elif self.date_type == "raw":
                 date = s2_data["time"].data
 
-        with xr.open_dataset(f"{self.path_data}/labels/label_{id}.nc") as label_data:
-            if self.label_type == "max_class" or self.label_type == "v3":
+        if self.label_type == "extended":
+            path_label = f"{self.path_data}/labels_extended"
+        else:
+            path_label = f"{self.path_data}/labels"
+
+        with xr.open_dataset(f"{path_label}/label_{id}.nc") as label_data:
+            if self.label_type == "max_class" or self.label_type == "extended":
                 label_numpy = label_data["max_class_1"].data  # NumPy
                 label_numpy = np.where(
                     label_numpy == -1, 0, label_numpy

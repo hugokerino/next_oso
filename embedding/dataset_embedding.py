@@ -116,10 +116,13 @@ class embedding_dataset(BaseDataset):
         # Label
         id = filename.split("_")[1].split(".")[0]
         if self.dataset == "next_oso":
-            to_open_label = f"{self.path_data}/labels/label_{id}.nc"
+            if self.label_type == "extended":
+                to_open_label = f"{self.path_data}/labels_extended/label_{id}.nc"
+            else:
+                to_open_label = f"{self.path_data}/labels/label_{id}.nc"
 
             with xr.open_dataset(to_open_label) as label_data:
-                if self.label_type == "max_class":
+                if self.label_type == "max_class" or self.label_type == "extended":
                     label_numpy = label_data["max_class_1"].data
                     label_numpy = np.where(label_numpy == -1, 0, label_numpy)
                     label = torch.from_numpy(label_numpy).long()

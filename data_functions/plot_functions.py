@@ -559,7 +559,7 @@ def plot_preds_labels_and_img(
     return fig
 
 
-def mean_entropy_per_class(path_labels):
+def mean_entropy_per_class(path_labels, plot=False):
     entropy_per_class = defaultdict(list)
 
     for label in os.listdir(path_labels):
@@ -578,19 +578,58 @@ def mean_entropy_per_class(path_labels):
     means = [np.array(entropy_per_class[c]).mean() for c in classes]
     stds = [np.array(entropy_per_class[c]).std() for c in classes]
 
-    # Plot
-    x = np.arange(len(classes))
-    fig, ax = plt.subplots(figsize=(14, 6))
-    ax.bar(x, means, yerr=stds, capsize=4, width=0.6)
-    ax.set_xticks(x)
-    ax.set_xticklabels([names_class[c] for c in classes], rotation=45, ha="right")
-    ax.set_ylabel("Entropie moyenne")
-    ax.set_title("Entropie moyenne par classe")
-    ax.set_ylim(0, 1)
-    plt.tight_layout()
-    plt.show()
+    if plot:
+        # Plot
+        x = np.arange(len(classes))
+        fig, ax = plt.subplots(figsize=(14, 6))
+        ax.bar(x, means, yerr=stds, capsize=4, width=0.6)
+        ax.set_xticks(x)
+        ax.set_xticklabels([names_class[c] for c in classes], rotation=45, ha="right")
+        ax.set_ylabel("Entropie moyenne")
+        ax.set_title("Entropie moyenne par classe")
+        ax.set_ylim(0, 1)
+        plt.tight_layout()
+        plt.show()
 
     return means
+
+
+def mean_entropy_per_class_per_eco_zone(path_labels, path_oso_class):
+    entropy_per_zone_class = defaultdict(lambda: defaultdict(list))
+
+    # Chemin vers le dossier racine contenant les dossiers 1-9
+    path_list_ids_per_ecozone = (
+        "/home/hkerino/Documents/nextoso-dataset/data/10m/s2/eco_zone.json"
+    )
+    with open(path_list_ids_per_ecozone, "r") as f:
+        eco_zone_dict = json.load(f)
+
+    for zone in eco_zone_dict:
+        for id in eco_zone_dict[str(zone)]:
+            path_label_file = os.path.join(path_labels, f"label_{id}.nc")
+            if os.path.exists(path_label_file):
+                patch = xr.open_dataset(path_label_file)
+                max_class = patch["max_class_1"].values.flatten()
+                entropy = patch["entropy_proba"].values.flatten()
+                max_class = np.where(max_class == -1, 0, max_class)
+
+                for c in np.unique(max_class):
+                    mask = max_class == c
+                    entropy_per_zone_class[zone][c].extend(entropy[mask].tolist())
+
+    # Calcul des moyennes
+    mean_entropy = {}
+    for zone in sorted(entropy_per_zone_class.keys()):
+        mean_entropy[zone] = {}
+        for c in sorted(entropy_per_zone_class[zone].keys()):
+            values = np.array(entropy_per_zone_class[zone][c])
+            mean_entropy[zone][c] = {
+                "mean": values.mean(),
+                "std": values.std(),
+                "n": len(values),
+            }
+
+    return mean_entropy
 
 
 def density_repartition(path_labels: str, name: str, plot=True):
@@ -1175,3 +1214,70 @@ def plot_eco_zone_by_folds(path_data):
     plt.tight_layout()
     plt.grid(axis="y", linestyle="--", alpha=0.5)  # Grille horizontale
     plt.show()
+
+
+def count_label_compare(
+    ids,
+    path_label,
+    nbr_class=25,
+    cmap=cmap_oso,
+    tick_labels=names_class,
+    normalized=False,
+    plot=True,
+):
+    classes = np.zeros(nbr_class)
+
+    for count, id in enumerate(ids):
+        labels = xr.open_dataset(path_label / f"label_{id}.nc")[
+            "max_class_1"
+        ].data.flatten()
+        if np.any(labels < 0):
+            labels[labels < 0] = 0
+
+        counts = np.bincount(labels, minlength=nbr_class)
+        classes += counts
+
+    if normalized:
+        classes = classes / (np.sum(classes))
+
+    if plot:
+        fig, ax = plt.subplots(figsize=(12, 6))
+        ax.set_title("Labels repartition")
+
+        # Determine bar colors from cmap (fall back to sampling if needed)
+        try:
+            n = classes.shape[0]
+        except Exception:
+            n = nbr_class
+
+        if hasattr(cmap, "colors") and len(cmap.colors) >= n:
+            bar_colors = list(cmap.colors)[:n]
+        else:
+            bar_colors = [cmap(i / (n - 1)) for i in range(n)]
+
+        bars = ax.bar(range(classes.shape[0]), classes, color=bar_colors)
+
+        ax.set_xticks(range(len(classes)))
+        ax.set_xticklabels(
+            tick_labels,
+            rotation=45,
+            ha="right",
+            rotation_mode="anchor",
+        )
+        ax.set_ylabel("Labels occurence")
+
+        # Afficher le chiffre brut au dessus de chaque barre
+        for bar, count in zip(bars, classes):
+            ax.text(
+                bar.get_x() + bar.get_width() / 2,
+                bar.get_height(),
+                f"{int(count):,}",
+                ha="center",
+                va="bottom",
+                fontsize=7,
+            )
+
+        plt.tight_layout()
+        plt.show()
+
+    return classes

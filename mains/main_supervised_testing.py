@@ -79,6 +79,7 @@ def main(config):
         decoder=decoder,
         loss_fn=criterion,
         batch_size=batch_size,
+        num_class=config["num_class"],
         names_class=dl_test.dataset.name_labels,
         path_save_excel=f"{config['path_dir_logs']}/fold_{config['fold_index'] + 1}/metrics_testing.xlsx",
         path_raw_matrix=f"{config['path_dir_logs']}/fold_{config['fold_index'] + 1}/raw_matrix_testing.pt",

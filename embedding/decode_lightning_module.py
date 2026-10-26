@@ -14,8 +14,7 @@ class DecodeEmbedding(BaseLightningModule):
         config: dict,
         names_class: dict | np.ndarray | None = None,
     ):
-        dataset = config.get("dataset")
-        num_class = 25 if dataset == "next_oso" else 19
+        num_class = config.get("num_class")
         lr = config.get("lr", 1e-3)
         max_epochs = config.get("max_epochs", 100)
         optimizer_scheduler = config.get("optimizer_scheduler", "sequential")
@@ -24,6 +23,7 @@ class DecodeEmbedding(BaseLightningModule):
         loss_fn = (
             torch.nn.CrossEntropyLoss(ignore_index=0)
             if config.get("label_type") == "max_class"
+            or config.get("label_type") == "extended"
             or config.get("label_type") is None
             else torch.nn.CrossEntropyLoss()
         )

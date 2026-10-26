@@ -3,11 +3,11 @@ path_data: /home/hkerino/Documents/nextoso-dataset/data/10m
 path_logs: /home/hkerino/Documents/next_oso/logs/light_training
 
 # Data
-label_type: oso_type
-label_type_test: max_class
+label_type: extended
+label_type_test: extended
 use_mnt_data: True
 num_worker: 21
-num_class: 25
+num_class: 30
 
 # Folds
 folds :

@@ -4,9 +4,14 @@ import torch.utils.data as tdata
 
 
 class BaseDataset(tdata.Dataset):
-    # Constantes pour les validations
-    VALID_LABEL_TYPES = {"max_class", "oso_type", "probas", "v3", None}
-    VALID_FOLD_RANGE = (1, 5)  # Plage valide pour les folds
+    VALID_LABEL_TYPES = {
+        "max_class",
+        "oso_type",
+        "probas",
+        "extended",
+        None,
+    }  # valid label type
+    VALID_FOLD_RANGE = (1, 5)  # valid range for folds
 
     def __init__(
         self,
@@ -31,11 +36,11 @@ class BaseDataset(tdata.Dataset):
         if folds is None:
             return None
 
-        # Vérifier que tous les folds sont des entiers
+        # Check if folds are int
         if not all(isinstance(f, int) for f in folds):
             raise TypeError(f"All fold values must be integers. Got {folds}")
 
-        # Vérifier la plage des folds
+        # Check range for folds
         min_fold, max_fold = self.VALID_FOLD_RANGE
         if not all(min_fold <= f <= max_fold for f in folds):
             raise ValueError(

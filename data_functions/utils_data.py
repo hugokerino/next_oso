@@ -1,12 +1,10 @@
 import numpy as np
 import xarray as xr
 import pandas
-import os
 import json
 import rioxarray
 from rasterio.features import rasterize
 import geopandas as gpd
-from collections import defaultdict
 import torch
 
 
@@ -83,44 +81,6 @@ def s2_spectrale_indice(s2):
     s2["ndwi"] = ndwi
     s2["brightness"] = brgt
     return s2
-
-
-def mean_entropy_per_class_per_eco_zone(path_labels, path_oso_class):
-    entropy_per_zone_class = defaultdict(lambda: defaultdict(list))
-
-    # Chemin vers le dossier racine contenant les dossiers 1-9
-    path_list_ids_per_ecozone = (
-        "/home/hkerino/Documents/nextoso-dataset/data/10m/s2/eco_zone.json"
-    )
-    with open(path_list_ids_per_ecozone, "r") as f:
-        eco_zone_dict = json.load(f)
-
-    for zone in eco_zone_dict:
-        for id in eco_zone_dict[str(zone)]:
-            path_label_file = os.path.join(path_labels, f"label_{id}.nc")
-            if os.path.exists(path_label_file):
-                patch = xr.open_dataset(path_label_file)
-                max_class = patch["max_class_1"].values.flatten()
-                entropy = patch["entropy_proba"].values.flatten()
-                max_class = np.where(max_class == -1, 0, max_class)
-
-                for c in np.unique(max_class):
-                    mask = max_class == c
-                    entropy_per_zone_class[zone][c].extend(entropy[mask].tolist())
-
-    # Calcul des moyennes
-    mean_entropy = {}
-    for zone in sorted(entropy_per_zone_class.keys()):
-        mean_entropy[zone] = {}
-        for c in sorted(entropy_per_zone_class[zone].keys()):
-            values = np.array(entropy_per_zone_class[zone][c])
-            mean_entropy[zone][c] = {
-                "mean": values.mean(),
-                "std": values.std(),
-                "n": len(values),
-            }
-
-    return mean_entropy
 
 
 def find_nan_label(dataset):

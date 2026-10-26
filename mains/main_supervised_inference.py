@@ -77,6 +77,7 @@ def main(config, log_dir, save_preds_dir):
         decoder=decoder,
         loss_fn=criterion,
         batch_size=batch_size,
+        num_class=config["num_class"],
         names_class=dl_test.dataset.name_labels,
     )
 

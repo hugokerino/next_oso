@@ -2,16 +2,29 @@ import os
 import pandas as pd
 from matplotlib.colors import ListedColormap
 
+# Check if running on cluster or locally
 is_cluster = "SLURM_JOB_ID" in os.environ
-path_to_oso_name = (
-    "/work/THEIA/CES/oso/hugok/nextoso-dataset/metadata/oso_classes.csv"
+metadata = (
+    "/work/THEIA/CES/oso/hugok/nextoso-dataset/metadata"
     if is_cluster
-    else "/home/hkerino/Documents/nextoso-dataset/data/10m/metadata/oso_classes.csv"
+    else "/home/hkerino/Documents/nextoso-dataset/data/10m/metadata/"
 )
 
+
+########################################################
+### Variables for Next-OSO dataset ###
+########################################################
+path_to_oso_name = path_to_oso_name = metadata + "oso_classes.csv"
 names_class = (
     pd.read_csv(path_to_oso_name).get("name_class").values
 )  # Doit contenir 25 entrées (0 à 24)
+
+names_class_english = (
+    pd.read_csv(path_to_oso_name.rsplit("/", 1)[0] + "/" + "oso_classes_english.csv")
+    .get("name_class")
+    .values
+)  # Doit contenir 25 entrées (0 à 24)
+
 num_class = len(names_class)
 
 
@@ -53,6 +66,62 @@ normalized_colors = [
 
 cmap_oso = ListedColormap(normalized_colors)
 
+
+########################################################
+### Variables for Next-OSO dataset extended version ###
+########################################################
+path_to_oso_name_extended = metadata + "oso_classes_extended.csv"
+names_class_extended = (
+    pd.read_csv(path_to_oso_name_extended).get("name_class").values
+)  # Doit contenir 25 entrées (0 à 24)
+num_class_extended = len(names_class_extended)
+
+OSO_COLORS_extended = {
+    0: (255, 255, 255),  # Blanc pour 'nan'
+    1: (255, 0, 255),  # Urbain dense
+    2: (255, 85, 255),  # Urbain diffus
+    3: (255, 170, 255),  # Zones industrielles et commerciales
+    4: (0, 255, 255),  # Routes
+    5: (255, 255, 0),  # Colza
+    6: (208, 255, 0),  # Céréales à paille
+    7: (161, 214, 0),  # Protéagineux
+    8: (255, 170, 68),  # Soja
+    9: (214, 214, 0),  # Tournesol
+    10: (255, 85, 0),  # Maïs
+    11: (197, 255, 255),  # Riz
+    12: (170, 170, 97),  # Légumes, PPAM, tubercules
+    13: (170, 170, 0),  # Prairies permanentes
+    14: (170, 170, 255),  # Vergers
+    15: (85, 0, 0),  # Vignes
+    16: (0, 156, 0),  # Forêts de feuillus
+    17: (0, 50, 0),  # Forêts de conifères
+    18: (170, 255, 0),  # Pelouse
+    19: (85, 170, 127),  # Landes
+    20: (255, 0, 0),  # Surfaces minérales
+    21: (255, 184, 2),  # Plages et Dunes
+    22: (190, 190, 190),  # Glaciers et neiges éternelles
+    23: (0, 0, 255),  # Eau
+    24: (68, 121, 200),  # Serres
+    # Classes 25-29 (noir/gris avec variations de luminosité)
+    25: (50, 50, 50),  # Sorghos et al (Gris très foncé)
+    26: (80, 50, 50),  # Lin, Chanvre (Noir rougeâtre)
+    27: (50, 80, 50),  # Prairies légumineuses (Noir verdâtre)
+    28: (50, 50, 80),  # Prairies graminées (Noir bleuté)
+    29: (70, 70, 70),  # Jachères (Gris foncé neutre)
+}
+
+# Normaliser les couleurs (diviser par 255)
+normalized_colors_extented = [
+    (r / 255, g / 255, b / 255)
+    for r, g, b in [OSO_COLORS_extended[i] for i in sorted(OSO_COLORS_extended.keys())]
+]
+
+cmap_oso_extended = ListedColormap(normalized_colors_extented)
+
+
+########################################################
+### Variables for Eco-climatic zones ###
+########################################################
 eco_zone_titles = {
     1: "montagne",
     2: "semi-continental",  # "semi-continental marges montagnardes"

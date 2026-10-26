@@ -132,6 +132,7 @@ def main(config):
         loss_fn=criterion,
         lr=config["learning_rate"],
         max_epochs=config["epochs_max"],
+        num_class=config["num_class"],
         names_class=dl_train.dataset.name_labels,
     )
 
@@ -158,6 +159,7 @@ def main(config):
             decoder=decoder,
             loss_fn=criterion,
             batch_size=config["batch_size"],
+            num_class=config["num_class"],
             names_class=dl_test.dataset.name_labels,
             path_save_excel=f"{log_fold}/metrics.xlsx",
             path_raw_matrix=f"{log_fold}/raw_matrix.pt",

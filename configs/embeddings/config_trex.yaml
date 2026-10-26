@@ -11,6 +11,7 @@ label_type : max_class
 label_type_test : max_class
 preload_data : false
 num_worker: 4
+num_class: 25
 
 # Folds for kfold
 folds :
