@@ -30,6 +30,7 @@ def test_embedding():
 
     config = {
         "dataset": "next_oso",
+        "num_class": 25,
         "lr": 1e-3,
         "max_epochs": 2,
         "optimizer_scheduler": "cosine_annealing",
@@ -67,6 +68,7 @@ def test_embedding():
 def test_embedding_pastis():
     config = {
         "dataset": "pastis",
+        "num_class": 19,
         "lr": 1e-3,
         "max_epochs": 2,
         "optimizer_scheduler": "reduce_on_plateau",

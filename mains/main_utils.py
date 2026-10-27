@@ -28,6 +28,7 @@ def build_model(config: dict):
         )  # Ajouter 4 dimensions pour les coordonnées spatiales si utilisé seulement au decoding
         # enc_cfg["input_dim"] += 4
 
+    dec_cfg["layers"][-1] = config["num_class"]
     if config["decoder_type"] == "mlp":
         decoder = utils_model.MLP_Decoder(**dec_cfg)
     elif config["decoder_type"] == "cnn":
