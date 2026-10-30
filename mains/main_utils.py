@@ -67,11 +67,15 @@ def build_model(config: dict):
     return encoder, decoder, batch_size
 
 
-def select_criterion(loss: str):
+def select_criterion(loss: str, nb_class: int = 25):
     criterion: torch.nn.Module
 
     if loss == "cross_entropy":
         criterion = torch.nn.CrossEntropyLoss(ignore_index=0)
+    elif loss == "cross_entropy_probas":
+        criterion = torch.nn.CrossEntropyLoss(
+            weight=torch.Tensor(np.concatenate([[0], np.ones(nb_class - 1)]))
+        )
     elif loss == "cross_entropy_weighted":
         criterion = torch.nn.CrossEntropyLoss(
             ignore_index=0, weight=torch.load("data_functions/weights_loss.pt")

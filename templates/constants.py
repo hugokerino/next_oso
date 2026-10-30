@@ -71,9 +71,19 @@ cmap_oso = ListedColormap(normalized_colors)
 ### Variables for Next-OSO dataset extended version ###
 ########################################################
 path_to_oso_name_extended = metadata + "oso_classes_extended.csv"
+
 names_class_extended = (
     pd.read_csv(path_to_oso_name_extended).get("name_class").values
 )  # Doit contenir 25 entrées (0 à 24)
+
+names_class_extended_english = (
+    pd.read_csv(
+        path_to_oso_name.rsplit("/", 1)[0] + "/" + "oso_classes_extended_english.csv"
+    )
+    .get("name_class")
+    .values
+)
+
 num_class_extended = len(names_class_extended)
 
 OSO_COLORS_extended = {

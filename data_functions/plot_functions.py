@@ -23,6 +23,7 @@ from templates.constants import (
     cmap_oso,
     custom_colors,
     eco_zone_titles_english,
+    names_class_extended,
 )
 
 
@@ -1029,10 +1030,11 @@ def plot_pred_and_label(y_true, y_pred, rgb_img, y_entropie, class_idx, idx_to_p
     plt.show()
 
 
-def plot_label_probability(label: torch.Tensor):
+def plot_label_probability(label: torch.Tensor, label_version="probas"):
     dims = []
+    class_ = names_class if label_version == "probas" else names_class_extended
 
-    for class_var in range(len(names_class)):
+    for class_var in range(len(class_)):
         if (label[class_var] != 0).any():
             dims.append(class_var)
 
@@ -1056,7 +1058,7 @@ def plot_label_probability(label: torch.Tensor):
             vmin=0,
             vmax=1,
         )
-        axes.flatten()[k].set_title(names_class[classs])
+        axes.flatten()[k].set_title(class_[classs])
     cbar = fig.colorbar(
         im0,
         ax=axes,

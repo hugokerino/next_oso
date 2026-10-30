@@ -9,6 +9,7 @@ class BaseDataset(tdata.Dataset):
         "oso_type",
         "probas",
         "extended",
+        "probas_extended",
         None,
     }  # valid label type
     VALID_FOLD_RANGE = (1, 5)  # valid range for folds

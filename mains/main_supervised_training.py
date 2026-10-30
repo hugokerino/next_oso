@@ -52,7 +52,7 @@ def main(config):
     ########################################
     #  Build classifier and Load data
     ########################################
-    criterion = select_criterion(config["criterion"])
+    criterion = select_criterion(config["criterion"], nb_class=config["num_class"])
     encoder, decoder, batch_size = build_model(config)
     config["batch_size"] = (
         batch_size  # Update batch size in config for data loading and lightning module

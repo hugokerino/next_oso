@@ -82,7 +82,9 @@ class next_oso_Dataset(BaseDataset):
         self.date_type = date_type
         self.ids: list[str] = []
         file_class_name = (
-            "oso_classes_extended" if self.label_type == "extended" else "oso_classes"
+            "oso_classes_extended"
+            if self.label_type in ["extended", "probas_extended"]
+            else "oso_classes"
         )
         self.name_labels = (
             pandas.read_csv(f"{self.path_data}/metadata/{file_class_name}.csv")
@@ -167,7 +169,7 @@ class next_oso_Dataset(BaseDataset):
             elif self.date_type == "raw":
                 date = s2_data["time"].data
 
-        if self.label_type == "extended":
+        if self.label_type in ("extended", "probas_extended"):
             path_label = f"{self.path_data}/labels_extended"
         else:
             path_label = f"{self.path_data}/labels"
@@ -187,8 +189,9 @@ class next_oso_Dataset(BaseDataset):
                 )  # Replace -1 by 0
                 label = torch.from_numpy(label_numpy).long()  # h x w
 
-            elif self.label_type == "probas":
-                labels_probas = np.zeros((25, 128, 128))
+            elif self.label_type in ("probas", "probas_extended"):
+                nb_class = 30 if self.label_type == "probas_extended" else 25
+                labels_probas = np.zeros((nb_class, 128, 128))
                 for k, var in enumerate(self.name_labels):
                     if var in list(label_data.data_vars):
                         labels_probas[k, :, :] = label_data[var].data
@@ -211,7 +214,7 @@ class next_oso_Dataset(BaseDataset):
                 mask_label = torch.from_numpy(
                     (s2_array == 0).all(axis=(0, 1))
                 ).bool()  # everywhere no data in s2
-                if self.label_type == "probas":
+                if self.label_type in ("probas", "probas_extended"):
                     label[:, mask_label] = 0
                 else:
                     label[mask_label] = 0

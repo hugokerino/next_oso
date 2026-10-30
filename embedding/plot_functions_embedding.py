@@ -69,7 +69,7 @@ def plot_embeddings(
     fig, axs = plt.subplots(1, n_col, figsize=figsize)
 
     axs[0].imshow(img_s2)
-    axs[0].set_title("Image Sentinel-2")
+    axs[0].set_title("Sentinel-2 RGB")
     axs[0].axis("off")
 
     axs[1].imshow(img_alpha_earth)
@@ -145,16 +145,16 @@ def plot_embedding(
     # plot
     fig, axs = plt.subplots(1, 3, figsize=figsize)
 
-    axs[0].imshow(label, cmap=cmap, vmin=vmin, vmax=vmax)
-    axs[0].set_title("Label")
+    axs[0].imshow(img_s2)
+    axs[0].set_title("Sentinel-2 RGB")
     axs[0].axis("off")
 
-    axs[1].imshow(img_s2)
-    axs[1].set_title("S2 Image")
+    axs[1].imshow(img_emb)
+    axs[1].set_title(f"{model} PCA")
     axs[1].axis("off")
 
-    axs[2].imshow(img_emb)
-    axs[2].set_title(f"{model} PCA")
+    axs[2].imshow(label, cmap=cmap, vmin=vmin, vmax=vmax)
+    axs[2].set_title("Label")
     axs[2].axis("off")
 
     return
