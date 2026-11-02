@@ -27,7 +27,7 @@ def main(config, log_dir, save_preds_dir):
     sys.stdout.flush()
 
     # criterion = torch.nn.CrossEntropyLoss(ignore_index=0)
-    criterion = select_criterion(config["criterion"])
+    criterion = select_criterion(config["criterion"], nb_class=config["num_class"])
     encoder, decoder, batch_size = build_model(config)
     config["batch_size"] = (
         batch_size  # Update batch size in config for data loading and lightning module

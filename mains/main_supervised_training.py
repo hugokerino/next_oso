@@ -53,6 +53,7 @@ def main(config):
     #  Build classifier and Load data
     ########################################
     criterion = select_criterion(config["criterion"], nb_class=config["num_class"])
+
     encoder, decoder, batch_size = build_model(config)
     config["batch_size"] = (
         batch_size  # Update batch size in config for data loading and lightning module
@@ -94,7 +95,8 @@ def main(config):
     tb_logger = TensorBoardLogger(
         log_fold, name="tensorboards", default_hp_metric=False
     )
-    limit_batches = 1.0  # 1.0 means use all batches, 0.1 means use 10% of batches, etc.
+    limit_batches = 0.1  # 1.0 means use all batches, 0.1 means use 10% of batches, etc.
+
     if config["test_model"]:
         tb_logger = None
         list_callback = None

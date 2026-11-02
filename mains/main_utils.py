@@ -72,6 +72,8 @@ def select_criterion(loss: str, nb_class: int = 25):
 
     if loss == "cross_entropy":
         criterion = torch.nn.CrossEntropyLoss(ignore_index=0)
+    elif loss == "cross_entropy_full":
+        criterion = torch.nn.CrossEntropyLoss()
     elif loss == "cross_entropy_probas":
         criterion = torch.nn.CrossEntropyLoss(
             weight=torch.Tensor(np.concatenate([[0], np.ones(nb_class - 1)]))

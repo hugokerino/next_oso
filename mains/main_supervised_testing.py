@@ -24,7 +24,7 @@ def main(config):
     print(f"FOLD {config['fold_index']}")
     sys.stdout.flush()
 
-    criterion = select_criterion(config["criterion"])
+    criterion = select_criterion(config["criterion"], nb_class=config["num_class"])
     encoder, decoder, batch_size = build_model(config)
     config["batch_size"] = (
         batch_size  # Update batch size in config for data loading and lightning module
@@ -55,7 +55,7 @@ def main(config):
         num_nodes=config["nodes"],
         strategy=config["strategy"],
         precision=get_precision(),
-        limit_test_batches=1.0,
+        limit_test_batches=50,
     )
 
     ########################################
@@ -97,7 +97,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--config_train",
         type=str,
-        default="configs/models/config_local.yaml",
+        default="configs/supervised_models/config_local.yaml",
         help="YAML config file for testing settings",
     )
 
