@@ -95,7 +95,7 @@ def main(config):
     tb_logger = TensorBoardLogger(
         log_fold, name="tensorboards", default_hp_metric=False
     )
-    limit_batches = 0.1  # 1.0 means use all batches, 0.1 means use 10% of batches, etc.
+    limit_batches = 1.0  # 1.0 means use all batches, 0.1 means use 10% of batches, etc.
 
     if config["test_model"]:
         tb_logger = None
