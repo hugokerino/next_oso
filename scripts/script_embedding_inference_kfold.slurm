@@ -32,7 +32,7 @@ module load pixi
 echo "Launch python file"
 
 pixi run -e gpu python mains/main_embedding_inference.py \
-    --config "/work/THEIA/CES/oso/hugok/next_oso/configs/embeddings/config_trex.yaml" \
+    --config "configs/embeddings/config_trex.yaml" \
     --path_dir_logs /work/THEIA/CES/oso/hugok/next_oso/logs/alpha-earth/mlp_2026-09-08_kfold \
     --path_save_preds /work/THEIA/CES/oso/hugok/predictions/preds_folder_5 \
     --fold_index $SLURM_ARRAY_TASK_ID  # Pass the fold index from the array

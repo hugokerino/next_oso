@@ -3,8 +3,10 @@ from pathlib import Path
 import sys
 import pprint
 from argparse import ArgumentParser
+from flask import json
 from tqdm import tqdm
 import yaml
+import time
 
 
 import torch
@@ -69,6 +71,7 @@ def main(config, log_dir, save_preds_dir):
 
     saved_count = 0
     skipped_count = 0
+    inference_time = []
     with torch.no_grad():
         for batch_idx, (embeddings, _, ids) in tqdm(
             enumerate(datamodule.test_dataloader()),
@@ -92,8 +95,11 @@ def main(config, log_dir, save_preds_dir):
                 # build per-sample inputs (each element has batch dim)
                 sample_inputs = embeddings[i].unsqueeze(dim=0)
                 # Forward single sample through the LightningModule
+                start = time.perf_counter()
                 y_logit = best_classifier.forward(sample_inputs)
                 probas = torch.softmax(y_logit, dim=1)  # shape (1, C, H, W)
+                end = time.perf_counter()
+                inference_time.append(end - start)
 
                 probs_tensor = probas.squeeze(0).cpu()
                 pred_tensor = probs_tensor.argmax(dim=0).to(torch.uint8)
@@ -106,6 +112,18 @@ def main(config, log_dir, save_preds_dir):
     print(f"Saved {saved_count} new per-sample predictions to {out_dir}")
     if skipped_count:
         print(f"Skipped {skipped_count} existing files")
+
+    with open(
+        f"{out_dir}/inference_time_fold_{config['fold_index'] + 1}.json",
+        "w",
+        encoding="utf-8",
+    ) as f:
+        json.dump(
+            {"mean inference_time": sum(inference_time) / len(inference_time)},
+            f,
+            indent=4,
+            ensure_ascii=False,
+        )
 
 
 if __name__ == "__main__":
