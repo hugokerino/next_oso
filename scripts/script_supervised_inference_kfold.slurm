@@ -33,6 +33,7 @@ pixi run -e gpu python mains/main_supervised_inference.py \
     --config_model configs/supervised_models/ALISE.yaml \
     --path_dir_logs /work/THEIA/CES/oso/hugok/next_oso/logs/light_training/ALISE_mlp_2026-09-21_kfold \
     --path_save_preds /work/THEIA/CES/oso/hugok/predictions/ALISE_preds/v3 \
-    --fold_index $SLURM_ARRAY_TASK_ID
+    --fold_index $SLURM_ARRAY_TASK_ID \
+    --measure_time True
 
 echo "End"

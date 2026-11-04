@@ -21,7 +21,7 @@ from mains.main_utils import build_decoder
 torch.set_float32_matmul_precision("high")
 
 
-def main(config, log_dir, save_preds_dir):
+def main(config, log_dir, save_preds_dir, measure_time=False):
     ########################################
     # MODEL
     ########################################
@@ -113,17 +113,18 @@ def main(config, log_dir, save_preds_dir):
     if skipped_count:
         print(f"Skipped {skipped_count} existing files")
 
-    with open(
-        f"{out_dir}/inference_time_fold_{config['fold_index'] + 1}.json",
-        "w",
-        encoding="utf-8",
-    ) as f:
-        json.dump(
-            {"mean inference_time": sum(inference_time) / len(inference_time)},
-            f,
-            indent=4,
-            ensure_ascii=False,
-        )
+    if measure_time:
+        with open(
+            f"{out_dir}/inference_time_fold_{config['fold_index'] + 1}.json",
+            "w",
+            encoding="utf-8",
+        ) as f:
+            json.dump(
+                {"mean inference_time": sum(inference_time) / len(inference_time)},
+                f,
+                indent=4,
+                ensure_ascii=False,
+            )
 
 
 if __name__ == "__main__":
@@ -152,6 +153,12 @@ if __name__ == "__main__":
         required=True,
         help="Chemin du dossier pour sauvergarder les prédictions, Ex:/home/hkerino/Documents/nextoso-dataset/preds",
     )
+    parser.add_argument(
+        "--measure_time",
+        type=bool,
+        default=False,
+    )
+
     args = parser.parse_args()
 
     # Open YAML file
@@ -163,4 +170,6 @@ if __name__ == "__main__":
     config["fold_index"] = args.fold_index
 
     pprint.pprint(config)
-    main(config, args.path_dir_logs, args.path_save_preds)
+    main(
+        config, args.path_dir_logs, args.path_save_preds, measure_time=args.measure_time
+    )

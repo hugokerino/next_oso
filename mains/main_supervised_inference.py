@@ -1,12 +1,15 @@
-import torch
-import lightning as L
-
 import os
 import sys
 import pprint
 from argparse import ArgumentParser
 from pathlib import Path
+from flask import json
 from tqdm import tqdm
+import time
+
+
+import torch
+import lightning as L
 
 
 from supervised_models import lightning_module
@@ -17,7 +20,7 @@ from mains.main_utils import load_config, build_model, select_criterion
 torch.set_float32_matmul_precision("high")
 
 
-def main(config, log_dir, save_preds_dir):
+def main(config, log_dir, save_preds_dir, measure_time=False):
     ########################################
     # MODEL
     ########################################
@@ -61,11 +64,7 @@ def main(config, log_dir, save_preds_dir):
     # INFERENCE
     ########################################
     print("\nINFERENCE ...")
-    checkpoint_dir = (
-        Path(config["path_dir_logs"])
-        / f"fold_{config['fold_index'] + 1}"
-        / "Checkpoints"
-    )
+    checkpoint_dir = Path(log_dir) / f"fold_{config['fold_index'] + 1}" / "Checkpoints"
     checkpoint = next(checkpoint_dir.glob("*.ckpt"))
     print(f"Loading checkpoint: {checkpoint}")
     sys.stdout.flush()
@@ -85,9 +84,13 @@ def main(config, log_dir, save_preds_dir):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     best_classifier.to(device)
 
+    out_dir = os.path.join(save_preds_dir, f"preds_{config['model']}")
+    os.makedirs(out_dir, exist_ok=True)
+
     # Save per-sample predictions
     saved_count = 0
     skipped_count = 0
+    inference_time = []
     with torch.no_grad():
         for batch_idx, (inputs, _, ids) in tqdm(enumerate(dl_test), total=len(dl_test)):
             # inputs: tuple of tensors (s2, dates, [mask], [geo]) with batch dim first
@@ -99,7 +102,9 @@ def main(config, log_dir, save_preds_dir):
                 if sample_id is None:
                     continue
 
-                filename = os.path.join(save_preds_dir, f"pred_{sample_id}.pt")
+                filename = os.path.join(
+                    out_dir, f"pred_{config['model']}_{sample_id}.pt"
+                )
                 if os.path.exists(filename):
                     skipped_count += 1
                     continue
@@ -108,8 +113,11 @@ def main(config, log_dir, save_preds_dir):
                 sample_inputs = [t[i].unsqueeze(dim=0) for t in inputs]
 
                 # Forward single sample through the LightningModule
+                start = time.perf_counter()
                 y_logit = best_classifier._forward((sample_inputs, _))
                 probas = torch.softmax(y_logit, dim=1)  # shape (1, C, H, W)
+                end = time.perf_counter()
+                inference_time.append(end - start)
 
                 probs_tensor = probas.squeeze(0).cpu()
                 pred_tensor = probs_tensor.argmax(dim=0).to(torch.uint8)
@@ -122,6 +130,19 @@ def main(config, log_dir, save_preds_dir):
     print(f"Saved {saved_count} new per-sample predictions to {save_preds_dir}")
     if skipped_count:
         print(f"Skipped {skipped_count} existing files")
+
+    if measure_time:
+        with open(
+            f"{out_dir}/inference_time_fold_{config['fold_index'] + 1}.json",
+            "w",
+            encoding="utf-8",
+        ) as f:
+            json.dump(
+                {"mean inference_time": sum(inference_time) / len(inference_time)},
+                f,
+                indent=4,
+                ensure_ascii=False,
+            )
 
 
 if __name__ == "__main__":
@@ -153,13 +174,20 @@ if __name__ == "__main__":
         help="Index of the fold to run (0-based, e.g., 0 for first fold)",
     )
 
+    parser.add_argument(
+        "--measure_time",
+        type=bool,
+        default=False,
+    )
+
     args = parser.parse_args()
 
     config = load_config(args.config_train, args.config_model)
 
-    config["path_dir_logs"] = args.path_dir_logs
     config["selected_fold"] = config["folds"][args.fold_index]
     config["fold_index"] = args.fold_index
 
     pprint.pprint(config)
-    main(config, args.path_dir_logs, args.path_save_preds)
+    main(
+        config, args.path_dir_logs, args.path_save_preds, measure_time=args.measure_time
+    )
