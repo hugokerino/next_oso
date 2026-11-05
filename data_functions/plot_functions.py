@@ -9,11 +9,9 @@ import pandas
 import geopandas as gpd
 import rasterio
 import torch
-from torch.utils.data import DataLoader
 
 from matplotlib import pyplot as plt
 from matplotlib.colors import ListedColormap
-import matplotlib.dates as mdates
 import matplotlib.gridspec as gridspec
 import seaborn as sns
 
@@ -129,7 +127,7 @@ def count_label(dataset, normalized=False, plot=True):
     return classes
 
 
-def count_label_easier(dataset, normalized=False, plot=True):
+def plot_label_histogram(dataset, normalized=False, plot=True):
     classes = np.zeros(25)
 
     for i in range(len(dataset)):
@@ -267,90 +265,6 @@ def compare_dataset(
         plt.show()
 
     return norm1, norm2
-
-
-def count_timestep_dataloard(dataset, plot=True, num_workers=8):
-    # Fonction collate qui ne récupère que les dates
-    def collate_dates(batch):
-        return [item[0][1] for item in batch]
-
-    loader = DataLoader(
-        dataset,
-        batch_size=32,
-        num_workers=num_workers,  # chargement parallèle
-        collate_fn=collate_dates,
-    )
-
-    list_date = []
-    for batch_dates in loader:
-        list_date.extend(batch_dates)
-
-    all_dates = np.concatenate(list_date).astype("datetime64[D]")
-    if plot:
-        fig, ax = plt.subplots(figsize=(14, 5))
-        ax.hist(
-            all_dates.astype("int64"),
-            bins=50,  # bins temporels
-            color="#3266ad",
-            edgecolor="white",
-            linewidth=0.5,
-        )
-        # Ticks lisibles en dates
-        ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
-        ax.xaxis.set_major_locator(mdates.MonthLocator(interval=2))
-        plt.xticks(rotation=45, ha="right")
-        ax.set_xlabel("Date")
-        ax.set_ylabel("Nombre de timestamps")
-        ax.set_title("Répartition temporelle des données")
-        ax.grid(True, linestyle="--", alpha=0.5)
-        plt.tight_layout()
-        plt.show()
-
-    return all_dates
-
-
-def histogram_valid_per_pixel(dataset, plot=True, density=False, num_workers=8):
-    def collate_masks(batch):
-        return [item[0][2] for item in batch]  # (T,H,W)
-
-    loader = DataLoader(
-        dataset,
-        batch_size=8,
-        num_workers=num_workers,
-        collate_fn=collate_masks,
-    )
-
-    all_values = []  # 👉 on stocke les counts, pas les maps
-
-    for batch_masks in loader:
-        for mask in batch_masks:
-            # (T,H,W) → (H,W)
-            valid_count = mask.sum(axis=0)
-
-            # 👉 on flatten DIRECTEMENT
-            all_values.append(valid_count.flatten())
-
-    # concat de tous les pixels de tous les samples
-    values = np.concatenate(all_values)
-
-    if plot:
-        plt.figure(figsize=(8, 5))
-        plt.hist(
-            values,
-            bins=100,
-            color="#3266ad",
-            edgecolor="white",
-            linewidth=0.5,
-            density=density,
-        )
-        plt.xlabel("Nombre de dates valides par pixel")
-        plt.ylabel("Nombre de pixels")
-        plt.title("Dates per pixels")
-        plt.grid(True, linestyle="--", alpha=0.5)
-        plt.tight_layout()
-        plt.show()
-
-    return values
 
 
 def plot_label(patch: xr.Dataset | np.ndarray):
@@ -1182,20 +1096,23 @@ def plot_eco_zone_by_folds(path_data):
     df = df.reset_index().rename(columns={"index": "patch_id"})
     cross_tab = pandas.crosstab(df["ecozone"], df["fold"])
 
-    # 4. Tracer l'histogramme empilé (chaque barre = écozone, divisée en 5 folds)
+    cross_tab_formatted = cross_tab.copy()
+    cross_tab_formatted.index = cross_tab_formatted.index.map(eco_zone_titles_english)
+    cross_tab_formatted.index.name = "ecozone"
+    cross_tab_formatted.columns = [f"Fold {c}" for c in cross_tab_formatted.columns]
+    cross_tab_formatted.columns.name = "fold"
+    cross_tab_formatted["Total"] = cross_tab_formatted.sum(axis=1)
+
     plt.figure(figsize=(12, 8))
 
-    # Créer le graphique empilé
     bottom = None
     colors = sns.color_palette("deep", 5)  # 5 couleurs pour les 5 folds
 
     for fold in range(1, 6):
-        # Extraire les valeurs pour ce fold
         values = cross_tab[fold]
 
-        # Tracer les barres pour ce fold
         plt.bar(
-            eco_zone_titles_english.values(),  # Écozones en abscisse
+            eco_zone_titles_english.values(),
             values,
             bottom=bottom,  # Empiler sur les folds précédents
             label=f"Fold {fold}",
@@ -1203,19 +1120,19 @@ def plot_eco_zone_by_folds(path_data):
             width=0.8,
         )
 
-        # Mettre à jour le bottom pour le prochain fold
         if bottom is None:
             bottom = values
         else:
             bottom += values
 
-    # Personnaliser le graphique
     plt.ylabel("Patch number", fontsize=12)
-    plt.xticks(ha="right", rotation=45)  # Incliner les étiquettes
+    plt.xticks(ha="right", rotation=45)
     plt.legend(loc="upper right")
     plt.tight_layout()
-    plt.grid(axis="y", linestyle="--", alpha=0.5)  # Grille horizontale
+    plt.grid(axis="y", linestyle="--", alpha=0.5)
     plt.show()
+
+    return cross_tab_formatted
 
 
 def count_label_compare(
@@ -1283,3 +1200,47 @@ def count_label_compare(
         plt.show()
 
     return classes
+
+
+def plot_histogram_dates_number(dataset):
+    dates_array = np.zeros((len(dataset)), dtype=object)
+    for i in range(len(dataset)):
+        date = dataset[i][0][1]
+        dates_array[i] = date.shape[0]
+        dates_count = np.array(dates_array, dtype=int)
+
+    # Création de l'histogramme
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    # Histogramme avec bins automatiques ou définis
+    counts, bins, patches = ax.hist(
+        dates_count,
+        bins=range(min(dates_count), max(dates_count) + 2),
+        color="steelblue",
+        edgecolor="black",
+        alpha=0.7,
+    )
+
+    ax.set_xlabel("Dates per patch numer ", fontsize=12)
+    ax.set_ylabel("Patch number", fontsize=12)
+
+    # Statistiques dans le coin
+    stats_text = (
+        f"Mean: {np.mean(dates_count):.1f}\Median: {np.median(dates_count):.1f}"
+    )
+    ax.text(
+        0.95,
+        0.95,
+        stats_text,
+        transform=ax.transAxes,
+        fontsize=10,
+        verticalalignment="top",
+        horizontalalignment="right",
+        bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5),
+    )
+
+    ax.grid(axis="y", alpha=0.3, linestyle="--")
+    plt.tight_layout()
+    plt.show()
+
+    return dates_count

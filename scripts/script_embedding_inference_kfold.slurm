@@ -35,6 +35,7 @@ pixi run -e gpu python mains/main_embedding_inference.py \
     --config configs/embeddings/config_trex.yaml \
     --path_dir_logs logs/alpha-earth/alpha-earth_2026-10-15 \
     --path_save_preds /work/THEIA/CES/oso/hugok/predictions/final_preds \
-    --fold_index $SLURM_ARRAY_TASK_ID  # Pass the fold index from the array
+    --fold_index $SLURM_ARRAY_TASK_ID  \
+    --measure_time True
 
 echo "End"
