@@ -37,7 +37,7 @@ FOLD_INDEX=1  # For single fold training, we can set the fold index to 0
 
 srun --export=ALL pixi run -e gpu python mains/main_supervised_training.py \
     --config_train configs/supervised_models/config_trex.yaml \
-    --config_model configs/supervised_models/UTAE.yaml \
+    --config_model configs/supervised_models/ALISE.yaml \
     --fold_index $FOLD_INDEX  # Pass the fold to train on
 
 echo "End"

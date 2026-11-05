@@ -30,9 +30,9 @@ echo "Launch python file"
 
 pixi run -e gpu python mains/main_supervised_inference.py \
     --config_train configs/supervised_models/config_trex.yaml \
-    --config_model configs/supervised_models/ALISE.yaml \
-    --path_dir_logs /work/THEIA/CES/oso/hugok/next_oso/logs/light_training/ALISE_mlp_2026-09-21_kfold \
-    --path_save_preds /work/THEIA/CES/oso/hugok/predictions/ALISE_preds/v3 \
+    --config_model configs/supervised_models/UTAE.yaml \
+    --path_dir_logs logs/light_training/UTAE_2026-10-12 \
+    --path_save_preds /work/THEIA/CES/oso/hugok/predictions/final_preds \
     --fold_index $SLURM_ARRAY_TASK_ID \
     --measure_time True
 
