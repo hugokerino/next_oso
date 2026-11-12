@@ -13,9 +13,9 @@ import torch
 import lightning as L
 
 
-from embedding.dataset_embedding import embedding_datamodule
+from embedding.dataset_embedding import EmbeddingDataModule
 from embedding.decode_lightning_module import DecodeEmbedding
-from mains.main_utils import build_decoder
+from mains.main_utils import build_decoder, select_criterion
 
 
 torch.set_float32_matmul_precision("high")
@@ -31,7 +31,7 @@ def main(config, log_dir, save_preds_dir, measure_time=False):
     model = config["model"]
     # Data
     selected_fold = config["selected_fold"]
-    datamodule = embedding_datamodule(
+    datamodule = EmbeddingDataModule(
         dataset=config["dataset"],
         model=model,
         path_data=config["path_data"],
@@ -51,14 +51,27 @@ def main(config, log_dir, save_preds_dir, measure_time=False):
     ########################################
     print("\nINFERENCE ...")
     # Model
-    decoder = build_decoder(model, config["decoder_type"], config["dataset"], dropout=0)
+    decoder = build_decoder(
+        model=model,
+        decoder_type=config["decoder_type"],
+        num_class=config["num_class"],
+        dropout=0,
+    )
     checkpoint_dir = Path(log_dir) / f"fold_{config['fold_index'] + 1}" / "Checkpoints"
     checkpoint = next(checkpoint_dir.glob("*.ckpt"))
     print(f"Loading checkpoint: {checkpoint}")
     sys.stdout.flush()
 
+    criterion = select_criterion(config["criterion"], nb_class=config["num_class"])
     best_classifier = DecodeEmbedding.load_from_checkpoint(
-        checkpoint, decoder=decoder, config=config
+        checkpoint,
+        decoder=decoder,
+        loss_fn=criterion,
+        batch_size=config["batch_size"],
+        num_class=config["num_class"],
+        lr=config["lr"],
+        max_epochs=config["max_epochs"],
+        optimizer_scheduler=config["optimizer_scheduler"],
     )
 
     best_classifier.eval()

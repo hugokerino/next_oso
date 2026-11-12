@@ -11,16 +11,34 @@ class BaseDataset(tdata.Dataset):
         "extended",
         "probas_extended",
         None,
-    }  # valid label type
-    VALID_FOLD_RANGE = (1, 5)  # valid range for folds
+    }
+    VALID_FOLD_RANGE = (1, 5)
 
     def __init__(
         self,
         path_data: Path,
         folds: list[int] | None,
         label_type: str | None,
-        return_id: None | str,
+        return_id: bool,
     ):
+        """
+        Base class for dataset creation, intended to mutualize shared code.
+
+        Parameters
+        ----------
+        path_data : Path
+            Path to the directory containing the dataset.
+        folds : list[int] | None
+            Dataset folds to load. If None, all available folds are used.
+            Values must be within VALID_FOLD_RANGE.
+        label_type : str | None
+            Type of label to return. Must be one of VALID_LABEL_TYPES.
+            None should be use only for embedding dataset on PASTIS.
+        return_id : bool
+            Whether to return the sample identifier together with the data and labels.
+
+        """
+
         super().__init__()
 
         if not isinstance(path_data, Path):

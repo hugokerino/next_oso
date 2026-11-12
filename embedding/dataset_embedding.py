@@ -14,24 +14,69 @@ import geopandas as gdp
 from templates.dataset_template import BaseDataset
 
 
-class embedding_dataset(BaseDataset):
+class Embedding_Dataset(BaseDataset):
+    VALID_DATASET = {
+        "next_oso",
+        "pastis",
+    }
+    VALID_MODEL = {"alpha-earth", "tessera", "malice"}
+
     def __init__(
         self,
-        dataset: str = "next_oso",  # pastis
-        path_data: Path = Path("/home/hkerino/Documents/nextoso-dataset/data/10m"),
-        model: str = "alpha-earth",  # "tessera", "malice"
+        path_data: Path = Path(
+            "/home/hkerino/Documents/nextoso-dataset/data/10m"
+        ),  # /home/hkerino/Documents/PASTIS
         folds: list[int] | None = None,
         label_type: str | None = "max_class",
-        mask: bool = True,  # If set to True, detect invalid pixel in embedding data and put those pixel at 0 for label to not take them into account in training
+        return_id: bool = False,
+        dataset: str = "next_oso",
+        model: str = "alpha-earth",
+        mask: bool = True,
         preload: bool = False,
-        return_id: bool = False,  # cannot be True if preload = True
     ):
+        """
+         PyTorch Dataset for the Next-OSO dataset (and PASTIS), to use with Embedding ready-to-use pipeline. Inherit from template BaseDataset.
+
+        Parameters
+        ----------
+        dataset : str
+            Embeddings available on 2 datasets. Must be one of VALID_DATASET.
+        model : str
+            Which embeddings to load.Must be one of VALID_MODEL.
+        mask : bool
+            If set to True, detect invalid pixel in embedding data and put those pixel at 0 for label to not take them into account.
+        preload : bool
+            If set to True, load dataset in cache memory. Should be set according to the available memory resources and dataset size.
+
+        Notes
+        ----------
+        All other parameters are inherited from : class:`BaseDataset`. See its docstring
+
+        Since works with Next-OSO and PASTIS dataset, path_data parameter is to adjust in function of dataset parameter.
+            Ex : if dataset is pastis, path_data should point towards pastis dataset folder.
+        Path to the directory containing the Next-OSO data must contain following :
+            embeddings_data/, labels/, labels_extended/, metadata/, mnt/, s2/.
+        Path to the directory containing the PASTIS data must contain following :
+            embeddings_data/, ANNOTATIONS/ metadata.geojson, label_names_reduced.json.
+        """
+
         super().__init__(
             path_data=path_data,
             folds=folds,
             label_type=label_type,
             return_id=return_id,
         )
+
+        if dataset not in self.VALID_DATASET:
+            raise ValueError(
+                f"Dataset error. Must be one of {self.VALID_DATASET}. Got {dataset}"
+            )
+        if model not in self.VALID_MODEL:
+            raise ValueError(
+                f"Model error. Must be one of {self.VALID_MODEL}. Got {model}"
+            )
+
+        # Specific attribute
         self.dataset = dataset
         self.model = model
         self.mask = mask
@@ -80,7 +125,7 @@ class embedding_dataset(BaseDataset):
 
         # Préchargement en RAM si demandé
         if self.preload:
-            print(f"Préchargement de {len(self.embedding_files)} patches en RAM...")
+            print(f"Preloading of {len(self.embedding_files)} patches in RAM...")
             self.embeddings_cache = []
             self.labels_cache = []
             self.dict_data = {}
@@ -89,10 +134,10 @@ class embedding_dataset(BaseDataset):
                 self.embeddings_cache.append(emb)
                 self.labels_cache.append(lbl)
                 self.dict_data[f.split("_")[1].split(".")[0]] = emb, lbl
-            print("Préchargement terminé.")
+            print("Preloading finished.")
 
     def _load_sample(self, filename):
-        """Chargement d'un sample depuis le disque."""
+        """Load a sample from disk."""
         # Embedding
         if filename.endswith(".npy"):
             embedding_npy = np.load(
@@ -144,8 +189,6 @@ class embedding_dataset(BaseDataset):
                                 labels_probas[k, :, :] == -1, 0, labels_probas[k, :, :]
                             )
                     label = torch.from_numpy(labels_probas).float()
-                else:
-                    raise ValueError(f"{self.label_type}, Label type unknow")
 
         if self.dataset == "pastis":
             to_open_label = f"{self.path_data}/ANNOTATIONS/TARGET_{id}.npy"
@@ -185,23 +228,47 @@ class embedding_dataset(BaseDataset):
         return self._load_sample(filename)
 
 
-class embedding_datamodule(LightningDataModule):
+class EmbeddingDataModule(LightningDataModule):
     def __init__(
         self,
         dataset: str = "next_oso",  # "pastis"
         model: str = "alpha-earth",
         path_data: Path = Path("/home/hkerino/Documents/nextoso-dataset/data/10m"),
         preload: bool = False,
-        fold_train=None | list[int],
-        fold_val=None | list[int],
-        fold_test=None | list[int],
+        fold_train: list[int] = [1, 2, 3],
+        fold_val: list[int] = [4],
+        fold_test: list[int] = [5],
         batch_size: int = 32,
         num_workers: int = 4,
-        label_type: None | str = "max_class",
-        label_type_test: None | str = "max_class",
-        mask: bool = "False",
+        label_type: str | None = "max_class",
+        label_type_test: str | None = "max_class",
+        mask: bool = False,
         return_id: bool = False,
     ):
+        """
+        PyTorch Datamodule for Embedding ready-to-use pipeline
+
+        Parameters
+        ----------
+        fold_train : list[int]
+            Folds used for training.
+        fold_val : list[int]
+            Folds used for validation.
+        fold_test : list[int]
+            Folds used for testing
+        batch_size : int
+            Number of samples per batch loaded by the dataloaders.
+        num_workers : int
+            Number of worker processes for data loading.
+        label_type_test : str | None
+            Type of label returned by the test dataset. Supported values are the same as for label_type.
+            This parameter allows using a different label type than training one at test time.
+
+        Notes
+        ----------
+        All other parameters are same as Embedding_Dataset. See its docstring
+        """
+
         super().__init__()
         self.dataset = dataset
         self.path_data = path_data
@@ -217,18 +284,20 @@ class embedding_datamodule(LightningDataModule):
         self.mask = mask
         self.return_id = return_id
 
+        if any(f is None for f in (fold_train, fold_val, fold_test)):
+            raise ValueError(
+                f"fold_train, fold_val and fold_test must all be provided. "
+                f"Got fold_train={fold_train}, fold_val={fold_val}, fold_test={fold_test}"
+            )
+
         all_folds = fold_train + fold_val + fold_test
-
-        if not all(1 <= fold <= 5 for fold in all_folds):
-            raise ValueError(f"Fold values must be between 1 and 5. Got {all_folds}")
-
         if len(set(all_folds)) != len(all_folds):
             raise ValueError("Folds_train, folds_val and folds_test must be disjoint.")
 
         if not all((fold_train, fold_val, fold_test)):
             raise ValueError("Folds cannot be empty.")
 
-        self.data_train = embedding_dataset(
+        self.data_train = Embedding_Dataset(
             dataset=dataset,
             path_data=path_data,
             model=model,
@@ -238,7 +307,7 @@ class embedding_datamodule(LightningDataModule):
             mask=mask,
             return_id=return_id,
         )
-        self.data_val = embedding_dataset(
+        self.data_val = Embedding_Dataset(
             dataset=dataset,
             path_data=path_data,
             model=model,
@@ -248,7 +317,7 @@ class embedding_datamodule(LightningDataModule):
             mask=mask,
             return_id=return_id,
         )
-        self.data_test = embedding_dataset(
+        self.data_test = Embedding_Dataset(
             dataset=dataset,
             path_data=path_data,
             model=model,

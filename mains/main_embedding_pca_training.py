@@ -15,8 +15,8 @@ import signal
 import yaml
 
 from embedding.decode_lightning_module import DecodeEmbedding
-from embedding.dataset_embedding_PCA import embedding_datamodule_pca
-from mains.main_utils import get_precision
+from embedding.dataset_embedding_PCA import EmbeddingDatamodulePCA
+from mains.main_utils import get_precision, select_criterion
 from supervised_models.utils_model import MLP_Decoder
 
 
@@ -34,7 +34,7 @@ def main(config):
     # Data
     selected_fold = config["selected_fold"]
 
-    datamodule_pca = embedding_datamodule_pca(
+    datamodule_pca = EmbeddingDatamodulePCA(
         dataset=config["dataset"],
         model=model,
         path_data=config["path_data"],
@@ -51,15 +51,25 @@ def main(config):
 
     # Decoder
     config["path_save_excel"] = f"{log_fold}/metrics.xlsx"
-    layers = [config["n_component"], 64, 32, 25]
+    layers = [config["n_component"], 64, 32, config["num_class"]]
     decoder = MLP_Decoder(layers=layers, dropout=config["dropout"])
+
+    criterion = select_criterion(config["criterion"], nb_class=config["num_class"])
+
+    # Classifier
     classifier = DecodeEmbedding(
         decoder=decoder,
-        config=config,
+        loss_fn=criterion,
+        batch_size=config["batch_size"],
+        num_class=config["num_class"],
+        lr=config["lr"],
+        max_epochs=config["max_epochs"],
+        optimizer_scheduler=config["optimizer_scheduler"],
         names_class=datamodule_pca.data_train.name_labels,
     )
 
-    limit_batches = 1
+    limit_batches = 1 if config["test_model"] else 1.0
+
     # training
     trainer = Trainer(
         accelerator="gpu" if torch.cuda.is_available() else "cpu",
@@ -80,7 +90,7 @@ def main(config):
         else None,
         precision=get_precision(),
         log_every_n_steps=10,
-        limit_predict_batches=limit_batches,
+        limit_val_batches=limit_batches,
         limit_test_batches=limit_batches,
         limit_train_batches=limit_batches,
     )

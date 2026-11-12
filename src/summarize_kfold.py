@@ -5,15 +5,14 @@ import pandas as pd
 
 def summarize_kfold_metrics(root_dir, output_file="metrics_summary.xlsx"):
     """
-    Lit les fichiers metrics.xlsx contenus dans les dossiers fold_*
-    et produit un fichier Excel contenant les moyennes ± écarts-types.
+    Read metric xlsx files in root_dir and produce a new xlsx file containing means and standard deviation.
 
     Parameters
     ----------
     root_dir : str or Path
-        Dossier contenant fold_1, fold_2, ...
+        Directory containing fold_1, fold_2, ...
     output_file : str
-        Nom du fichier Excel de sortie.
+        Output xlsx filename.
     """
 
     root_dir = Path(root_dir)
@@ -22,21 +21,18 @@ def summarize_kfold_metrics(root_dir, output_file="metrics_summary.xlsx"):
     class_metrics = []
 
     for fold_dir in sorted(root_dir.glob("fold_*")):
-        # Cherche tous les fichiers commençant par "metrics" et finissant par ".xlsx"
+        # look for every file "metrics" et ending by ".xlsx"
         metrics_files = list(fold_dir.glob("metrics*.xlsx"))
 
         if not metrics_files:
-            raise FileNotFoundError(
-                f"Aucun fichier metrics*.xlsx trouvé dans {fold_dir}"
-            )
+            raise FileNotFoundError(f"No file metrics*.xlsx founded in {fold_dir}")
         elif len(metrics_files) > 1:
             raise ValueError(
-                f"Plusieurs fichiers metrics*.xlsx trouvés dans {fold_dir}: {metrics_files}"
+                f"Several metrics*.xlsx found in {fold_dir}: {metrics_files}"
             )
 
-        # On prend le premier (et unique) fichier trouvé
         file = metrics_files[0]
-        print(f"Fichier trouvé: {file}")
+        print(f"File founded : {file}")
 
         ##########################
         # Global metrics

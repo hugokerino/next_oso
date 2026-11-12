@@ -12,8 +12,9 @@ import torch
 import lightning as L
 
 
-from supervised_models import lightning_module
-from data_functions import dataset
+from supervised_models.lightning_module import Classifier
+from data_functions.dataset import get_loaders
+
 from mains.main_utils import load_config, build_model, select_criterion
 
 
@@ -44,7 +45,7 @@ def main(config, log_dir, save_preds_dir, measure_time=False):
     selected_fold = config["selected_fold"]
 
     # Load dataloaders
-    _, _, dl_test = dataset.get_loaders(
+    _, _, dl_test = get_loaders(
         path_data=config["path_data"],
         use_mnt_data=config["use_mnt_data"],
         folds_train=selected_fold[0],
@@ -57,7 +58,7 @@ def main(config, log_dir, save_preds_dir, measure_time=False):
         mask_needed=config["mask_need"],
         norm=True if config["model"] in ["LTAE", "UTAE", "ALISE"] else False,
         shuffle=False,
-        pass_id=True,
+        return_id=True,
     )
 
     ########################################
@@ -69,7 +70,7 @@ def main(config, log_dir, save_preds_dir, measure_time=False):
     print(f"Loading checkpoint: {checkpoint}")
     sys.stdout.flush()
 
-    best_classifier = lightning_module.Classifier.load_from_checkpoint(
+    best_classifier = Classifier.load_from_checkpoint(
         checkpoint,
         weights_only=True,
         encoder=encoder,

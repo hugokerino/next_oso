@@ -2,14 +2,46 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-from supervised_models.utils_model import PositionalEncoder, duplicate_to_img
+from supervised_models.utils_model import duplicate_to_img
+
+
+# Classical position encoding
+class PositionalEncoder(nn.Module):
+    def __init__(
+        self, d: int, T: int = 1000, repeat: int | None = None, offset: int = 0
+    ):
+        """
+        Classical position encoding adapted for the L-TAE with repeat parameter.
+        """
+        super().__init__()
+        self.d = d
+        self.T = T
+        self.repeat = repeat
+        self.denom = torch.pow(
+            T, 2 * (torch.arange(offset, offset + d).float() // 2) / d
+        )
+
+    def forward(self, batch_positions):
+        self.denom = self.denom.to(batch_positions.device)
+        sinusoid_table = (
+            batch_positions[:, :, None] / self.denom[None, None, :]
+        )  # B x T x C
+        sinusoid_table[:, :, 0::2] = torch.sin(sinusoid_table[:, :, 0::2])  # dim 2i
+        sinusoid_table[:, :, 1::2] = torch.cos(sinusoid_table[:, :, 1::2])  # dim 2i+1
+
+        if self.repeat is not None:
+            sinusoid_table = torch.cat(
+                [sinusoid_table for _ in range(self.repeat)], dim=-1
+            )
+
+        return sinusoid_table
 
 
 # LTAE ENCODER MODEL
 class LTAE2d(nn.Module):
     def __init__(
         self,
-        input_dim=128,
+        input_dim=10,
         n_head=16,
         d_k=4,
         d_model=256,
@@ -22,7 +54,7 @@ class LTAE2d(nn.Module):
         Attention-based sequence encoding that maps a sequence of images to a single feature map.
         A shared L-TAE is applied to all pixel positions of the image sequence.
         Args:
-            in_channels (int): Number of channels of the input embeddings.
+            input_dim (int): Number of channels of the input time series.
             n_head (int): Number of attention heads.
             d_k (int): Dimension of the key and query vectors.
             mlp (List[int]): Widths of the layers of the MLP that processes the concatenated outputs of the attention heads.
@@ -45,7 +77,10 @@ class LTAE2d(nn.Module):
             self.d_model = input_dim
             self.inconv = None
 
-        # assert self.mlp[0] == self.d_model
+        if self.d_model % self.n_head != 0:
+            raise ValueError(
+                f"d_model should be  divisible by n_head got n_head. Got d_model = {self.d_model}, n_head = {self.n_head}"
+            )
 
         if positional_encoding:
             self.positional_encoder = PositionalEncoder(
@@ -82,17 +117,17 @@ class LTAE2d(nn.Module):
                 pad_mask.permute(0, 2, 3, 1).contiguous().view(b * h * w, t).bool()
             )  # (bhw)xt
 
-        out = x.permute(0, 3, 4, 2, 1).contiguous().view(b * h * w, t, c)  # (BHW)xTxd
+        x = x.permute(0, 3, 4, 2, 1).contiguous().view(b * h * w, t, c)  # (BHW)xTxd
         # out = self.in_norm(out.permute(0, 2, 1)).permute(0, 2, 1)
 
         if self.inconv is not None:
-            out = self.inconv(out.permute(0, 2, 1)).permute(0, 2, 1)
+            x = self.inconv(x.permute(0, 2, 1)).permute(0, 2, 1)
 
         if self.positional_encoder is not None:
             bp = duplicate_to_img(batch_positions, h=h, w=w)  # (bhw)xt
-            out = out + self.positional_encoder(bp)
+            x = x + self.positional_encoder(bp)
 
-        out, attn = self.attention_heads(out, pad_mask=pad_mask)
+        out, attn = self.attention_heads(x, pad_mask=pad_mask)
         out = out.permute(1, 0, 2).contiguous().view(b * h * w, -1)  # Concatenate heads
 
         attn = attn.view(self.n_head, b, h, w, t).permute(

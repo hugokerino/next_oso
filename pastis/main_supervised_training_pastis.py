@@ -17,7 +17,7 @@ import sys
 
 from pastis import dataset_PASTIS
 from src import custom_loss_functions
-from supervised_models import lightning_module
+from supervised_models.lightning_module import Classifier
 from mains.main_utils import load_config, build_model, select_criterion, get_precision
 
 torch.serialization.add_safe_globals([custom_loss_functions.FocalLoss])
@@ -51,7 +51,7 @@ def main(config):
     #  Build classifier and Load data
     ########################################
 
-    criterion = select_criterion(config["criterion"])
+    criterion = select_criterion(config["criterion"], nb_class=config["num_class"])
     encoder, decoder, batch_size = build_model(config)
     config["batch_size"] = (
         batch_size  # Update batch size in config for data loading and lightning module
@@ -117,14 +117,14 @@ def main(config):
     )
 
     # Model
-    classifier = lightning_module.Classifier(
+    classifier = Classifier(
         encoder,
         decoder,
         batch_size=config["batch_size"],
         optimizer_scheduler=config["optimizer_scheduler"],
         loss_fn=criterion,
         lr=config["learning_rate"],
-        num_classe=config["num_class"],
+        num_class=config["num_class"],
         names_class=name_class,
     )
 
@@ -145,14 +145,14 @@ def main(config):
 
     best_classifier = classifier
     if not config["test_model"]:
-        best_classifier = lightning_module.Classifier.load_from_checkpoint(
+        best_classifier = Classifier.load_from_checkpoint(
             checkpoint_callback.best_model_path,
             weights_only=True,
             encoder=encoder,
             decoder=decoder,
             loss_fn=criterion,
             batch_size=config["batch_size"],
-            num_classe=config["num_class"],
+            num_class=config["num_class"],
             name_class=name_class,
             path_save_excel=f"{log_fold}/metrics.xlsx",
             path_save_raw_matrix=f"{log_fold}/raw_matrix.pt",
@@ -174,7 +174,7 @@ if __name__ == "__main__":
 
     parser = ArgumentParser()
     parser.add_argument(
-        "--config_train", type=str, default="pastis/configs/config_train_kfold.yaml"
+        "--config_train", type=str, default="pastis/configs/supervised_config.yaml"
     )
     parser.add_argument(
         "--config_model",

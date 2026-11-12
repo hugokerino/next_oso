@@ -4,7 +4,7 @@ model : alpha-earth
 
 # Paths
 path_data : /home/hkerino/Documents/nextoso-dataset/data/10m #/home/hkerino/Documents/PASTIS
-path_logs : /home/hkerino/Documents/next_oso/fm_logs # /work/THEIA/CES/oso/hugok/next_oso/pastis/logs
+path_logs : /home/hkerino/Documents/next_oso/embedding_logs # /work/THEIA/CES/oso/hugok/next_oso/pastis/logs
 
 # Data settings
 label_type : max_class
@@ -23,9 +23,10 @@ folds :
 
 # Training arguments
 decoder_type : mlp # mlp or cnn
+criterion : cross_entropy
 optimizer_scheduler : reduce_on_plateau
 batch_size : 4
 lr : 0.001
 max_epochs : 1
 dropout : 0.1
-test_model : false
+test_model : true

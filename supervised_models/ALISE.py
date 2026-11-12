@@ -6,20 +6,23 @@ from supervised_models.ALISE_blocks import sse, transformer, temporal_proj
 
 
 class ALISE(nn.Module):
-    """
-    ALISE architecture
-    """
-
     def __init__(
         self,
         patch_embedding: sse.PatchEmbedding,
         temporal_encoder: transformer.TransformerEncoder,
         temporal_projector: temporal_proj.LearnedQMultiHeadAttention,
     ):
+        """
+        ALISE architecture. Process time series satellite images with sequentially U-Net, transformer encoder and a temporal projector.
+        Args:
+            patch_embedding(PatchEmbedding): Integrate position information on feature map extracted by the spectro-spatial encoder.
+            temporal_encoder (TransformerEncoder): Transformer encoder for processing temporal information.
+            temporal_projector (LearnedQMultiHeadAttention): Multi-Head attention with learned queries, n_q = 1 to compressed sequence dimension to 1.
+        """
         super().__init__()
-        self.temporal_projector = temporal_projector
-        self.temporal_encoder = temporal_encoder
         self.patch_embedding = patch_embedding
+        self.temporal_encoder = temporal_encoder
+        self.temporal_projector = temporal_projector
 
     def forward(self, sits: Tensor, batch_positions: Tensor):
         """
@@ -30,7 +33,8 @@ class ALISE(nn.Module):
         positions : (B,T)
         padd_mask : (B,T), True means the value should be *ignored* in the attention
 
-        Returns
+        Returns:
+        out : (B,C,H,W)
         -------
 
         """
@@ -46,13 +50,14 @@ class ALISE(nn.Module):
         pad_mask = repeat(batch_positions == 0, "B T -> (B H W) T", H=H, W=W)
         x = self.temporal_encoder(x, src_key_padding_mask=pad_mask)
         x = self.temporal_projector(x, pad_mask=~pad_mask)
+        out = x.squeeze()
 
-        return x.squeeze()
+        return out
 
 
 class ALISE_encoding(nn.Module):
     """
-    ALISE architecture
+    ALISE architecture withinout temporal projector. Process time series satellite images with sequentially U-Net and transformer encoder.
     """
 
     def __init__(
@@ -74,6 +79,7 @@ class ALISE_encoding(nn.Module):
         padd_mask : (B,T), True means the value should be *ignored* in the attention
 
         Returns
+        out : (B,T,C,H,W)
         -------
 
         """
@@ -88,6 +94,6 @@ class ALISE_encoding(nn.Module):
 
         pad_mask = repeat(batch_positions == 0, "B T -> (B H W) T", H=H, W=W)
         x = self.temporal_encoder(x, src_key_padding_mask=pad_mask)
-        x = rearrange(x, "(B H W ) T C -> B T C H W", B=B, H=H, W=W)
+        out = rearrange(x, "(B H W ) T C -> B T C H W", B=B, H=H, W=W)
 
-        return x
+        return out

@@ -6,8 +6,8 @@ import sys
 from pathlib import Path
 
 
-from data_functions import dataset
-from supervised_models import lightning_module
+from supervised_models.lightning_module import Classifier
+from data_functions.dataset import get_loaders
 from mains.main_utils import load_config, build_model, select_criterion, get_precision
 
 
@@ -33,7 +33,7 @@ def main(config):
     selected_fold = config["selected_fold"]
 
     # Load dataloaders
-    _, _, dl_test = dataset.get_loaders(
+    _, _, dl_test = get_loaders(
         path_data=config["path_data"],
         use_mnt_data=config["use_mnt_data"],
         folds_train=selected_fold[0],
@@ -72,7 +72,7 @@ def main(config):
     print(f"Loading checkpoint: {checkpoint}")
     sys.stdout.flush()
 
-    best_classifier = lightning_module.Classifier.load_from_checkpoint(
+    best_classifier = Classifier.load_from_checkpoint(
         checkpoint_path=checkpoint,
         weights_only=True,
         encoder=encoder,

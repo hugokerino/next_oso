@@ -5,10 +5,10 @@ import torch
 import numpy as np
 from einops import rearrange
 
-from embedding.dataset_embedding import embedding_dataset, embedding_datamodule
+from embedding.dataset_embedding import Embedding_Dataset, EmbeddingDataModule
 
 
-class embedding_dataset_pca(embedding_dataset):
+class Embedding_Dataset_PCA(Embedding_Dataset):
     def __init__(self, scaler, pca, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.pca = pca
@@ -17,7 +17,7 @@ class embedding_dataset_pca(embedding_dataset):
     def __getitem__(self, idx):
         embedding, label = super().__getitem__(idx)
 
-        if embedding.ndim == 4:
+        if embedding.ndim == 4:  # time dimension (MALICE)
             embedding = rearrange(embedding, "t c h w -> (t c) h w")
 
         n_features = embedding.shape[0]
@@ -32,7 +32,7 @@ class embedding_dataset_pca(embedding_dataset):
         return rearrange(embedding_pca, "h w c -> c h w"), label
 
 
-class embedding_datamodule_pca(embedding_datamodule):
+class EmbeddingDatamodulePCA(EmbeddingDataModule):
     def __init__(self, n_component, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -46,7 +46,7 @@ class embedding_datamodule_pca(embedding_datamodule):
                 folds=kwargs["fold_train"], n_component=n_component
             )  # incremental PCA for malice model due to large embedding size, cannot fit in memory
 
-        self.data_train = embedding_dataset_pca(
+        self.data_train = Embedding_Dataset_PCA(
             scaler=scaler,
             pca=pca,
             dataset=self.dataset,
@@ -58,7 +58,7 @@ class embedding_datamodule_pca(embedding_datamodule):
             preload=self.preload,
             return_id=self.return_id,
         )
-        self.data_val = embedding_dataset_pca(
+        self.data_val = Embedding_Dataset_PCA(
             scaler=scaler,
             pca=pca,
             dataset=self.dataset,
@@ -70,7 +70,7 @@ class embedding_datamodule_pca(embedding_datamodule):
             preload=self.preload,
             return_id=self.return_id,
         )
-        self.data_test = embedding_dataset_pca(
+        self.data_test = Embedding_Dataset_PCA(
             scaler=scaler,
             pca=pca,
             dataset=self.dataset,
@@ -86,7 +86,7 @@ class embedding_datamodule_pca(embedding_datamodule):
     def create_scaler_pca(self, folds: list[int], n_component: int = 10):
         print("Standard PCA")
         sys.stdout.flush()
-        dataset = embedding_dataset(
+        dataset = Embedding_Dataset(
             dataset=self.dataset,
             model=self.model,
             path_data=self.path_data,
@@ -98,7 +98,7 @@ class embedding_datamodule_pca(embedding_datamodule):
         n_features = emb.shape[0]
         n_pixels = emb.shape[1] * emb.shape[2]
 
-        n_sample_PCA = dataset.__len__()
+        n_sample_PCA = 10  # dataset.__len__()
 
         X = np.empty(
             (n_sample_PCA * n_pixels, n_features), dtype=np.float32
@@ -123,7 +123,7 @@ class embedding_datamodule_pca(embedding_datamodule):
     def create_scaler_pca_incremental(self, folds: list[int], n_component: int = 10):
         print("Incremental PCA")
         sys.stdout.flush()
-        dataset = embedding_dataset(
+        dataset = Embedding_Dataset(
             dataset=self.dataset,
             model=self.model,
             path_data=self.path_data,

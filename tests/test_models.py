@@ -32,6 +32,18 @@ def test_ltae(batch):
 
     assert output.shape == (x.shape[0] * x.shape[3] * x.shape[4], model.d_model)
 
+    with pytest.raises(
+        ValueError,
+        match="d_model should be  divisible by n_head got n_head",
+    ):
+        _ = LTAE.LTAE2d(
+            input_dim=10,
+            n_head=16,
+            d_k=8,
+            d_model=129,
+            T=1000,
+        )
+
 
 def test_utae(batch):
     x, dates = batch

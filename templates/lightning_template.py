@@ -25,21 +25,61 @@ from src import metrics
 class BaseLightningModule(L.LightningModule):
     def __init__(
         self,
-        num_class: int = 25,
-        lr: float = 0.001,
-        max_epochs: int = 100,
-        loss_fn: nn.Module | None = None,
-        optimizer_scheduler: str = "sequential",
+        decoder: nn.Module,
+        loss_fn: nn.Module,
+        optimizer_scheduler: str,
+        lr: float,
+        batch_size: int,
+        max_epochs: int,
+        num_class: int,
+        H: int,
+        W: int,
         path_save_excel: str | None = None,
         path_raw_matrix: str | None = None,
         names_class: dict | np.ndarray | None = None,
-        batch_size: int | None = None,
-        H: int | None = None,
-        W: int | None = None,
     ):
+        """
+        Base PyTorch Lightning module for models.
+
+        Mutualizes lightning module for both pipelines (Encoder/Decoder and Embedding ready-to-use).
+
+        Parameters
+        ----------
+        decoder : nn.Module
+            decoder to perform final prediction
+        loss_fn : nn.Module | None
+            Loss function used for training.
+        optimizer_scheduler : str
+            Strategy for chaining optimizer and learning rate scheduler.
+            Supported values are: ``"sequential"``,  ``"cosine_annealing"`` and  ``"reduce_on_plateau"``.
+        lr : float
+            Learning rate used by the optimizer.
+        batch_size : int
+            Batch size to use.
+        max_epochs : int
+            Maximum number of training epochs.
+        num_class : int
+            Number of output classes of the model.
+        H : int | None
+            Height size of the input patches.
+        W : int | None
+            Width size of the input patches
+        path_save_excel : str | None
+            Path to the Excel file where training metrics are saved.
+            If None, metrics are not exported to Excel.
+        path_raw_matrix : str | None
+            Path to the file where the raw confusion matrix is saved (no normalisation).
+            If None, the matrix is not saved.
+        names_class : dict | np.ndarray | None
+            Class names used to label the confusion matrix and exported metrics.
+            If None, classes are indexed by their integer label.
+        """
+
         super().__init__()
 
-        # Attributs communs
+        # Shared attributs
+        self.decoder = decoder
+        self.loss_fn = loss_fn
         self.num_class = num_class
         self.lr = lr
         self.max_epochs = max_epochs
@@ -51,14 +91,6 @@ class BaseLightningModule(L.LightningModule):
         self.path_save_excel = path_save_excel
         self.path_raw_matrix = path_raw_matrix
 
-        # Loss function (peut être redéfinie dans les classes filles)
-        self.loss_fn = (
-            loss_fn
-            if loss_fn is not None
-            else torch.nn.CrossEntropyLoss(ignore_index=0)
-        )
-
-        # Métriques (identiques dans les deux classes)
         self.acc_metric = MulticlassAccuracy(
             num_classes=self.num_class, ignore_index=0, average="micro"
         )
@@ -73,7 +105,6 @@ class BaseLightningModule(L.LightningModule):
         )
         self.kappa = MulticlassCohenKappa(num_classes=self.num_class, ignore_index=0)
 
-        # Stockage des prédictions pour le test
         self.y_pred_test: list[torch.Tensor] = []
         self.y_true_test: list[torch.Tensor] = []
 
@@ -130,12 +161,12 @@ class BaseLightningModule(L.LightningModule):
             torch.save(metrics_dict["cm"].cpu(), self.path_raw_matrix)
 
     def on_before_optimizer_step(self, optimizer):
-        # Calcul de la norme globale des gradients (pas de clipping ici)
+        # Monitor norm gradient (no clipping here)
         grad_norm = torch.nn.utils.clip_grad_norm_(
             self.parameters(),
-            max_norm=float("inf"),  # inf = pas de clipping
+            max_norm=float("inf"),  # inf =no clipping
         )
-        # Log avec Lightning (Tensorboard ou autre logger)
+
         self.log(
             "grad_norm",
             grad_norm,
@@ -145,7 +176,6 @@ class BaseLightningModule(L.LightningModule):
             sync_dist=True,
         )
 
-        # Log learning rate from scheduler
         current_lr = optimizer.param_groups[0]["lr"]
         self.log(
             "learning_rate",

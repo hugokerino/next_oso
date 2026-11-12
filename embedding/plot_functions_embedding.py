@@ -5,14 +5,14 @@ from einops import rearrange
 from matplotlib import pyplot as plt
 
 from templates.constants import cmap_oso
-from embedding.dataset_embedding import embedding_dataset
+from embedding.dataset_embedding import Embedding_Dataset
 
 
 def plot_embeddings(
     ID: str,
-    alpha_earth_dataset: embedding_dataset,
-    tessera_dataset: embedding_dataset,
-    malice_dataset: embedding_dataset,
+    alpha_earth_dataset: Embedding_Dataset,
+    tessera_dataset: Embedding_Dataset,
+    malice_dataset: Embedding_Dataset,
     path_data: str,
     plot_label: bool,
     figsize=(20, 5),
@@ -99,7 +99,7 @@ def plot_embeddings(
 
 def plot_embedding(
     ID: str,
-    emb_data: embedding_dataset,
+    emb_data: Embedding_Dataset,
     path_data: str,
     figsize=(15, 8),
 ):

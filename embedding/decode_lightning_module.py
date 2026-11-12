@@ -11,45 +11,48 @@ class DecodeEmbedding(BaseLightningModule):
     def __init__(
         self,
         decoder: nn.Module,
-        config: dict,
+        loss_fn: nn.Module,
+        optimizer_scheduler: str = "reduce_on_plateau",
+        lr: float = 0.001,
+        batch_size: int = 32,
+        max_epochs: int = 1000,
+        num_class: int = 25,
+        H: int = 128,
+        W: int = 128,
+        path_save_excel: str | None = None,
+        path_raw_matrix: str | None = None,
         names_class: dict | np.ndarray | None = None,
     ):
-        num_class = config.get("num_class")
-        lr = config.get("lr", 1e-3)
-        max_epochs = config.get("max_epochs", 100)
-        optimizer_scheduler = config.get("optimizer_scheduler", "sequential")
-        path_save_excel = config.get("path_save_excel")
-        path_raw_matrix = config.get("path_save_raw_matrix")
-        loss_fn = (
-            torch.nn.CrossEntropyLoss(ignore_index=0)
-            if config.get("label_type") == "max_class"
-            or config.get("label_type") == "extended"
-            or config.get("label_type") is None
-            else torch.nn.CrossEntropyLoss()
-        )
+        """
+        Lightning module for Embedding ready-to-use pipeline.
+
+        Notes
+        -----
+        All parameters are inherited from : class:`BaseLightningModule`. See its docstring
+        """
 
         super().__init__(
+            decoder=decoder,
             num_class=num_class,
             lr=lr,
+            batch_size=batch_size,
             max_epochs=max_epochs,
             loss_fn=loss_fn,
             optimizer_scheduler=optimizer_scheduler,
             path_save_excel=path_save_excel,
             path_raw_matrix=path_raw_matrix,
             names_class=names_class,
+            H=H,
+            W=W,
         )
-        # Attribut spécifique
-        self.decoder = decoder
 
     def forward(self, x):
-        b_s = x.shape[0]
+        b_s = x.shape[0]  # batch_size
 
         if isinstance(self.decoder, MLP_Decoder):
             if x.ndim == 5:  # time dimension
-                h_s, w_s = x.shape[3], x.shape[4]
                 x_ = rearrange(x, "b t c h w -> (b h w) (t c)")
             else:
-                h_s, w_s = x.shape[2], x.shape[3]
                 x_ = rearrange(x, "b c h w -> (b h w) c")
 
             out = self.decoder(x_)
@@ -58,8 +61,8 @@ class DecodeEmbedding(BaseLightningModule):
                 out,
                 "(b h w) c -> b c h w",
                 b=b_s,
-                h=h_s,
-                w=w_s,
+                h=self.H,  # TO DO : make it work
+                w=self.W,  # TO DO : make it work
             )
 
         elif isinstance(self.decoder, CNN_Decoder):

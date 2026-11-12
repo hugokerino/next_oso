@@ -4,39 +4,12 @@ import copy
 from supervised_models.ALISE_blocks import temporal_proj
 
 
-# Classical position encoding
-class PositionalEncoder(nn.Module):
-    def __init__(self, d, T=1000, repeat=None, offset=0):
-        super().__init__()
-        self.d = d
-        self.T = T
-        self.repeat = repeat
-        self.denom = torch.pow(
-            T, 2 * (torch.arange(offset, offset + d).float() // 2) / d
-        )
-
-    def forward(self, batch_positions):
-        self.denom = self.denom.to(batch_positions.device)
-        sinusoid_table = (
-            batch_positions[:, :, None] / self.denom[None, None, :]
-        )  # B x T x C
-        sinusoid_table[:, :, 0::2] = torch.sin(sinusoid_table[:, :, 0::2])  # dim 2i
-        sinusoid_table[:, :, 1::2] = torch.cos(sinusoid_table[:, :, 1::2])  # dim 2i+1
-
-        if self.repeat is not None:
-            sinusoid_table = torch.cat(
-                [sinusoid_table for _ in range(self.repeat)], dim=-1
-            )
-
-        return sinusoid_table
-
-
 class MLP_Decoder(nn.Module):
     """
     A simple MLP.
     """
 
-    def __init__(self, layers=[128, 64, 19], dropout=0.2):
+    def __init__(self, layers: list[int] = [128, 64, 19], dropout: float = 0.2):
         super().__init__()
 
         self.n_neurons = copy.deepcopy(layers)

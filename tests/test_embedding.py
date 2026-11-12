@@ -1,49 +1,68 @@
+import yaml
+import pytest
+
 import torch
-from embedding import dataset_embedding, decode_lightning_module
-from supervised_models.utils_model import MLP_Decoder, CNN_Decoder
+from embedding.dataset_embedding import EmbeddingDataModule, Embedding_Dataset
+from embedding.decode_lightning_module import DecodeEmbedding
+
+from mains.main_utils import build_decoder
+
+path_config = "./configs/embeddings/config_local.yaml"
+with open(path_config, "r") as f:
+    train_cfg = yaml.safe_load(f)
+config = {**train_cfg}
 
 
-def test_embedding():
+def test_embedding(config=config):
     model = "alpha-earth"  # alpha-earth, tessera, malice
-    datamodule = dataset_embedding.embedding_datamodule(
+    datamodule = EmbeddingDataModule(
         dataset="next_oso",
         path_data="/home/hkerino/Documents/nextoso-dataset/data/10m",
         model=model,
         fold_train=[1],
         fold_val=[2],
         fold_test=[3],
-        batch_size=2,
+        batch_size=config["batch_size"],
         num_workers=1,
         preload=False,
         label_type="max_class",
         mask=True,
     )
 
-    if model == "alpha-earth":
-        layers = [64, 32, 25]
-    elif model == "tessera":
-        layers = [128, 64, 32, 25]
-    elif model == "malice":
-        layers = [640, 320, 64, 25]
-    else:
-        print(f"{model} not recognized")
+    criterion = torch.nn.CrossEntropyLoss(ignore_index=0)
 
-    config = {
-        "dataset": "next_oso",
-        "num_class": 25,
-        "lr": 1e-3,
-        "max_epochs": 2,
-        "optimizer_scheduler": "cosine_annealing",
-        "path_name_class": "/home/hkerino/Documents/nextoso-dataset/data/auxiliary/OSO/oso_classes.csv",
-        "label_type": "max_class",
-        "path_save_excel": None,
-    }
-
-    classifier_MLP = decode_lightning_module.DecodeEmbedding(
-        decoder=MLP_Decoder(layers=layers, dropout=0.1), config=config
+    decoder_mlp = build_decoder(
+        model=model,
+        decoder_type="mlp",
+        num_class=config["num_class"],
+        dropout=config["dropout"],
     )
-    classifier_CNN = decode_lightning_module.DecodeEmbedding(
-        decoder=CNN_Decoder(layers=layers, dropout=0.1), config=config
+    classifier_MLP = DecodeEmbedding(
+        decoder=decoder_mlp,
+        loss_fn=criterion,
+        batch_size=config["batch_size"],
+        num_class=config["num_class"],
+        lr=config["lr"],
+        max_epochs=config["max_epochs"],
+        optimizer_scheduler=config["optimizer_scheduler"],
+        names_class=datamodule.data_train.name_labels,
+    )
+
+    decoder_cnn = build_decoder(
+        model=model,
+        decoder_type="cnn",
+        num_class=config["num_class"],
+        dropout=config["dropout"],
+    )
+    classifier_CNN = DecodeEmbedding(
+        decoder=decoder_cnn,
+        loss_fn=criterion,
+        batch_size=config["batch_size"],
+        num_class=config["num_class"],
+        lr=config["lr"],
+        max_epochs=config["max_epochs"],
+        optimizer_scheduler=config["optimizer_scheduler"],
+        names_class=datamodule.data_train.name_labels,
     )
 
     # Training step
@@ -65,47 +84,57 @@ def test_embedding():
     classifier_CNN.test_step(test_batch)
 
 
-def test_embedding_pastis():
-    config = {
-        "dataset": "pastis",
-        "num_class": 19,
-        "lr": 1e-3,
-        "max_epochs": 2,
-        "optimizer_scheduler": "reduce_on_plateau",
-        "path_name_class": "/home/hkerino/Documents/PASTIS/label_names_reduced.json",
-        "label_type": None,
-        "path_save_excel": None,
-    }
-
+def test_embedding_pastis(config=config):
     model = "alpha-earth"  # alpha-earth, tessera, malice
-    datamodule = dataset_embedding.embedding_datamodule(
+    num_class_pastis = 19
+    datamodule = EmbeddingDataModule(
         dataset="pastis",
         model=model,
         path_data="/home/hkerino/Documents/PASTIS",
         fold_train=[1],
         fold_val=[2],
         fold_test=[3],
-        batch_size=2,
+        batch_size=config["batch_size"],
         num_workers=1,
         preload=False,
         label_type=None,
         mask=True,
     )
 
-    if model == "alpha-earth":
-        layers = [64, 32, 25]
-    elif model == "tessera":
-        layers = [128, 64, 32, 25]
-    elif model == "malice":
-        layers = [640, 320, 64, 25]
-    else:
-        print(f"{model} not recognized")
+    criterion = torch.nn.CrossEntropyLoss(ignore_index=0)
 
-    classifier_MLP = decode_lightning_module.DecodeEmbedding(
-        decoder=MLP_Decoder(layers=layers, dropout=0.1), config=config
+    decoder_mlp = build_decoder(
+        model=model,
+        decoder_type="mlp",
+        num_class=num_class_pastis,
+        dropout=config["dropout"],
     )
-    classifier_CNN = decode_lightning_module.DecodeEmbedding(
-        decoder=CNN_Decoder(layers=layers, dropout=0.1), config=config
+    classifier_MLP = DecodeEmbedding(
+        decoder=decoder_mlp,
+        loss_fn=criterion,
+        batch_size=config["batch_size"],
+        num_class=num_class_pastis,
+        lr=config["lr"],
+        max_epochs=config["max_epochs"],
+        optimizer_scheduler=config["optimizer_scheduler"],
+        names_class=datamodule.data_train.name_labels,
+    )
+
+    decoder_cnn = build_decoder(
+        model=model,
+        decoder_type="cnn",
+        num_class=num_class_pastis,
+        dropout=config["dropout"],
+    )
+    classifier_CNN = DecodeEmbedding(
+        decoder=decoder_cnn,
+        loss_fn=criterion,
+        batch_size=config["batch_size"],
+        num_class=num_class_pastis,
+        lr=config["lr"],
+        max_epochs=config["max_epochs"],
+        optimizer_scheduler=config["optimizer_scheduler"],
+        names_class=datamodule.data_train.name_labels,
     )
 
     train_loader = datamodule.train_dataloader()
@@ -126,3 +155,17 @@ def test_embedding_pastis():
     test_batch = next(iter(datamodule.test_dataloader()))
     classifier_MLP.test_step(test_batch)
     classifier_CNN.test_step(test_batch)
+
+
+def test_raise_errors():
+    with pytest.raises(
+        ValueError,
+        match="Dataset error.",
+    ):
+        Embedding_Dataset(dataset="Not_implemented")
+
+    with pytest.raises(
+        ValueError,
+        match="Model error.",
+    ):
+        Embedding_Dataset(model="Not_implemented")

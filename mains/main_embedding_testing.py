@@ -9,9 +9,10 @@ from argparse import ArgumentParser
 
 import yaml
 
-from embedding import dataset_embedding, decode_lightning_module
+from embedding.dataset_embedding import EmbeddingDataModule
+from embedding.decode_lightning_module import DecodeEmbedding
 
-from mains.main_utils import get_precision, build_decoder
+from mains.main_utils import get_precision, build_decoder, select_criterion
 
 torch.set_float32_matmul_precision("high")
 
@@ -24,7 +25,7 @@ def main(config):
     # config["selected_fold"] holds the actual tuple/list of [train, val, test] for this job
     selected_fold = config["selected_fold"]
 
-    datamodule = dataset_embedding.embedding_datamodule(
+    datamodule = EmbeddingDataModule(
         dataset=config["dataset"],
         model=model,
         path_data=config["path_data"],
@@ -55,11 +56,22 @@ def main(config):
     config["path_save_excel"] = f"{log_fold}/metrics_testing.xlsx"
     config["path_save_raw_matrix"] = f"{log_fold}/raw_matrix_testing.pt"
 
-    decoder = build_decoder(model, config["decoder_type"], config["dataset"], dropout=0)
-    best_classifier = decode_lightning_module.DecodeEmbedding.load_from_checkpoint(
+    decoder = build_decoder(
+        model=model,
+        decoder_type=config["decoder_type"],
+        num_class=config["num_class"],
+        dropout=0,
+    )
+    criterion = select_criterion(config["criterion"], nb_class=config["num_class"])
+    best_classifier = DecodeEmbedding.load_from_checkpoint(
         checkpoint,
         decoder=decoder,
-        config=config,
+        loss_fn=criterion,
+        batch_size=config["batch_size"],
+        num_class=config["num_class"],
+        lr=config["lr"],
+        max_epochs=config["max_epochs"],
+        optimizer_scheduler=config["optimizer_scheduler"],
         names_class=datamodule.data_test.name_labels,
     )
     best_classifier.eval()

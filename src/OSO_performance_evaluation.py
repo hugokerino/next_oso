@@ -8,7 +8,18 @@ from src.metrics import compute_metrics, metrics_to_excel
 from templates.constants import names_class, num_class
 from templates.lightning_template import BaseLightningModule
 
-module = BaseLightningModule(num_class=25, lr=1, max_epochs=1)
+# Module to exploit same metrics as pipelines used
+module = BaseLightningModule(
+    decoder=torch.nn.Module,
+    loss_fn=torch.nn.Module,
+    optimizer_scheduler="",
+    lr=0.0,
+    batch_size=0,
+    max_epochs=0,
+    num_class=25,
+    H=0,
+    W=0,
+)
 
 
 def calculate_and_save_metrics_OSO_kfold(

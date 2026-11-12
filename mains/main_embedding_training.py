@@ -17,8 +17,10 @@ from datetime import datetime
 import signal
 
 
-from embedding import dataset_embedding, decode_lightning_module
-from mains.main_utils import get_precision, build_decoder
+from embedding.dataset_embedding import EmbeddingDataModule
+from embedding.decode_lightning_module import DecodeEmbedding
+
+from mains.main_utils import get_precision, build_decoder, select_criterion
 
 torch.set_float32_matmul_precision("high")
 
@@ -38,7 +40,7 @@ def main(config):
     # config["selected_fold"] holds the actual tuple/list of [train, val, test] for this job
     selected_fold = config["selected_fold"]
 
-    datamodule = dataset_embedding.embedding_datamodule(
+    datamodule = EmbeddingDataModule(
         dataset=config["dataset"],
         model=model,
         path_data=config["path_data"],
@@ -58,10 +60,23 @@ def main(config):
     config["path_save_raw_matrix"] = f"{log_fold}/raw_matrix.pt"
 
     decoder = build_decoder(
-        model, config["decoder_type"], config["dataset"], config["dropout"]
+        model=model,
+        decoder_type=config["decoder_type"],
+        num_class=config["num_class"],
+        dropout=config["dropout"],
     )
-    classifier = decode_lightning_module.DecodeEmbedding(
-        decoder=decoder, names_class=datamodule.data_train.name_labels, config=config
+
+    criterion = select_criterion(config["criterion"], nb_class=config["num_class"])
+
+    classifier = DecodeEmbedding(
+        decoder=decoder,
+        loss_fn=criterion,
+        batch_size=config["batch_size"],
+        num_class=config["num_class"],
+        lr=config["lr"],
+        max_epochs=config["max_epochs"],
+        optimizer_scheduler=config["optimizer_scheduler"],
+        names_class=datamodule.data_train.name_labels,
     )
 
     limit_batch = 2 if config["test_model"] else 1.0  # 1.0 means 100% data
@@ -95,7 +110,10 @@ def main(config):
 
     # Remove dropout
     classifier.decoder = build_decoder(
-        model, config["decoder_type"], config["dataset"], dropout=0
+        model=model,
+        decoder_type=config["decoder_type"],
+        num_class=config["num_class"],
+        dropout=0,
     )
     trainer.test(classifier, datamodule=datamodule, ckpt_path="best")
 

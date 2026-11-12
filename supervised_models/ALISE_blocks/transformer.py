@@ -9,6 +9,10 @@ def Transformer(
     batch_first=True,
     num_layers=3,
 ) -> TransformerEncoder:
+    """
+    Transformer encoder for sequence data, composed of multiple TransformerEncoderLayer instances.
+    Wrapper around the PyTorch TransformerEncoder class.
+    """
     layer = TransformerEncoderLayer(
         d_model=d_model,
         nhead=nhead,

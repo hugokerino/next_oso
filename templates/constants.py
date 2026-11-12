@@ -2,6 +2,10 @@ import os
 import pandas as pd
 from matplotlib.colors import ListedColormap
 
+"""
+Python file to store all constans relative to Next-OSO
+"""
+
 # Check if running on cluster or locally
 is_cluster = "SLURM_JOB_ID" in os.environ
 metadata = (

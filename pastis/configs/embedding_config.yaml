@@ -9,6 +9,7 @@ path_logs : /work/THEIA/CES/oso/hugok/next_oso/pastis/logs
 # Data settings
 label_type : max_class
 label_type_test : max_class
+num_class : 19
 preload_data : true
 num_worker: 4
 
@@ -22,6 +23,8 @@ folds :
 
 # Training arguments
 decoder_type : mlp # mlp or cnn
+criterion : cross_entropy
+optimizer_scheduler : reduce_on_plateau
 batch_size : 8
 lr : 0.001
 max_epochs : 300

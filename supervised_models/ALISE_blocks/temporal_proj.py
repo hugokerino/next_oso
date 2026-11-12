@@ -8,7 +8,7 @@ class LearnedQMultiHeadAttention(nn.Module):
     """Multi-Head Attention module
     Modified from github.com/jadore801120/attention-is-all-you-need-pytorch
     No W_Q and W_V matrix to project queries and values.
-     Value features are split along the heads
+    Value features are split along the heads
     """
 
     def __init__(self, n_head=4, d_k=8, d_in=64, n_q=1):

@@ -16,8 +16,8 @@ from datetime import datetime
 import sys
 
 
-from data_functions import dataset
-from supervised_models import lightning_module
+from supervised_models.lightning_module import Classifier
+from data_functions.dataset import get_loaders
 from src import custom_loss_functions
 from mains.main_utils import load_config, build_model, select_criterion, get_precision
 
@@ -63,7 +63,7 @@ def main(config):
     selected_fold = config["selected_fold"]
 
     # Load dataloaders
-    dl_train, dl_val, dl_test = dataset.get_loaders(
+    dl_train, dl_val, dl_test = get_loaders(
         path_data=config["path_data"],
         use_mnt_data=config["use_mnt_data"],
         folds_train=selected_fold[0],
@@ -126,7 +126,7 @@ def main(config):
     )
 
     # Model
-    classifier = lightning_module.Classifier(
+    classifier = Classifier(
         encoder,
         decoder,
         batch_size=config["batch_size"],
@@ -154,7 +154,7 @@ def main(config):
     sys.stdout.flush()
     best_classifier = classifier
     if not config["test_model"]:
-        best_classifier = lightning_module.Classifier.load_from_checkpoint(
+        best_classifier = Classifier.load_from_checkpoint(
             checkpoint_callback.best_model_path,
             weights_only=True,
             encoder=encoder,

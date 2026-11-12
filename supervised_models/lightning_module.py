@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import numpy as np
 
 from einops import rearrange, repeat
 
@@ -12,19 +13,33 @@ class Classifier(BaseLightningModule):
         self,
         encoder: nn.Module,
         decoder: nn.Module,
-        batch_size: int,
         loss_fn: nn.Module,
-        optimizer_scheduler: str = "sequential",
+        optimizer_scheduler: str = "reduce_on_plateau",
         lr: float = 1e-3,
+        batch_size: int = 1,
         max_epochs: int = 100,
         num_class: int = 25,
         H: int = 128,
         W: int = 128,
-        names_class: dict | None = None,
         path_save_excel: str | None = None,
         path_raw_matrix: str | None = None,
+        names_class: dict | np.ndarray | None = None,
     ):
+        """
+        Lightning module for Encoder/Decoder pipeline.
+
+        Parameters
+        ----------
+        encoder : nn.Module
+            Encoder producing the embedding from input patches.
+
+        Notes
+        -----
+        All other parameters are inherited from : class:`BaseLightningModule`. See its docstring
+        """
+
         super().__init__(
+            decoder=decoder,
             num_class=num_class,
             lr=lr,
             max_epochs=max_epochs,
@@ -38,8 +53,8 @@ class Classifier(BaseLightningModule):
             W=W,
         )
 
+        # Specific attribute
         self.encoder = encoder
-        self.decoder = decoder
 
     def _forward(self, batch):
         ### Unpack the batch ###

@@ -107,19 +107,12 @@ def get_precision():
 
 
 # Build decoder based on model, data and decoder type
-def build_decoder(model, decoder_type, dataset, dropout):
+def build_decoder(model, decoder_type, num_class, dropout):
     ENCODER_DIM = {
         "alpha-earth": 64,
         "tessera": 128,
         "malice": 640,
     }
-
-    if dataset == "next_oso":
-        num_class = 25
-    elif dataset == "pastis":
-        num_class = 19
-    else:
-        raise ValueError(f"Unknown data {dataset}")
 
     in_channels = ENCODER_DIM[model]
 
