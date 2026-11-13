@@ -63,7 +63,7 @@ def test_alise(batch):
     model = ALISE.ALISE(
         patch_embedding=sse.PatchEmbedding(
             sse=sse.Unet(planes=64),
-            tpe=sse.PositionalEncoder(d=64),
+            tpe=sse.PositionalEncoder(d=64, T=1000),
         ),
         temporal_encoder=transformer.Transformer(),
         temporal_projector=temporal_proj.LearnedQMultiHeadAttention(d_in=64, n_q=1),

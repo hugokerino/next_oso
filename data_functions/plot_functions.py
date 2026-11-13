@@ -1023,7 +1023,7 @@ def plot_geodatas(s2, geodatas, s2_timestep=0):
     slope = geodatas[3, :, :]
 
     ax[0].imshow(to_RGB(s2[:, s2_timestep, :, :], norm=True))
-    ax[0].set_title("Image Sentinel-2")
+    ax[0].set_title("Sentinel-2 RGB")
     ax[0].axis("off")
     im1 = ax[1].imshow(elev, cmap="GnBu")
     ax[1].set_title("DEM - Elevation Normalized")

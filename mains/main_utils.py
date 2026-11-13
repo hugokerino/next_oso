@@ -47,7 +47,7 @@ def build_model(config: dict):
         encoder = ALISE.ALISE(
             patch_embedding=sse.PatchEmbedding(
                 sse=sse.Unet(planes=emb_dim, **enc_cfg["sse"]),
-                tpe=sse.PositionalEncoder(d=emb_dim),
+                tpe=sse.PositionalEncoder(d=emb_dim, T=enc_cfg["scaling_constant"]),
             ),
             temporal_encoder=transformer.Transformer(**enc_cfg["transformer"]),
             temporal_projector=temporal_proj.LearnedQMultiHeadAttention(

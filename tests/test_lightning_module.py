@@ -53,7 +53,8 @@ def get_models(ltae_config, utae_config, alise_config, decoder_type="cnn"):
                         **alise_config["encoder"]["sse"],
                     ),
                     tpe=sse.PositionalEncoder(
-                        d=alise_config["encoder"]["embedding_dim"]
+                        d=alise_config["encoder"]["embedding_dim"],
+                        T=alise_config["encoder"]["scaling_constant"],
                     ),
                 ),
                 temporal_encoder=transformer.Transformer(

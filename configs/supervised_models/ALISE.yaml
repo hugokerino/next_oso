@@ -3,6 +3,7 @@ mask_need: false
 
 encoder:
   embedding_dim: 64
+  scaling_constant: 62
   sse:
     inplanes: 10
     encoder_widths: [64, 64, 64, 128]
