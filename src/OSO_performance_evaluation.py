@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import torch
 import numpy as np
@@ -70,3 +71,25 @@ def calculate_and_save_metrics_OSO_kfold(
             metrics=metrics_dict,
             path=f"{os.path.join(path_oso_maps, str(fold))}/metrics_{label_type_test}.xlsx",
         )
+
+
+def convert_OSO_to_tensor(
+    path_oso_maps="/home/hkerino/Documents/OSO_maps",
+    path_to_save="/home/hkerino/Documents/nextoso-dataset/preds/preds_OSO",
+):
+    path_oso_maps = Path(path_oso_maps)
+    path_to_save = Path(path_to_save)
+    for fold in range(1, 6):
+        files = [
+            f
+            for f in sorted(os.listdir(path_oso_maps / f"fold_{fold}"))
+            if f.endswith(".nc")
+        ]
+        for file in files:
+            id = file.split("_")[1].split(".")[0]
+            oso_aoi = torch.from_numpy(
+                xr.open_dataset(path_oso_maps / f"fold_{fold}/{file}")[
+                    "__xarray_dataarray_variable__"
+                ].data.squeeze()
+            )
+            torch.save(oso_aoi, path_to_save / f"pred_OSO_{id}.pt")
