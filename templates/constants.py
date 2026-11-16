@@ -9,7 +9,7 @@ Python file to store all constans relative to Next-OSO
 # Check if running on cluster or locally
 is_cluster = "SLURM_JOB_ID" in os.environ
 metadata = (
-    "/work/THEIA/CES/oso/hugok/nextoso-dataset/metadata"
+    "/work/THEIA/CES/oso/hugok/nextoso-dataset/metadata/"
     if is_cluster
     else "/home/hkerino/Documents/nextoso-dataset/data/10m/metadata/"
 )
