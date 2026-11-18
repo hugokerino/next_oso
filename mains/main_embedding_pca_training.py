@@ -47,6 +47,7 @@ def main(config):
         label_type=config["label_type"],
         mask=True,
         n_component=config["n_component"],
+        percentage_sample=0.01 if config["test_model"] else 1.0,
     )
 
     # Decoder

@@ -14,10 +14,15 @@ class ALISE(nn.Module):
     ):
         """
         ALISE architecture. Process time series satellite images with sequentially U-Net, transformer encoder and a temporal projector.
-        Args:
-            patch_embedding(PatchEmbedding): Integrate position information on feature map extracted by the spectro-spatial encoder.
-            temporal_encoder (TransformerEncoder): Transformer encoder for processing temporal information.
-            temporal_projector (LearnedQMultiHeadAttention): Multi-Head attention with learned queries, n_q = 1 to compressed sequence dimension to 1.
+
+        Parameters
+        ----------
+            patch_embedding(PatchEmbedding):
+                Integrate position information on feature map extracted by the spectro-spatial encoder.
+            temporal_encoder (TransformerEncoder):
+                Transformer encoder for processing temporal information.
+            temporal_projector (LearnedQMultiHeadAttention):
+                Multi-Head attention with learned queries, n_q = 1 to compressed sequence dimension to 1.
         """
         super().__init__()
         self.patch_embedding = patch_embedding

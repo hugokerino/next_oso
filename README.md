@@ -32,7 +32,7 @@ This repository contains codes to train and evaluate Deep Learning (DL) models a
 ├── supervised_models      # Encoders architectures
 ├── templates              # Base class and constants
 ├── test                   # Pytests
-├── overview.ipynb         # Notebook for getting started
+└── overview.ipynb         # Notebook for getting started
 
 ```
 ## Environment
@@ -76,6 +76,8 @@ The dependencies are specified in pixi.toml, while pixi.lock records the exact d
 
 ## Usage
 
+Below are a few examples of how to run scripts
+
 **Examples**
 
 * Training ALISE architecure on a GPU on first fold :
@@ -93,26 +95,27 @@ pixi run -e gpu python mains/main_supervised_training.py \
 sbatch scripts/script_supervised_train_kfold.slurm
 ```
 
-During training, a log directory is created with the following structure :
+* During training, a log directory is created with the following structure :
 
 ```
 .
-├── config_parameters.json     # Store all parameters used for training
 ├── fold_1
-│   ├── Checkpoints            # Contains best model in .ckpt format
-│   ├── metrics.xlsx           # Evaluation metrics
-│   ├── raw_matrix.pt          # Confusion matrix. no-normalize
-│   └── tensorboards           # store tensorboards tracking training and model evaluation metrics
+│   ├── Checkpoints/               # Contains best model in .ckpt format
+│   ├── metrics.xlsx               # Evaluation metrics
+│   ├── raw_matrix.pt              # Confusion matrix. no-normalize
+│   ├── tensorboards/              # Store tensorboards tracking training and model evaluation metrics
+│   └── config_parameters.json     # Store all parameters used for training
 ├── fold_2
 ...
 └── fold_5
-    ├── Checkpoints
+    ├── Checkpoints/
     ├── metrics.xlsx
     ├── raw_matrix.pt
-    └── tensorboards
+│   ├── tensorboards/
+│   └── config_parameters.json
 ```
 
-Once training is completed, to compute mean metric accross 5 folds :
+* Once training is completed, to compute mean metric accross 5 folds :
 
 ```bash
 pixi run python src/summarize_kfold.py \
@@ -120,7 +123,7 @@ pixi run python src/summarize_kfold.py \
     --output_file name_of_the_xlsx_file \
 ```
 
-Test an embedding model already train on last fold :
+* Test an embedding model already train on last fold :
 ```bash
 pixi run python mains/main_embedding_testing.py \
     --config configs/FM_models/config_trex.yaml \

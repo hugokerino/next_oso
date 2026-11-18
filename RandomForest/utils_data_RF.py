@@ -1,8 +1,13 @@
 import pandas
 import numpy as np
+from data_functions.utils_data import to_RGB
 
 
 def s2_spectrale_indice(s2):
+    """
+    Create NDVI, NDWI and Brightness indices
+    """
+
     ndvi = (s2["B8"] - s2["B4"]) / (s2["B4"] + s2["B8"] + 1e-6)
     ndwi = (s2["B3"] - s2["B8"]) / (s2["B3"] + s2["B8"] + 1e-6)
     brgt = np.sqrt(
@@ -17,14 +22,18 @@ def s2_spectrale_indice(s2):
 
 
 def interpolate(s2_list, grid, s2_masks=None):
+    """
+    Time interpolation. Put S2 time series on a commun and fixed grid
+    TODO : Use S2 validity mask to select or not timesteps. Difficulty : on a same timestep some pixels can be invalid while others are valid
+    """
     dataset_list = []
     for idx, s2 in enumerate(s2_list):
         if s2_masks:
-            s2_mask = s2_masks[idx]  # t h w
+            s2_mask = s2_masks[idx]  # (t h w). Should be use for interpolation see TODO
             print(s2_mask.shape)
 
         # time
-        time_list = []  # alpha + pair of time to interpolate
+        time_list = []  # store alpha + pair of time to interpolate
 
         for target_date in grid:
             if target_date > s2["time"][0].values:
@@ -74,6 +83,9 @@ def interpolate(s2_list, grid, s2_masks=None):
 
 
 def find_clear_img_in_xarray(s2_xr):
+    """
+    Find a timestep with valid S2 validity mask to return a RGB image
+    """
     mask = s2_xr["S2_mask"]
     t_test = (mask == 0).all(dim=("x", "y"))
 
@@ -84,4 +96,4 @@ def find_clear_img_in_xarray(s2_xr):
         t_idx = num_zeros.argmax()  # Index du max de 0
         img = s2_xr.isel(time=t_idx)
 
-    return img
+    return to_RGB(img)

@@ -7,14 +7,20 @@ from supervised_models.ALISE_blocks import sse, transformer, temporal_proj
 
 
 def load_config(train_cfg_path: str, model_cfg_path: str) -> dict:
+    """
+    Create and return a dictionnary from model yaml config and training yaml config
+    """
     with open(train_cfg_path, "r") as f:
         train_cfg = yaml.safe_load(f)
     with open(model_cfg_path, "r") as f:
         model_cfg = yaml.safe_load(f)
-    return {**train_cfg, **model_cfg}  # fusion des deux configs
+    return {**train_cfg, **model_cfg}
 
 
 def build_model(config: dict):
+    """
+    Build Encoder and Decoder for Encoder/Decoder structure based on config parameter
+    """
     model_name = config["model"]
     enc_cfg = config["encoder"]
     dec_cfg = config["decoder"]
@@ -25,8 +31,7 @@ def build_model(config: dict):
     if config["use_mnt_data"]:
         dec_cfg["layers"][0] += (
             4 * enc_cfg["temporal_projector"]["n_q"] if model_name == "ALISE" else 4
-        )  # Ajouter 4 dimensions pour les coordonnées spatiales si utilisé seulement au decoding
-        # enc_cfg["input_dim"] += 4
+        )  # Add dimensions to first decoder layer if geo datas (MNT,coords) are used.
 
     dec_cfg["layers"][-1] = config["num_class"]
     if config["decoder_type"] == "mlp":
@@ -61,13 +66,16 @@ def build_model(config: dict):
 
     if (
         config["batch_size"] is not None
-    ):  # Si une taille de batch est spécifiée dans la config, l'utiliser
+    ):  # if specific batch size in config replace and use it
         batch_size = config["batch_size"]
 
     return encoder, decoder, batch_size
 
 
 def select_criterion(loss: str, nb_class: int = 25):
+    """
+    Select and return a loss function for training
+    """
     criterion: torch.nn.Module
 
     if loss == "cross_entropy":
@@ -99,6 +107,9 @@ def select_criterion(loss: str, nb_class: int = 25):
 
 
 def get_precision():
+    """
+    Precision to be used in the Trainer. If available bf16-mixed should be used (speed up convergence).
+    """
     if not torch.cuda.is_available():
         return "32"  # CPU en local
     if torch.cuda.is_bf16_supported():
@@ -106,8 +117,11 @@ def get_precision():
     return "16-mixed"
 
 
-# Build decoder based on model, data and decoder type
 def build_decoder(model, decoder_type, num_class, dropout):
+    """
+    Build decoder for Embedding ready-to-use pipeline.
+    Two hidden layers, either MLP or CNN. First layer is determined by model used and final one by number of class  to predict.
+    """
     ENCODER_DIM = {
         "alpha-earth": 64,
         "tessera": 128,

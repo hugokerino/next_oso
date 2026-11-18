@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import pandas as pd
 from matplotlib.colors import ListedColormap
 
@@ -8,7 +9,7 @@ Python file to store all constans relative to Next-OSO
 
 # Check if running on cluster or locally
 is_cluster = "SLURM_JOB_ID" in os.environ
-metadata = (
+metadata = Path(
     "/work/THEIA/CES/oso/hugok/nextoso-dataset/metadata/"
     if is_cluster
     else "/home/hkerino/Documents/nextoso-dataset/data/10m/metadata/"
@@ -18,7 +19,7 @@ metadata = (
 ########################################################
 ### Variables for Next-OSO dataset ###
 ########################################################
-path_to_oso_name = path_to_oso_name = metadata + "oso_classes.csv"
+path_to_oso_name = path_to_oso_name = metadata / "oso_classes.csv"
 names_class = (
     pd.read_csv(path_to_oso_name).get("name_class").values
 )  # Doit contenir 25 entrées (0 à 24)
@@ -74,7 +75,7 @@ cmap_oso = ListedColormap(normalized_colors)
 ########################################################
 ### Variables for Next-OSO dataset extended version ###
 ########################################################
-path_to_oso_name_extended = metadata + "oso_classes_extended.csv"
+path_to_oso_name_extended = metadata / "oso_classes_extended.csv"
 
 names_class_extended = (
     pd.read_csv(path_to_oso_name_extended).get("name_class").values

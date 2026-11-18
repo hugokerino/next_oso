@@ -7,8 +7,8 @@ from argparse import ArgumentParser, Namespace
 import numpy as np
 
 from data_functions.transfrom import load_transform_one_mod
-from data_functions import dataset
-from pastis.pastis_dataset import PASTIS_Dataset
+from data_functions.dataset import Next_OSO_Dataset
+from pastis.dataset_PASTIS import PASTIS_Dataset
 import sys
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -33,7 +33,7 @@ def encode_series_malise_onnx(
 
     if args.data == "next_oso":
         # DATA
-        d = dataset.next_oso_Dataset(
+        d = Next_OSO_Dataset(
             path_data=args.path_data,
             folds=[args.fold],
             norm=False,

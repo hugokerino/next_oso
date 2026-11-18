@@ -179,6 +179,7 @@ if __name__ == "__main__":
         "--measure_time",
         type=bool,
         default=False,
+        help="Wheter or not measuring mean inference time per batch",
     )
 
     args = parser.parse_args()

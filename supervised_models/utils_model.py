@@ -6,7 +6,7 @@ from supervised_models.ALISE_blocks import temporal_proj
 
 class MLP_Decoder(nn.Module):
     """
-    A simple MLP.
+    MLP Decoder. variable depth
     """
 
     def __init__(self, layers: list[int] = [128, 64, 19], dropout: float = 0.2):
@@ -29,19 +29,7 @@ class MLP_Decoder(nn.Module):
 
 class CNN_Decoder(nn.Module):
     """
-    CNN de profondeur variable.
-
-    Exemple :
-        cnn=[64, 32, 25]
-            -> Conv(64→32) -> ReLU
-            -> Conv(32→25)
-
-        cnn=[64, 64, 32, 25]
-            -> Conv(64→64) -> ReLU
-            -> Conv(64→32) -> ReLU
-            -> Conv(32→25)
-
-    Toutes les convolutions conservent la résolution spatiale.
+    CNN Decoder. variable depth
     """
 
     def __init__(
@@ -85,9 +73,9 @@ class CNN_Decoder(nn.Module):
         return x
 
 
-# Function use to duplicate batch to image dimension
 def duplicate_to_img(x, h=128, w=128):
     """
+    Function use to duplicate batch to image dimension
     from 'b t' to '(bhw) t'
 
     x : tensor of shape (bt)
@@ -103,6 +91,9 @@ def duplicate_to_img(x, h=128, w=128):
 
 # Put x to device
 def recursive_todevice(x, device):
+    """
+    Function to put x to device
+    """
     if isinstance(x, torch.Tensor):
         return x.to(device)
     else:

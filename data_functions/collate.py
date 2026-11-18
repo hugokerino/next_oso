@@ -8,18 +8,20 @@ import collections.abc
 import re
 
 
-def pad_to_length(tensor, dim, length, pad_value=0):
+def pad_to_length(tensor: torch.Tensor, dim: int, length: int, pad_value: float = 0):
     """
-    Pad un tenseur sur une dimension spécifique pour atteindre une longueur donnée.
+    Pad tensor on a specific dimension to achieve a length value.
 
-    Args:
-        tensor (torch.Tensor): Le tenseur à padder.
-        dim (int): La dimension à padder.
-        length (int): La longueur souhaitée après padding.
-        pad_value (float, optional): La valeur de padding. Par défaut, 0.
-
-    Returns:
-        torch.Tensor: Le tenseur après padding.
+    Parameters
+    ----------
+        tensor : torch.Tensor
+            Tensor to pad.
+        dim : int
+            Dimension to pad.
+        length : int
+            Length wanted after padding.
+        pad_value : float
+            Padding value
     """
     current_length = tensor.shape[dim]
     if current_length >= length:
@@ -39,9 +41,28 @@ def pad_to_length(tensor, dim, length, pad_value=0):
     return padded_tensor
 
 
-def pad_nextoso_collate(batch, pad_value=0, mask_needed=True, pass_id=False):
+def pad_nextoso_collate(
+    batch: list[torch.Tensor],
+    pad_value: float = 0,
+    mask_needed: bool = True,
+    pass_id: bool = False,
+):
+    """
+    Function to be used in Dataloader as agurment of collate_fn parameter.
+    Return a padded version of batch
 
-    # Décompactage unifié
+    Parameters
+    ----------
+        batch : list[torch.Tensor]
+            Batch to pad.
+        pad_value : float
+            Padding value
+        mask_needed : bool
+            Specify if mask is in input batch list
+        pass_id : bool
+            Specify if id is in batch list
+
+    """
     if pass_id:
         inputs, label_list, ids = zip(*batch)
     else:
@@ -98,11 +119,9 @@ class BucketSampler(Sampler):
         self.batch_size = batch_size
         self.shuffle = shuffle
 
-        # Trier les indices par longueur
         self.sorted_indices = sorted(range(len(lengths)), key=lambda i: lengths[i])
 
     def __iter__(self):
-        # Découper en buckets
         batches = [
             self.sorted_indices[i : i + self.batch_size]
             for i in range(0, len(self.sorted_indices), self.batch_size)

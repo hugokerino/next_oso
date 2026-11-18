@@ -69,20 +69,6 @@ def find_clear_img(batch):
     return clear_imgs
 
 
-def s2_spectrale_indice(s2):
-    ndvi = (s2["B8"] - s2["B4"]) / (s2["B4"] + s2["B8"])
-    ndwi = (s2["B3"] - s2["B8"]) / (s2["B3"] + s2["B8"])
-    brgt = np.sqrt(
-        np.pow(s2[["B2", "B3", "B4", "B5", "B6", "B7", "B8", "B8A", "B11", "B12"]], 2)
-        .to_array()
-        .sum("variable")
-    )
-    s2["ndvi"] = ndvi
-    s2["ndwi"] = ndwi
-    s2["brightness"] = brgt
-    return s2
-
-
 def find_nan_label(dataset):
     ids_with_nan = []
 
@@ -163,6 +149,9 @@ def erode_class_max(
 
 
 def normalize_s2(s2):
+    """
+    Old version to normalize s2 data.
+    """
     stats = json.load(
         open(
             "/home/hkerino/Documents/nextoso-dataset/data/10m/s2/stats_global.json", "r"
@@ -190,6 +179,9 @@ def normalize_s2(s2):
 def geographical_information(
     s2: xr.Dataset, id: str, path_mnt: str | None, h=128, w=128
 ) -> torch.Tensor:
+    """
+    Return a tensor composed of MNT (slope & elevation) and coordinates (longitude, latitude) datas
+    """
     X_MIN, X_MAX = 1e5, 1.3e6
     Y_MIN, Y_MAX = 6e6, 7.2e6
     ELEV_MAX = 3000

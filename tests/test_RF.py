@@ -87,3 +87,9 @@ def test_dataset_label_type(reduced_grid):
 
     assert X_1.shape == X_2.shape == X_3.shape
     assert Y_1.shape == Y_2.shape == Y_3.shape
+
+    with pytest.raises(
+        ValueError,
+        match="label_type must be one of ",
+    ):
+        (_, _) = dataset_RF.create_dataset(label_type="Not_implemented")

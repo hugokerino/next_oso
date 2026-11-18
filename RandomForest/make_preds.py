@@ -27,7 +27,7 @@ dict_fold_to_load = {
     3: 2,
     4: 3,
     5: 4,
-}
+}  # match fold index and test fold. Make sure we predict on unseen data
 
 # Loop over folds
 fold_index = 0

@@ -110,9 +110,6 @@ def load_transform_one_mod(path_dir_csv: str, mod: str = "s2") -> OneTransform:
     path_dir_csv : path where norms are stored
     mod : modality, implemented only of S2
 
-    Returns
-    -------
-
     """
     if mod != "s2":
         raise NotImplementedError

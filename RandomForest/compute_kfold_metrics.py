@@ -8,10 +8,23 @@ from src.metrics import compute_metrics, metrics_to_excel
 from templates.constants import num_class, names_class
 from templates.lightning_template import BaseLightningModule
 
-module = BaseLightningModule(num_class=25, lr=1, max_epochs=1)
+module = BaseLightningModule(
+    decoder=torch.nn.Module,
+    loss_fn=torch.nn.Module,
+    optimizer_scheduler="",
+    lr=0.0,
+    batch_size=0,
+    max_epochs=0,
+    num_class=25,
+    H=0,
+    W=0,
+)
 
 
-def make_labels_to_compute_metrics(config_yaml, log_fold, label_type="v2"):
+def make_labels_to_compute_metrics(config_yaml, log_fold, label_type="oso_type"):
+    """
+    Make label of type label_type. Can be used after to compute classification metrics
+    """
     with open(config_yaml, "r") as f:
         cfg = yaml.safe_load(f)
         config = {**cfg}
@@ -34,7 +47,10 @@ def make_labels_to_compute_metrics(config_yaml, log_fold, label_type="v2"):
             )
 
 
-def calculate_and_save_metrics_RF_kfold_preds(log_fold, label_type="v1"):
+def calculate_and_save_metrics_RF_kfold_preds(log_fold, label_type="max_class"):
+    """
+    Load preds from RF and labels to compute metrics.
+    """
     for fold in sorted(os.listdir(log_fold)):
         list_preds = []
         list_trues = []
@@ -43,9 +59,9 @@ def calculate_and_save_metrics_RF_kfold_preds(log_fold, label_type="v1"):
                 continue
             name_folder = os.path.join(log_fold, fold, zone)
             list_preds.append(np.load(f"{name_folder}/y_pred.npy"))
-            if label_type == "v1":
+            if label_type == "max_class":
                 list_trues.append(np.load(f"{name_folder}/y_true.npy"))
-            elif label_type == "v2":
+            elif label_type == "oso_type":
                 list_trues.append(
                     np.load(f"{name_folder}/y_true_v2.npy").astype(np.int16)
                 )
