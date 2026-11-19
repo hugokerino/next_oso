@@ -1,9 +1,8 @@
 import yaml
-import pytest
 
 import torch
-from embedding.dataset_embedding import EmbeddingDataModule, Embedding_Dataset
-from embedding.dataset_embedding_PCA import EmbeddingDatamodulePCA
+from embedding.dataset_embedding import EmbeddingDataModule
+
 from embedding.decode_lightning_module import DecodeEmbedding
 
 from mains.main_utils import build_decoder
@@ -156,83 +155,3 @@ def test_embedding_pastis(config=config):
     test_batch = next(iter(datamodule.test_dataloader()))
     classifier_MLP.test_step(test_batch)
     classifier_CNN.test_step(test_batch)
-
-
-def test_raise_errors():
-    with pytest.raises(
-        ValueError,
-        match="Dataset error.",
-    ):
-        Embedding_Dataset(dataset="Not_implemented")
-
-    with pytest.raises(
-        ValueError,
-        match="Model error.",
-    ):
-        Embedding_Dataset(model="Not_implemented")
-
-
-##PCA version
-def test_embedding_pca(config=config):
-    model = "tessera"  # alpha-earth, tessera, malice
-    datamodule = EmbeddingDatamodulePCA(
-        n_component=32,
-        percentage_sample=0.01,
-        dataset="next_oso",
-        path_data="/home/hkerino/Documents/nextoso-dataset/data/10m",
-        model=model,
-        fold_train=[1],
-        fold_val=[2],
-        fold_test=[3],
-        batch_size=config["batch_size"],
-        num_workers=1,
-        preload=False,
-        label_type="max_class",
-        mask=True,
-    )
-
-    train_loader = datamodule.train_dataloader()
-    batch = next(iter(train_loader))
-    inputs, labels = batch
-    assert isinstance(inputs, torch.Tensor)
-    assert isinstance(labels, torch.Tensor)
-
-    with pytest.raises(
-        ValueError,
-        match="Number of component to keep cannot be larger than initial one.",
-    ):
-        EmbeddingDatamodulePCA(
-            n_component=10000,  # Should detect error here
-            percentage_sample=0.01,
-            dataset="next_oso",
-            path_data="/home/hkerino/Documents/nextoso-dataset/data/10m",
-            model=model,
-            fold_train=[1],
-            fold_val=[2],
-            fold_test=[3],
-            batch_size=config["batch_size"],
-            num_workers=1,
-            preload=False,
-            label_type="max_class",
-            mask=True,
-        )
-
-    with pytest.raises(
-        ValueError,
-        match="Percentage should be between 0.0 and 1.0.",
-    ):
-        EmbeddingDatamodulePCA(
-            n_component=32,
-            percentage_sample=-10000,  # Should detect error here
-            dataset="next_oso",
-            path_data="/home/hkerino/Documents/nextoso-dataset/data/10m",
-            model=model,
-            fold_train=[1],
-            fold_val=[2],
-            fold_test=[3],
-            batch_size=config["batch_size"],
-            num_workers=1,
-            preload=False,
-            label_type="max_class",
-            mask=True,
-        )

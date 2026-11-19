@@ -25,7 +25,7 @@ names_class = (
 )  # Doit contenir 25 entrées (0 à 24)
 
 names_class_english = (
-    pd.read_csv(path_to_oso_name.rsplit("/", 1)[0] + "/" + "oso_classes_english.csv")
+    pd.read_csv(path_to_oso_name.parent / "oso_classes_english.csv")
     .get("name_class")
     .values
 )  # Doit contenir 25 entrées (0 à 24)
@@ -82,9 +82,7 @@ names_class_extended = (
 )  # Doit contenir 25 entrées (0 à 24)
 
 names_class_extended_english = (
-    pd.read_csv(
-        path_to_oso_name.rsplit("/", 1)[0] + "/" + "oso_classes_extended_english.csv"
-    )
+    pd.read_csv(path_to_oso_name.parent / "oso_classes_extended_english.csv")
     .get("name_class")
     .values
 )

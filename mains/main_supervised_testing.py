@@ -21,6 +21,11 @@ torch.backends.cuda.enable_mem_efficient_sdp(
 
 
 def main(config):
+    """
+    Test script.
+    Load a trained classifier (.ckpt format) for encoder/decoder pipeline and test it.
+    Will created a tensorboard, save unnormalized confusion matrix, and xlsx file containing classification metrics.
+    """
     print(f"FOLD {config['fold_index']}")
     sys.stdout.flush()
 

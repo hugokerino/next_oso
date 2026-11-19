@@ -33,6 +33,12 @@ torch.backends.cuda.enable_mem_efficient_sdp(
 
 
 def main(config):
+    """
+    Train script.
+    Training encoder/decoder pipeline and test it.
+    Will created a tensorboard, save unnormalized confusion matrix, and xlsx file containing classification metrics.
+    """
+
     date = os.getenv("LAUNCH_DATE", datetime.now().date().strftime("%Y-%m-%d"))
 
     ########################################

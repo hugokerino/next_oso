@@ -21,6 +21,9 @@ from supervised_models.utils_model import MLP_Decoder
 
 
 def main(config):
+    """
+    Script to train a decoder fed by PCA embeddings.
+    """
     # Paths
     model = config["model"]
     path_logs = os.path.join(config["path_logs"], model)

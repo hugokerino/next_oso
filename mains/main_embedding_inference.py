@@ -22,6 +22,11 @@ torch.set_float32_matmul_precision("high")
 
 
 def main(config, log_dir, save_preds_dir, measure_time=False):
+    """
+    Inference script.
+    Load a trained decoder (.ckpt format) for embedding ready-to-use pipeline, make inference on desire folder and save predictions.
+    Model config should match with model config during training
+    """
     ########################################
     # MODEL
     ########################################
@@ -150,21 +155,24 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--fold_index", type=int, required=True, help="Index of the fold to train on"
+        "--fold_index",
+        type=int,
+        required=True,
+        help="Index of the folder to make inference. Ex: fold_index 0 would make inference on fold 5 because folds [1,2,3] are use for training, [4] to validate and [5] for testing. See config files",
     )
 
     parser.add_argument(
         "--path_dir_logs",
         type=str,
         required=True,
-        help="Chemin du dossier de logs, Ex:/home/hkerino/Documents/next_oso/logs/alpha-earth/2026-07-22_mlp_kfold",
+        help="Path to log directory, Ex:/home/hkerino/Documents/next_oso/logs/alpha-earth/2026-07-22_mlp_kfold",
     )
 
     parser.add_argument(
         "--path_save_preds",
         type=str,
         required=True,
-        help="Chemin du dossier pour sauvergarder les prédictions, Ex:/home/hkerino/Documents/nextoso-dataset/preds",
+        help="Path to directory to store predictions, Ex:/home/hkerino/Documents/nextoso-dataset/preds",
     )
     parser.add_argument(
         "--measure_time",

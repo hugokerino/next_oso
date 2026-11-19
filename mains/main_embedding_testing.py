@@ -18,6 +18,11 @@ torch.set_float32_matmul_precision("high")
 
 
 def main(config):
+    """
+    Test script.
+    Load a trained decoder (.ckpt format) for embedding ready-to-use pipeline and test it.
+    Will created a tensorboard, save unnormalized confusion matrix, and xlsx file containing classification metrics.
+    """
     # Paths
     model = config["model"]
 

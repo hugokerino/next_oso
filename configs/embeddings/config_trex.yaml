@@ -15,11 +15,11 @@ num_class: 25
 
 # Folds for kfold
 folds :
-  - [[1,2,3], [4], [5]]
-  - [[2,3,4], [5], [1]]
-  - [[3,4,5], [1], [2]]
-  - [[4,5,1], [2], [3]]
-  - [[5,1,2], [3], [4]]
+  - [[1,2,3], [4], [5]] # fold_index 0
+  - [[2,3,4], [5], [1]] # fold_index 1
+  - [[3,4,5], [1], [2]] # fold_index 2
+  - [[4,5,1], [2], [3]] # fold_index 3
+  - [[5,1,2], [3], [4]] # fold_index 4
 
 # Training arguments
 decoder_type : mlp # mlp or cnn

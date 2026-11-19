@@ -76,7 +76,9 @@ The dependencies are specified in pixi.toml, while pixi.lock records the exact d
 
 ## Usage
 
-Below are a few examples of how to run scripts
+The “overview.ipynb” notebook serves as a starting point for getting started with the project.
+
+Below are a few examples of how to run scripts from the command line
 
 **Examples**
 

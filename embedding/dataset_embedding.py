@@ -123,7 +123,6 @@ class Embedding_Dataset(BaseDataset):
                 ]
             )
 
-        # Préchargement en RAM si demandé
         if self.preload:
             print(f"Preloading of {len(self.embedding_files)} patches in RAM...")
             self.embeddings_cache = []
@@ -139,21 +138,18 @@ class Embedding_Dataset(BaseDataset):
     def _load_sample(self, filename):
         """Load a sample from disk."""
         # Embedding
+        to_open_embedding = (
+            f"{self.path_data}/embeddings_data/{self.model}_data/{filename}"
+        )
         if filename.endswith(".npy"):
-            embedding_npy = np.load(
-                f"{self.path_data}/embeddings_data/{self.model}_data/{filename}"
-            )
+            embedding_npy = np.load(to_open_embedding)
             # ensure float32 to avoid dtype mismatch (numpy defaults to float64)
             if embedding_npy.dtype != np.float32:
                 embedding_npy = embedding_npy.astype(np.float32)
             embedding = torch.from_numpy(embedding_npy)
 
         elif filename.endswith(".pt"):
-            embedding = torch.load(
-                os.path.join(
-                    self.path_data, f"embeddings_data/{self.model}_data/{filename}"
-                )
-            )
+            embedding = torch.load(to_open_embedding)
             # ensure float32
             if torch.is_tensor(embedding) and embedding.dtype != torch.float32:
                 embedding = embedding.float()

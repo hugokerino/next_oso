@@ -1038,17 +1038,12 @@ def plot_geodatas(s2, geodatas, s2_timestep=0):
     plt.show()
 
 
-def plot_eco_zone_repartition(path_data):
+def plot_eco_zone_repartition(path_data, path_aoi, path_ecozone, path_regions):
     path_data = Path(path_data)
 
-    extent = gpd.read_file(path_data / "../aoi/nextoso_extent.gpkg")
-    ecozone = gpd.read_file(
-        path_data / "../auxiliary/ecosystems/ecosystems_shp/regions_ecocli_france.shp"
-    )
-    regions = gpd.read_file(
-        path_data
-        / "../auxiliary/administrative_boundaries/dep_France_admin_express_2025.gpkg"
-    )
+    extent = gpd.read_file(path_aoi)
+    ecozone = gpd.read_file(path_ecozone)
+    regions = gpd.read_file(path_regions)
 
     fig, ax = plt.subplots(figsize=(12, 10))
 

@@ -26,6 +26,12 @@ torch.set_float32_matmul_precision("high")
 
 
 def main(config):
+    """
+    Train script.
+    Training embedding ready-to-use pipeline and test it.
+    Will created a tensorboard, save unnormalized confusion matrix, and xlsx file containing classification metrics.
+    """
+
     # Paths
     model = config["model"]
     path_logs = os.path.join(config["path_logs"], model)

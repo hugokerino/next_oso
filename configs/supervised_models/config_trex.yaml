@@ -9,11 +9,11 @@ use_mnt_data: True
 num_worker: 4
 num_class: 25
 folds :
-  - [[1,2,3], [4], [5]]
-  - [[2,3,4], [5], [1]]
-  - [[3,4,5], [1], [2]]
-  - [[4,5,1], [2], [3]]
-  - [[5,1,2], [3], [4]]
+  - [[1,2,3], [4], [5]] # = fold_index 0
+  - [[2,3,4], [5], [1]] # = fold_index 1
+  - [[3,4,5], [1], [2]] # = fold_index 2
+  - [[4,5,1], [2], [3]] # = fold_index 3
+  - [[5,1,2], [3], [4]] # = fold_index 4
 
 # Training
 decoder_type: mlp #choose among "mlp" or "cnn"
@@ -25,7 +25,7 @@ test_model: false
 accelerator:  "gpu"
 devices: 1
 nodes: 1
-strategy: "auto" #choose among "auto" 'ddp', 'ddp_unused_parameters', 'ddp_find_unused_parameters_true' #UTAE n'est pas compatible avec DDP
+strategy: "auto" #choose among "auto" 'ddp', 'ddp_unused_parameters', 'ddp_find_unused_parameters_true' #UTAE  is not compatible with DDP
 running_on_trex_gpu: true
 learning_rate: 0.0001
 logs : True

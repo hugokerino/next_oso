@@ -40,6 +40,9 @@ def select_decoder(config):
 
 
 def main(config):
+    """
+    Script for training a decoder on top of frozen ALISE model
+    """
     # Logs
     date = datetime.now().date().strftime("%Y-%m-%d")
     base_log_dir = os.path.join(config.path_logs, f"alise_decoding_{date}")
