@@ -23,9 +23,7 @@ class Embedding_Dataset(BaseDataset):
 
     def __init__(
         self,
-        path_data: Path = Path(
-            "/home/hkerino/Documents/nextoso-dataset/data/10m"
-        ),  # /home/hkerino/Documents/PASTIS
+        path_data: Path,
         folds: list[int] | None = None,
         label_type: str | None = "max_class",
         return_id: bool = False,

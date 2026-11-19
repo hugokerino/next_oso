@@ -3,8 +3,8 @@ dataset : next_oso
 model : alpha-earth
 
 # Paths
-path_data : /home/hkerino/Documents/nextoso-dataset/data/10m #/home/hkerino/Documents/PASTIS
-path_logs : /home/hkerino/Documents/next_oso/embedding_logs # /work/THEIA/CES/oso/hugok/next_oso/pastis/logs
+path_data : /home/hkerino/Documents/nextoso-dataset/data/10m #/home/hkerino/Documents/PASTIS #to change
+path_logs : /home/hkerino/Documents/next_oso/embedding_logs # /work/THEIA/CES/oso/hugok/next_oso/pastis/logs #to change
 
 # Data settings
 label_type : max_class

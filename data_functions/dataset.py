@@ -14,7 +14,7 @@ from templates.dataset_template import BaseDataset
 class Next_OSO_Dataset(BaseDataset):
     def __init__(
         self,
-        path_data: Path = Path("/home/hkerino/Documents/nextoso-dataset/data/10m"),
+        path_data: Path,
         folds: list[int] | None = None,
         label_type: str = "max_class",
         return_id: bool = False,
@@ -215,7 +215,7 @@ class Next_OSO_Dataset(BaseDataset):
 
 
 def get_loaders(
-    path_data: str = "/home/hkerino/Documents/nextoso-dataset/data/10m",
+    path_data: Path,
     folds_train: list[int] = [1, 2, 3],
     folds_val: list[int] = [4],
     folds_test: list[int] = [5],

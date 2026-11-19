@@ -3,7 +3,7 @@
 **Delivery Date :**  November 20th, 2026
 
 ## Description
-This repository contains codes to train and evaluate Deep Learning (DL) models as well as Foundation model's embeddings on the Next-OSO dataset. Next-OSO project aims to enhance the current Land Cover classification OSO produces every year by the CESBIO laboratory. Two approaches are investigated:
+This repository contains codes to train and evaluate Deep Learning (DL) models as well as Foundation model's embeddings on the Next-OSO dataset. Next-OSO project aims to enhance the current Land Cover classification OSO produces every year by the CESBIO laboratory since 2016. Two approaches are investigated:
 
 1.) End-to-end supervised Encoder/Decoder architectures.
 
@@ -26,6 +26,8 @@ This repository contains codes to train and evaluate Deep Learning (DL) models a
 ├── pixi.toml              # Pixi environment
 ├── pyproject.toml         # Pixi environment
 ├── RandomForest           # Functions, scripts and objects reltive to recreate OSO pipeline
+├── Makefile               # For quicker commands
+├── Next_OSO.pdf           # Report
 ├── README.md
 ├── scripts                # SLURM scripts
 ├── src                    # Functions for metrics evaluation and loss functions
@@ -124,6 +126,7 @@ pixi run python src/summarize_kfold.py \
     --root_dir path_to_log_directory \
     --output_file name_of_the_xlsx_file \
 ```
+Result is save in xlsx format stored in the same directory with name specified by the 'ouput_file' argument
 
 * Test an embedding model already train on last fold :
 ```bash
@@ -138,7 +141,7 @@ pixi run python mains/main_embedding_testing.py \
 Basic tests have been implemented with Pytest to ensure the correctness of the main components and to detect regressions during development. These tests provide a minimal validation of the project's core functionalities.
 
 
-* To run all tests (can be long especially due to one test in test_RF.py):
+* To run all tests (long especially due to first test in test_RF.py):
 
 ```bash
 pixi run -e dev pytest

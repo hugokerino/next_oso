@@ -5,9 +5,11 @@ import numpy
 from data_functions.dataset import Next_OSO_Dataset, get_loaders
 from data_functions import utils_data, transfrom
 
+path_dataset_next_oso = "/home/hkerino/Documents/nextoso-dataset/data/10m"  # to change
+
 
 def test_dataset_default():
-    d = Next_OSO_Dataset()
+    d = Next_OSO_Dataset(path_data=path_dataset_next_oso)
     sample = d.__getitem__(0)
     sample = d.__getitem__("0001")
 
@@ -19,18 +21,18 @@ def test_dataset_default():
 
 
 def test_dataset_choose_folds():
-    d1 = Next_OSO_Dataset(folds=[1])
-    d2 = Next_OSO_Dataset(folds=[1, 5])
-    d3 = Next_OSO_Dataset(folds=[1, 2, 3, 4, 5])
-    d4 = Next_OSO_Dataset(folds=None)
+    d1 = Next_OSO_Dataset(path_data=path_dataset_next_oso, folds=[1])
+    d2 = Next_OSO_Dataset(path_data=path_dataset_next_oso, folds=[1, 5])
+    d3 = Next_OSO_Dataset(path_data=path_dataset_next_oso, folds=[1, 2, 3, 4, 5])
+    d4 = Next_OSO_Dataset(path_data=path_dataset_next_oso, folds=None)
 
     assert d1.__len__() < d2.__len__()
     assert d3.__len__() == d4.__len__()
 
 
 def test_dataset_norms():
-    d1 = Next_OSO_Dataset(norm=True)
-    d2 = Next_OSO_Dataset(norm=False)
+    d1 = Next_OSO_Dataset(path_data=path_dataset_next_oso, norm=True)
+    d2 = Next_OSO_Dataset(path_data=path_dataset_next_oso, norm=False)
 
     sits_norm, sits_raw = (
         d1.__getitem__(500)[0][0],
@@ -40,7 +42,7 @@ def test_dataset_norms():
 
 
 def test_get_item_error():
-    d = Next_OSO_Dataset()
+    d = Next_OSO_Dataset(path_data=path_dataset_next_oso)
 
     # Test avec un str invalide
     with pytest.raises(ValueError, match="not found in dataset"):
@@ -53,32 +55,41 @@ def test_get_item_error():
 
 def test_dataset_return_data():
     # Default return (datas, label) with datas = (sits, dates, None, None)
-    d = Next_OSO_Dataset(use_mnt_data=False)
+    d = Next_OSO_Dataset(path_data=path_dataset_next_oso, use_mnt_data=False)
     assert (d.__getitem__(1)[0][0] is not None) and (d.__getitem__(1)[0][1] is not None)
     assert (d.__getitem__(1)[0][2] is None) and (d.__getitem__(1)[0][3] is None)
 
-    d = Next_OSO_Dataset(return_id=True)
+    d = Next_OSO_Dataset(path_data=path_dataset_next_oso, return_id=True)
     assert len(d.__getitem__(100)) == 3, "should return (datas, label, id)"
 
-    d = Next_OSO_Dataset(use_mnt_data=True)
+    d = Next_OSO_Dataset(path_data=path_dataset_next_oso, use_mnt_data=True)
     assert d.__getitem__(1)[0][3] is not None
 
-    d = Next_OSO_Dataset(use_mnt_data=True, mask_needed=True, return_id=True)
+    d = Next_OSO_Dataset(
+        path_data=path_dataset_next_oso,
+        use_mnt_data=True,
+        mask_needed=True,
+        return_id=True,
+    )
     assert len(d.__getitem__(100)) == 3, "should return (datas, label, id)"
     assert (d.__getitem__(1)[0][3] is not None) and (d.__getitem__(1)[0][2] is not None)
 
 
 def test_dataset_label_type():
-    d_max_class = Next_OSO_Dataset(label_type="max_class")
-    d_probas = Next_OSO_Dataset(label_type="probas")
-    d_oso = Next_OSO_Dataset(label_type="oso_type")
-    d_extended = Next_OSO_Dataset(label_type="extended")
+    d_max_class = Next_OSO_Dataset(
+        path_data=path_dataset_next_oso, label_type="max_class"
+    )
+    d_probas = Next_OSO_Dataset(path_data=path_dataset_next_oso, label_type="probas")
+    d_oso = Next_OSO_Dataset(path_data=path_dataset_next_oso, label_type="oso_type")
+    d_extended = Next_OSO_Dataset(
+        path_data=path_dataset_next_oso, label_type="extended"
+    )
 
     with pytest.raises(
         ValueError,
         match="label_type must be one of",
     ):
-        _ = Next_OSO_Dataset(label_type="invalid")
+        _ = Next_OSO_Dataset(path_data=path_dataset_next_oso, label_type="invalid")
 
     assert (d_max_class.__getitem__(1000)[1]).shape == (128, 128)
     assert (d_probas.__getitem__(1000)[1]).shape == (25, 128, 128)
@@ -87,8 +98,8 @@ def test_dataset_label_type():
 
 
 def test_dataset_date_type():
-    d1 = Next_OSO_Dataset(date_type="relative")
-    d2 = Next_OSO_Dataset(date_type="raw")
+    d1 = Next_OSO_Dataset(path_data=path_dataset_next_oso, date_type="relative")
+    d2 = Next_OSO_Dataset(path_data=path_dataset_next_oso, date_type="raw")
 
     sample1 = d1.__getitem__(1000)[0][1]
     sample2 = d2.__getitem__(1000)[0][1]
@@ -104,7 +115,7 @@ def test_dataset_date_type():
 
 
 def test_dataloader_default():
-    train_loader, val_loader, test_loader = get_loaders()
+    train_loader, val_loader, test_loader = get_loaders(path_data=path_dataset_next_oso)
 
     assert all(
         isinstance(loader, torch.utils.data.DataLoader)
@@ -118,7 +129,10 @@ def test_dataloader_folds_exception():
         match="fold_train, fold_val and fold_test must all be provided.",
     ):
         train_loader, val_loader, test_loader = get_loaders(
-            folds_train=[5, 4, 1], folds_val=None, folds_test=[3]
+            path_data=path_dataset_next_oso,
+            folds_train=[5, 4, 1],
+            folds_val=None,
+            folds_test=[3],
         )
 
     with pytest.raises(
@@ -126,31 +140,40 @@ def test_dataloader_folds_exception():
         match="Folds_train, folds_val and folds_test must be disjoint.",
     ):
         train_loader, val_loader, test_loader = get_loaders(
-            folds_train=[5, 4, 1], folds_val=[3], folds_test=[3]
+            path_data=path_dataset_next_oso,
+            folds_train=[5, 4, 1],
+            folds_val=[3],
+            folds_test=[3],
         )
     with pytest.raises(
         ValueError,
         match="Fold values must be between 1 and 5",
     ):
         train_loader, val_loader, test_loader = get_loaders(
-            folds_train=[1, 2, 3], folds_val=[4, 5], folds_test=[6]
+            path_data=path_dataset_next_oso,
+            folds_train=[1, 2, 3],
+            folds_val=[4, 5],
+            folds_test=[6],
         )
     with pytest.raises(
         ValueError,
         match="Folds cannot be empty",
     ):
         train_loader, val_loader, test_loader = get_loaders(
-            folds_train=[1, 2, 3], folds_val=[4, 5], folds_test=[]
+            path_data=path_dataset_next_oso,
+            folds_train=[1, 2, 3],
+            folds_val=[4, 5],
+            folds_test=[],
         )
 
 
 @pytest.mark.parametrize(
     "path",
     [
-        "/home/hkerino/Documents/nextoso-dataset/data/10m/s2/s2_0010.nc",
-        "/home/hkerino/Documents/nextoso-dataset/data/10m/s2/s2_0035.nc",
-        "/home/hkerino/Documents/nextoso-dataset/data/10m/s2/s2_0054.nc",
-        "/home/hkerino/Documents/nextoso-dataset/data/10m/s2/s2_1262.nc",
+        "/home/hkerino/Documents/nextoso-dataset/data/10m/s2/s2_0010.nc",  # to change
+        "/home/hkerino/Documents/nextoso-dataset/data/10m/s2/s2_0035.nc",  # to change
+        "/home/hkerino/Documents/nextoso-dataset/data/10m/s2/s2_0054.nc",  # to change
+        "/home/hkerino/Documents/nextoso-dataset/data/10m/s2/s2_1262.nc",  # to change
     ],
 )
 def test_open_and_normalisation(path):

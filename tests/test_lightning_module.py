@@ -70,15 +70,9 @@ def get_models(ltae_config, utae_config, alise_config, decoder_type="cnn"):
     ]
 
 
-ltae_config = yaml.safe_load(
-    open("/home/hkerino/Documents/next_oso/configs/supervised_models/LTAE.yaml", "r")
-)
-utae_config = yaml.safe_load(
-    open("/home/hkerino/Documents/next_oso/configs/supervised_models/UTAE.yaml", "r")
-)
-alise_config = yaml.safe_load(
-    open("/home/hkerino/Documents/next_oso/configs/supervised_models/ALISE.yaml", "r")
-)
+ltae_config = yaml.safe_load(open("configs/supervised_models/LTAE.yaml", "r"))
+utae_config = yaml.safe_load(open("configs/supervised_models/UTAE.yaml", "r"))
+alise_config = yaml.safe_load(open("configs/supervised_models/ALISE.yaml", "r"))
 
 
 def get_model_parameters(ltae_config, utae_config, alise_config):
