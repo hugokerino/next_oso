@@ -16,8 +16,8 @@ Sript to visualize attention from a trained LTAE model with S2 time series and S
 """
 
 # Load configuration and build the model
-config= load_config(train_cfg_path="/home/hkerino/Documents/next_oso/configs/supervised_models/config_local.yaml",
-            model_cfg_path="/home/hkerino/Documents/next_oso/configs/supervised_models/LTAE.yaml")
+config= load_config(train_cfg_path="./configs/supervised_models/config_local.yaml",
+            model_cfg_path="./configs/supervised_models/LTAE.yaml")
 fold = 0
 config["fold_index"] = fold
 config["selected_fold"] = config["folds"][fold]

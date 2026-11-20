@@ -7,12 +7,9 @@ import numpy as np
 import xarray as xr
 import pandas
 import geopandas as gpd
-import rasterio
 import torch
 
 from matplotlib import pyplot as plt
-from matplotlib.colors import ListedColormap
-import matplotlib.gridspec as gridspec
 import seaborn as sns
 
 from data_functions.utils_data import to_RGB
@@ -25,109 +22,10 @@ from templates.constants import (
 )
 
 
-def count_label(dataset, normalized=False, plot=True):
-    classes = np.zeros(25)
-
-    names_class_english = pandas.read_csv(
-        "/home/hkerino/Documents/nextoso-dataset/data/auxiliary/OSO/oso_classes_english.csv",
-        dtype=str,
-    )
-
-    for i in range(len(dataset)):
-        labels = dataset[i][1].flatten().numpy()
-        if np.any(labels < 0):
-            print(f"Échantillon {i} : labels contiennent des valeurs négatives !")
-            print(f"Valeurs uniques : {np.unique(labels)}")
-            continue  # Exclure cet échantillon
-
-        counts = np.bincount(labels, minlength=25)
-        classes += counts
-
-    if normalized:
-        classes = classes / (np.sum(classes))
-
-    if plot:
-        fig, ax = plt.subplots(figsize=(12, 6))
-        ax.set_title("Labels repartition")
-
-        # Determine bar colors from cmap (fall back to sampling if needed)
-        try:
-            n = classes.shape[0]
-        except Exception:
-            n = 25
-
-        if hasattr(cmap_oso, "colors") and len(cmap_oso.colors) >= n:
-            bar_colors = list(cmap_oso.colors)[:n]
-        else:
-            bar_colors = [cmap_oso(i / (n - 1)) for i in range(n)]
-
-        bars = ax.bar(range(classes.shape[0]), classes, color=bar_colors)
-
-        def clean_english_label(label):
-            s = str(label).strip().strip('"')
-            if "," in s:
-                s = s.split(",", 1)[1].strip()
-            if "." in s:
-                s = s.split(".", 1)[1].strip()
-            s = s.replace(" ", "_")
-            if "_" in s:
-                first, rest = s.split("_", 1)
-                if first.isdigit() and rest and rest[0].isdigit():
-                    rest = rest.lstrip("0123456789").lstrip("_")
-                    s = f"{first}_{rest}"
-            return s
-
-        try:
-            if isinstance(names_class_english, pandas.DataFrame):
-                if names_class_english.shape[1] == 1:
-                    raw_labels = names_class_english.iloc[:, 0].astype(str).tolist()
-                elif "name_class" in names_class_english.columns:
-                    raw_labels = names_class_english["name_class"].astype(str).tolist()
-                else:
-                    raw_labels = names_class_english.iloc[:, 0].astype(str).tolist()
-            elif isinstance(names_class_english, pandas.Series):
-                raw_labels = names_class_english.astype(str).tolist()
-            else:
-                raw_labels = list(names_class_english)
-
-            english_labels = [clean_english_label(v) for v in raw_labels]
-        except Exception:
-            english_labels = None
-
-        if english_labels is None or len(english_labels) != classes.shape[0]:
-            tick_labels = getattr(
-                dataset, "name_labels", [str(i) for i in range(classes.shape[0])]
-            )
-        else:
-            tick_labels = english_labels
-
-        ax.set_xticks(range(len(classes)))
-        ax.set_xticklabels(
-            tick_labels,
-            rotation=45,
-            ha="right",
-            rotation_mode="anchor",
-        )
-        ax.set_ylabel("Labels occurence")
-
-        # Afficher le chiffre brut au dessus de chaque barre
-        for bar, count in zip(bars, classes):
-            ax.text(
-                bar.get_x() + bar.get_width() / 2,
-                bar.get_height(),
-                f"{int(count):,}",
-                ha="center",
-                va="bottom",
-                fontsize=7,
-            )
-
-        plt.tight_layout()
-        plt.show()
-
-    return classes
-
-
 def plot_label_histogram(dataset, normalized=False, plot=True):
+    """
+    Plot histogram of class repartition in dataset
+    """
     classes = np.zeros(25)
 
     for i in range(len(dataset)):
@@ -191,6 +89,10 @@ def plot_label_histogram(dataset, normalized=False, plot=True):
 def compare_dataset(
     dataset1, dataset2, label1="Dataset 1", label2="Dataset 2", plot=True
 ):
+    """
+    Plot histograms of class repartition of 2 datasets on same figure
+    """
+
     def count_classes(dataset):
         classes = np.zeros(25)
         for i in range(len(dataset)):
@@ -268,6 +170,9 @@ def compare_dataset(
 
 
 def plot_label(patch: xr.Dataset | np.ndarray):
+    """
+    Function to plot label
+    """
     if isinstance(patch, xr.Dataset):
         label = patch["max_class_1"].data
     else:
@@ -284,6 +189,9 @@ def plot_label(patch: xr.Dataset | np.ndarray):
 
 
 def plot_label_and_entropy(id: int, label: str):
+    """
+    Function to plot label and his entropy
+    """
     patch = xr.open_dataset(f"{label}/label_{id:04d}.nc")
     label = patch["max_class_1"].data
     entropy = patch["entropy_proba"].data
@@ -306,175 +214,10 @@ def plot_label_and_entropy(id: int, label: str):
     plt.tight_layout()
 
 
-def plot_label_and_entropy2(id: int, s2_rgb: str, label: str):
-    from mpl_toolkits.axes_grid1 import make_axes_locatable
-
-    with rasterio.open(f"{s2_rgb}/s2_{id:04d}.tif") as src:
-        s2 = src.read()
-
-    rgb = np.stack(
-        [
-            s2[0],  # B04
-            s2[1],  # B03
-            s2[2],  # B02
-        ],
-        axis=-1,
-    )
-
-    # Normalisation pour affichage
-    rgb = rgb.astype(np.float32)
-    rgb = np.clip(rgb / np.percentile(rgb, 98), 0, 1)
-    patch = xr.open_dataset(f"{label}/label_{id:04d}.nc")
-
-    # Patch
-    label = patch["max_class_1"].data
-    entropy = patch["entropy_proba"].data
-
-    fig, ax = plt.subplots(
-        1,
-        3,
-        figsize=(15, 5),
-        constrained_layout=True,
-    )
-
-    # ====================================================
-    # RGB
-    # ====================================================
-    ax[0].imshow(rgb)
-    ax[0].set_title("S2 RGB")
-    ax[0].axis("off")
-
-    # ====================================================
-    # Labels
-    # ====================================================
-    im = ax[1].imshow(label, cmap=cmap_oso, vmin=0, vmax=24)
-    ax[1].set_title("Labels")
-    ax[1].axis("off")
-
-    divider = make_axes_locatable(ax[1])
-    cax = divider.append_axes("right", size="5%", pad=0.05)
-    cbar = fig.colorbar(im, cax=cax, ticks=np.arange(25))
-    cbar.ax.set_yticklabels(names_class)
-
-    # ====================================================
-    # Entropy
-    # ====================================================
-    etrpy = ax[2].imshow(entropy)
-    ax[2].set_title("Entropy")
-    ax[2].axis("off")
-
-    divider = make_axes_locatable(ax[2])
-    cax = divider.append_axes("right", size="5%", pad=0.05)
-    fig.colorbar(etrpy, cax=cax)
-
-
-# Plot RGB images sequence with associated date, mask and label
-def plot_nextoso(dataset, idx=0, first_date=0, lenght=5):
-    # --- Figure 1 : Images RGB et masques ---
-    fig1, axes1 = plt.subplots(2, lenght, figsize=(15, 8))
-
-    (x, dates, masks, geo), y = dataset[idx]
-
-    for t in range(lenght):
-        # Affichage de l'image RGB
-        axes1[0, t].imshow(to_RGB(x[:, first_date + t, :, :], norm=True))
-        if isinstance(dates[first_date + t], np.datetime64):
-            axes1[0, t].set_title(f"DATE = {dates[first_date + t]}")
-        if isinstance(dates[first_date + t], torch.Tensor):
-            axes1[0, t].set_title(f"DATE = {dates[first_date + t].numpy()}")
-        axes1[0, t].axis("off")
-
-        # Affichage du masque
-        if masks is not None:
-            axes1[1, t].imshow(
-                masks[first_date + t, :, :], cmap="Greys", vmin=0, vmax=1
-            )
-        else:
-            axes1[1, t].text(0.5, 0.5, "No mask", ha="center", va="center", fontsize=12)
-        axes1[1, t].axis("off")
-
-    fig1.tight_layout()
-
-    # --- Figure 2 : Carte des labels avec colorbar ---
-    fig2, ax2 = plt.subplots(figsize=(8, 8))
-
-    # Affichage de la carte des labels
-    im = ax2.imshow(y, cmap=cmap_oso, vmin=0, vmax=24)
-
-    # Ajout de la colorbar
-    cbar = fig2.colorbar(im, ax=ax2, ticks=np.arange(0, 25))
-    cbar.ax.set_yticklabels([names_class[i] for i in range(25)])
-
-    # Titre et ajustement
-    ax2.set_title("Carte des labels")
-    ax2.axis("off")
-
-    plt.tight_layout()
-    return fig1, fig2
-
-
-def plot_preds_labels_and_img(
-    preds_RF,
-    preds_model_1,
-    preds_model_2,
-    labels,
-    imgs,
-    batch_size,
-    batch_index,
-):
-    # Créer une figure avec GridSpec pour gérer la layout
-    fig = plt.figure(figsize=(20, batch_size * 3))
-    gs = gridspec.GridSpec(batch_size, 6, width_ratios=[1, 1, 1, 1, 1, 0.05])
-
-    ax = []
-    for i in range(batch_size):
-        ax_row = []
-        for j in range(5):
-            ax_row.append(fig.add_subplot(gs[i, j]))
-        ax.append(ax_row)
-
-    # Extraire les données
-    imgs_batch = imgs[batch_index]
-    labels_batch = labels[batch_index]
-    pred_model1_batch = preds_model_1[batch_index]
-    pred_model2_batch = preds_model_2[batch_index]
-
-    # Afficher les images et les prédictions
-    for i in range(batch_size):
-        ax[i][0].imshow(imgs_batch[i])
-        ax[i][0].axis("off")
-
-        ax[i][1].imshow(labels_batch[i], cmap=cmap_oso, vmin=0, vmax=24)
-        ax[i][1].axis("off")
-
-        ax[i][2].imshow(
-            preds_RF[batch_index * batch_size + i], cmap=cmap_oso, vmin=0, vmax=24
-        )
-        ax[i][2].axis("off")
-
-        ax[i][3].imshow(pred_model1_batch[i], cmap=cmap_oso, vmin=0, vmax=24)
-        ax[i][3].axis("off")
-
-        im = ax[i][4].imshow(pred_model2_batch[i], cmap=cmap_oso, vmin=0, vmax=24)
-        ax[i][4].axis("off")
-
-    # Créer un axe dédié pour la colorbar (colonne 5)
-    cbar_ax = fig.add_subplot(gs[:, 5])
-    cbar = fig.colorbar(im, cax=cbar_ax, ticks=np.arange(0, 25))
-    cbar.ax.set_yticklabels([names_class[i] for i in range(25)])
-
-    # Titres
-    ax[0][0].set_title("Images")
-    ax[0][1].set_title("Labels")
-    ax[0][2].set_title("Predictions RF")
-    ax[0][3].set_title("Predictions LTAE")
-    ax[0][4].set_title("Predictions UTAE")
-
-    plt.tight_layout()
-    return fig
-
-
 def mean_entropy_per_class(path_labels, plot=False):
+    """
+    Calculate mean label entropy per class and plot it if desired
+    """
     entropy_per_class = defaultdict(list)
 
     for label in os.listdir(path_labels):
@@ -509,45 +252,10 @@ def mean_entropy_per_class(path_labels, plot=False):
     return means
 
 
-def mean_entropy_per_class_per_eco_zone(path_labels, path_oso_class):
-    entropy_per_zone_class = defaultdict(lambda: defaultdict(list))
-
-    # Chemin vers le dossier racine contenant les dossiers 1-9
-    path_list_ids_per_ecozone = (
-        "/home/hkerino/Documents/nextoso-dataset/data/10m/s2/eco_zone.json"
-    )
-    with open(path_list_ids_per_ecozone, "r") as f:
-        eco_zone_dict = json.load(f)
-
-    for zone in eco_zone_dict:
-        for id in eco_zone_dict[str(zone)]:
-            path_label_file = os.path.join(path_labels, f"label_{id}.nc")
-            if os.path.exists(path_label_file):
-                patch = xr.open_dataset(path_label_file)
-                max_class = patch["max_class_1"].values.flatten()
-                entropy = patch["entropy_proba"].values.flatten()
-                max_class = np.where(max_class == -1, 0, max_class)
-
-                for c in np.unique(max_class):
-                    mask = max_class == c
-                    entropy_per_zone_class[zone][c].extend(entropy[mask].tolist())
-
-    # Calcul des moyennes
-    mean_entropy = {}
-    for zone in sorted(entropy_per_zone_class.keys()):
-        mean_entropy[zone] = {}
-        for c in sorted(entropy_per_zone_class[zone].keys()):
-            values = np.array(entropy_per_zone_class[zone][c])
-            mean_entropy[zone][c] = {
-                "mean": values.mean(),
-                "std": values.std(),
-                "n": len(values),
-            }
-
-    return mean_entropy
-
-
 def density_repartition(path_labels: str, name: str, plot=True):
+    """
+    Calculate probability distribution for a specific class 'name'
+    """
     probas_list = []
 
     for label in os.listdir(path_labels):
@@ -580,6 +288,10 @@ def density_repartition(path_labels: str, name: str, plot=True):
 
 
 def density_repartition_all_classes(path_labels: str, plot=True):
+    """
+    Calculate probabiliies distributions for all classes in NextOSO
+    """
+
     all_probas = {}
 
     for name in names_class:
@@ -630,18 +342,18 @@ def density_repartition_all_classes(path_labels: str, plot=True):
 
 def plot_filtered_probas(all_probas, percentile_keep=80, plot=True):
     """
-    Calcule le seuil de probabilité par classe selon le percentile
-    et affiche la distribution des échantillons retenus.
+    Calculate threshold probability for each class corresponding to percentile given as argument.
 
     Args:
-        all_probas (dict): clé = nom de classe, valeur = array des probabilités
-        percentile_keep (float): percentile à garder (ex: 80 → top 20% plus sûrs)
-        plot (bool): si True, affiche les histogrammes filtrés
+        all_probas (dict): key = name class, value = probability array
+        percentile_keep (float): percentile to keep (ex: 80 → top 20% plus sûrs)
+        plot (bool): if True, plot histogram
 
     Returns:
-        thresholds (dict): seuil de probabilité par classe
-        filtered_probas (dict): dictionnaire des probabilités filtrées par classe
+        thresholds (dict): probability threshold
+        filtered_probas (dict): dictionnary of filtered probability
     """
+
     thresholds = {}
     filtered_probas = {}
     for name in names_class:
@@ -704,71 +416,7 @@ def plot_filtered_probas(all_probas, percentile_keep=80, plot=True):
     return thresholds, filtered_probas
 
 
-def plot_nan(patch):
-    label = patch["max_class_1"]
-    cmap_mask = ListedColormap(["red", "white"])
-
-    fig, ax = plt.subplots(1, 2, figsize=(12, 8))
-
-    ax[0].imshow(label, cmap=cmap_oso, vmin=0, vmax=24)
-    ax[0].axis("off")
-
-    patch_binary = (label != -1).astype(int)
-
-    ax[1].imshow(patch_binary, cmap=cmap_mask, vmin=0, vmax=1)
-    ax[1].tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
-    ax[1].axis("off")
-
-
-def plot_entropy_per_zone_for_class(mean_entropy, classe):
-    zones = sorted(mean_entropy.keys())
-    means = [
-        mean_entropy[zone][classe]["mean"]
-        for zone in zones
-        if classe in mean_entropy[zone]
-    ]
-    stds = [
-        mean_entropy[zone][classe]["std"]
-        for zone in zones
-        if classe in mean_entropy[zone]
-    ]
-    counts = [
-        mean_entropy[zone][classe]["n"]
-        for zone in zones
-        if classe in mean_entropy[zone]
-    ]
-    zones = [zone for zone in zones if classe in mean_entropy[zone]]
-
-    x = np.arange(len(zones))
-
-    fig, ax = plt.subplots(figsize=(12, 6))
-    bars = ax.bar(x, means, yerr=stds, capsize=4, width=0.6)
-
-    # Afficher le nombre d'échantillons au dessus de chaque barre
-    for bar, n in zip(bars, counts):
-        ax.text(
-            bar.get_x() + bar.get_width() / 2,  # centré sur la barre
-            bar.get_height() + 0.15,  # légèrement au dessus
-            f"n={n}",
-            ha="center",
-            va="bottom",
-            fontsize=9,
-        )
-
-    ax.set_xticks(x)
-    ax.set_xticklabels([f"Zone {z}" for z in zones])
-    ax.set_ylabel("Entropie moyenne")
-    ax.set_title(
-        f"Entropie moyenne par zone éco-climatique — classe '{names_class[classe]}'"
-    )
-    ax.set_ylim(0, 1)
-    plt.tight_layout()
-    plt.show()
-
-
-def plot_label_confusion(
-    path_labels, path_oso_class, proba_threshold=0.5, secondary_threshold=0.2
-):
+def plot_label_confusion(path_labels, proba_threshold=0.5, secondary_threshold=0.2):
     n_classes = len(names_class)
 
     list_names = []
@@ -853,98 +501,10 @@ def plot_label_confusion(
     return confusion_counts
 
 
-def plot_pred_and_label(y_true, y_pred, rgb_img, y_entropie, class_idx, idx_to_plot):
-    samples_with_class = []
-    for idx in range(y_true.shape[0]):
-        patch = y_true[idx, :, :]
-        pred = y_pred[idx, :, :]
-        entropy = y_entropie[idx, :, :]
-        imgs = rgb_img[idx, :, :, :]
-        if (patch == class_idx).any():
-            samples_with_class.append([idx, patch, pred, imgs, entropy])
-
-    max_samples = len(samples_with_class)
-
-    assert idx_to_plot <= max_samples
-
-    label = samples_with_class[idx_to_plot][1]
-    pred = samples_with_class[idx_to_plot][2]
-    img = samples_with_class[idx_to_plot][3]
-    entropy = samples_with_class[idx_to_plot][4]
-
-    error_mask = (label == class_idx) & (pred != class_idx)
-    label_class_only = np.where(label == class_idx, class_idx, np.nan)
-    pred_on_errors = np.where(error_mask, pred, np.nan)
-
-    class_maj_pred_on_error = np.argmax(
-        np.bincount(
-            pred_on_errors.flatten()[~np.isnan(pred_on_errors.flatten())].astype(int),
-            minlength=25,
-        )
-    )
-
-    # GridSpec : 3 lignes, 4 colonnes
-    # col 0 et 1 : plots, col 2 : cbar classes, col 3 : cbar entropy
-    # ligne 2 : plot entropy centré en col 0-1 + cbar entropy en col 3
-    fig = plt.figure(figsize=(15, 12))
-    gs = gridspec.GridSpec(
-        3, 4, width_ratios=[1, 1, 0.05, 0.05], hspace=0.35, wspace=0.35
-    )
-
-    ax00 = fig.add_subplot(gs[0, 0])
-    ax01 = fig.add_subplot(gs[0, 1])
-    ax10 = fig.add_subplot(gs[1, 0])
-    ax11 = fig.add_subplot(gs[1, 1])
-    ax20 = fig.add_subplot(gs[2, 0])
-    ax21 = fig.add_subplot(gs[2, 1])
-
-    # cbar classes — s'étend uniquement sur les 2 premières lignes
-    cbar_ax = fig.add_subplot(gs[0:2, 2])
-
-    # cbar entropy — uniquement sur la ligne 2
-    cbar_entropy_ax = fig.add_subplot(gs[2, 2])
-
-    ax00.imshow(label, cmap=cmap_oso, vmin=0, vmax=24)
-    ax00.set_title("Labels")
-    ax00.axis("off")
-
-    ax01.imshow(pred, cmap=cmap_oso, vmin=0, vmax=24)
-    ax01.set_title("Predictions")
-    ax01.axis("off")
-
-    ax10.imshow(label_class_only, cmap=cmap_oso, vmin=0, vmax=24)
-    ax10.set_title(f"Pixels vrais '{names_class[class_idx]}'")
-    ax10.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
-
-    im = ax11.imshow(pred_on_errors, cmap=cmap_oso, vmin=0, vmax=24)
-    ax11.set_title(
-        f"Classe majoritairement prédite : '{names_class[class_maj_pred_on_error]}'"
-    )
-    ax11.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
-
-    ax20.imshow(img)
-    ax20.set_title("S2 RGB image")
-    ax20.axis("off")
-
-    im_entropy = ax21.imshow(entropy, cmap="viridis")
-    ax21.set_title("Entropy")
-    ax21.axis("off")
-
-    # Colorbars
-    cbar = fig.colorbar(im, cax=cbar_ax, ticks=np.arange(0, 25))
-    cbar.ax.set_yticklabels([names_class[i] for i in range(25)])
-
-    fig.colorbar(im_entropy, cax=cbar_entropy_ax)
-
-    fig.suptitle(
-        f"Erreurs de prédiction — classe '{names_class[class_idx]}' "
-        f"({error_mask.sum()} pixels mal classifiés)"
-    )
-
-    plt.show()
-
-
 def plot_label_probability(label: torch.Tensor, label_version="probas"):
+    """
+    Plot probabilities for each class
+    """
     dims = []
     class_ = names_class if label_version == "probas" else names_class_extended
 
@@ -986,6 +546,9 @@ def plot_label_probability(label: torch.Tensor, label_version="probas"):
 
 
 def plot_s2_and_mask(s2, dates, masks, start_timestep):
+    """
+    Plot S2 timesteps and associated S2 validity masks
+    """
     length = 5
     if start_timestep + length > s2.shape[1]:
         length = s2.shape[1] - start_timestep
@@ -1017,6 +580,9 @@ def plot_s2_and_mask(s2, dates, masks, start_timestep):
 
 
 def plot_geodatas(s2, geodatas, s2_timestep=0):
+    """
+    Plot MNT data S2 RGB on desire timestep
+    """
     fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(12, 8), layout="constrained")
 
     elev = geodatas[2, :, :]
@@ -1039,6 +605,9 @@ def plot_geodatas(s2, geodatas, s2_timestep=0):
 
 
 def plot_eco_zone_repartition(path_data, path_aoi, path_ecozone, path_regions):
+    """
+    Plot Next-OSO patch extent on France map with eco-climatic zones and regions.
+    """
     path_data = Path(path_data)
 
     extent = gpd.read_file(path_aoi)
@@ -1083,6 +652,9 @@ def plot_eco_zone_repartition(path_data, path_aoi, path_ecozone, path_regions):
 
 
 def plot_eco_zone_by_folds(path_data):
+    """
+    Plot repartition of samples per eco-climatic zone and per folder
+    """
     path_data = Path(path_data)
 
     with open(path_data / "metadata/mapping.json", "r") as f:
@@ -1139,6 +711,9 @@ def count_label_compare(
     normalized=False,
     plot=True,
 ):
+    """
+    Histogram of labels occurence. Work also with extended nomenclature version
+    """
     classes = np.zeros(nbr_class)
 
     for count, id in enumerate(ids):
@@ -1198,6 +773,9 @@ def count_label_compare(
 
 
 def plot_histogram_dates_number(dataset):
+    """
+    Plot histogram of S2 time serie length
+    """
     dates_array = np.zeros((len(dataset)), dtype=object)
     for i in range(len(dataset)):
         date = dataset[i][0][1]

@@ -21,6 +21,10 @@ from templates.constants import cmap_oso, names_class, names_class_english, name
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="generate_graphs")
 
+"""
+Script used to generate graphs
+"""
+
 base_log = "/home/hkerino/Documents/next_oso/logs/to_share"
 class_names_next_oso_csv_path = (
     "/home/hkerino/Documents/nextoso-dataset/data/auxiliary/OSO/oso_classes.csv"
@@ -2825,10 +2829,10 @@ def generate_tab(path_xlsx_original, path_xlsx_extended, metrics=["Class", "F1",
 #     dict_names=dict(zip(names_class_extended, names_class_extended_english)),
 # )
 
-for i in tqdm(range(1,3599)):
-    id = f"{i:04d}"
-    plot_all_models_with_rgb(id=id,
-                             path_preds="/work/THEIA/CES/oso/hugok/predictions/preds_tensor",
-                             path_labels="/work/THEIA/CES/oso/hugok/nextoso-dataset/labels",
-                             path_rgb="/work/THEIA/CES/oso/hugok/nextoso-dataset/plot_s2",
-                             path_save="/work/THEIA/CES/oso/hugok/predictions/preds_img")
+# for i in tqdm(range(1,3599)):
+#     id = f"{i:04d}"
+#     plot_all_models_with_rgb(id=id,
+#                              path_preds="/work/THEIA/CES/oso/hugok/predictions/preds_tensor",
+#                              path_labels="/work/THEIA/CES/oso/hugok/nextoso-dataset/labels",
+#                              path_rgb="/work/THEIA/CES/oso/hugok/nextoso-dataset/plot_s2",
+#                              path_save="/work/THEIA/CES/oso/hugok/predictions/preds_img")

@@ -17,6 +17,9 @@ def plot_embeddings(
     plot_label: bool,
     figsize=(20, 5),
 ):
+    """
+    plot all embeddings for one id using PCA.
+    """
     dataset = alpha_earth_dataset.dataset
 
     # Alpha-Earth
@@ -103,6 +106,9 @@ def plot_embedding(
     path_data: str,
     figsize=(15, 8),
 ):
+    """
+    plot one select embedding for one id using PCA.
+    """
     dataset = emb_data.dataset
     model = emb_data.model
 
